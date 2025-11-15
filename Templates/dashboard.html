@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Asistencia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); }
+        .navbar { animation: slideDown 0.6s ease-out; background: #374151; border-bottom: 1px solid #4b5563; }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+    <nav class="shadow-lg navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <img src="https://via.placeholder.com/50x30?text=Logo+Oscuro" alt="Logo" class="mr-3 rounded-lg shadow-sm border border-gray-600">
+                    <h1 class="text-xl font-bold text-orange-400">Panel Oscuro - {{ nombre }}</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <form action="/marcar_inicio" method="post" class="inline">
+                        <button class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-2 rounded-xl shadow-lg transition duration-300 transform hover:scale-105 hover:shadow-xl font-semibold">
+                            🕒 Marcar Inicio
+                        </button>
+                    </form>
+                    <form action="/marcar_salida" method="post" class="inline">
+                        <button class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2 rounded-xl shadow-lg transition duration-300 transform hover:scale-105 hover:shadow-xl font-semibold">
+                            🚪 Marcar Salida
+                        </button>
+                    </form>
+                    {% if admin %}
+                        <a href="/exportar_datos" class="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-2 rounded-xl shadow-lg transition duration-300 transform hover:scale-105 hover:shadow-xl font-semibold">
+                            📊 Exportar Datos
+                        </a>
+                    {% endif %}
+                    <a href="/logout" class="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-2 rounded-xl shadow-lg transition duration-300 transform hover:scale-105 hover:shadow-xl font-semibold flex items-center">
+                        🚪 Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto mt-8 px-4 sm:px-6 lg:px-8">
+        <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 mb-8 transition duration-300 hover:shadow-xl">
+            <h3 class="text-lg font-semibold text-orange-400 mb-4">📈 Gráficos Interactivos de Horas Trabajadas</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gradient-to-br from-gray-700 to-gray-800 p-4 rounded-lg shadow border border-gray-600 transition duration-300 hover:shadow-md">
+                    <canvas id="chartEmpleados"></canvas>
+                </div>
+                <div class="bg-gradient-to-br from-gray-700 to-gray-800 p-4 rounded-lg shadow border border-gray-600 transition duration-300 hover:shadow-md">
+                    <canvas id="chartDona"></canvas>
+                </div>
+                <div class="bg-gradient-to-br from-gray-700 to-gray-800 p-4 rounded-lg shadow border border-gray-600 transition duration-300 hover:shadow-md">
+                    <canvas id="chartMixto"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 transition duration-300 hover:shadow-xl">
+            <h2 class="text-xl font-bold text-orange-400 mb-6">📋 Registro de Marcaciones</h2>
+            <table class="w-full border border-gray-600 rounded-xl overflow-hidden">
+                <thead class="bg-gray-700 text-gray-200">
+                    <tr>
+                        <th class="py-3 px-4 text-left">📅 Fecha</th>
+                        <th class="py-3 px-4 text-left">🕓 Hora de Inicio</th>
+                        <th class="py-3 px-4 text-left">🕔 Hora de Salida</th>
+                        <th class="py-3 px-4 text-center">⏱ Horas Trabajadas</th>
+                        <th class="py-3 px-4 text-center">💪 Horas Extras</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if registros %}
+                        {% for fecha, registro in registros.items() %}
+                        <tr class="border-b border-gray-600 hover:bg-gray-700 transition duration-300">
+                            <td class="py-3 px-4">{{ fecha }}</td>
+                            <td class="py-3 px-4">
+                                {{ registro.inicio[:10] }} <br>
+                                <span class="text-sm text-gray-400">{{ registro.inicio[11:19] }}</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                {% if registro.salida %}
+                                    {{ registro.salida[:10] }} <br>
+                                    <span class="text-sm text-gray-400">{{ registro.salida[11:19] }}</span>
+                                {% else %}
+                                    <span class="text-gray-500 italic">No registrada</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4 text-center">{{ registro.horas_trabajadas }}</td>
+                            <td class="py-3 px-4 text-center">{{ registro.horas_extras }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-6 text-gray-400">
+                                No hay marcaciones registradas aún.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer class="mt-12 mb-4 text-center text-gray-400 text-sm">
+        &copy; {{ year }} Sistema Oscuro de Asistencia Empresarial
+    </footer>
+
+    <script>
+        const ctxEmpleados = document.getElementById('chartEmpleados').getContext('2d');
+        new Chart(ctxEmpleados, {
+            type: 'bar',
+            data: {
+                labels: {{ empleados_horas.keys() | list | tojson }},
+                datasets: [{
+                    label: 'Horas Trabajadas',
+                    data: {{ empleados_horas.values() | list }},
+                    backgroundColor: 'rgba(255, 165, 0, 0.8)', // Naranja
+                    borderColor: 'rgba(255, 165, 0, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 1500, easing: 'easeOutBounce' },
+                plugins: { tooltip: { backgroundColor: 'rgba(0,0,0,0.9)', titleColor: '#fff', bodyColor: '#fff' } },
+                scales: { y: { beginAtZero: true, grid: { color: 'rgba(100,100,100,0.3)' }, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } }
+            }
+        });
+
+        const ctxDona = document.getElementById('chartDona').getContext('2d');
+        const totalHoras = {{ empleados_horas.values() | list | sum }};
+        const horasExtras = {{ empleados_horas.values() | list | sum }} * 0.1;
+        new Chart(ctxDona, {
+            type: 'doughnut',
+            data: {
+                labels: ['Horas Normales', 'Horas Extras'],
+                datasets: [{
+                    data: [totalHoras - horasExtras, horasExtras],
+                    backgroundColor: ['rgba(255, 165, 0, 0.8)', 'rgba(255, 69, 0, 0.8)'], // Naranja y rojo
+                    borderColor: ['rgba(255, 165, 0, 1)', 'rgba(255, 69, 0, 1)'],
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { animateRotate: true, animateScale: true },
+                plugins: { tooltip: { backgroundColor: 'rgba(0,0,0,0.9)', titleColor: '#fff', bodyColor: '#fff' } }
+            }
+        });
+
+        const ctxMixto = document.getElementById('chartMixto').getContext('2d');
+        new Chart(ctxMixto, {
+            data: {
+                labels: {{ fechas | tojson }},
+                datasets: [{
+                    type: 'bar',
+                    label: 'Horas Diarias',
+                    data: {{ horas_fechas }},
+                    backgroundColor: 'rgba(255, 165, 0, 0.6)',
+                    borderColor: 'rgba(255, 165, 0, 1)',
+                    borderWidth: 2
+                }, {
+                    type: 'line',
+                    label: 'Tendencia',
+                    data: {{ horas_fechas }},
+                    backgroundColor: 'rgba(255, 69, 0, 0.2)',
+                    borderColor: 'rgba(255, 69, 0, 1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 2000 },
+                plugins: { tooltip: { mode: 'index', intersect: false, backgroundColor: 'rgba(0,0,0,0.9)', titleColor: '#fff', bodyColor: '#fff' } },
+                scales: { y: { beginAtZero: true, grid: { color: 'rgba(100,100,100,0.3)' }, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } }
+            }
+        });
+    </script>
+</body>
+</html>

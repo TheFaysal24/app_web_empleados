@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block title %}Gestión de Turnos{% endblock %}
+{% block content %}
+<h3 class="text-primary">Gestión de Turnos</h3>
+<form method="POST" action="{{ url_for('admin_turnos') }}" class="card shadow p-4">
+  <div class="mb-3">
+    <label>Selecciona Usuario</label>
+    <select name="usuario" class="form-select">
+      {% for usuario in usuarios %}
+        <option value="{{ usuario }}">{{ usuario }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="row">
+    <div class="col-md-6 mb-3"><label>Día</label><input type="date" name="fecha" class="form-control" required></div>
+    <div class="col-md-6 mb-3"><label>Horas Asignadas</label><input type="number" name="horas" value="8" class="form-control"></div>
+  </div>
+  <button class="btn btn-success w-100">Asignar Turno</button>
+</form>
+
+<hr>
+<h5>Turnos Asignados</h5>
+<ul class="list-group">
+  {% for usuario, lista in turnos.items() %}
+    {% for fecha in lista %}
+      <li class="list-group-item">{{ usuario }} - {{ fecha }}</li>
+    {% endfor %}
+  {% endfor %}
+</ul>
+{% endblock %}

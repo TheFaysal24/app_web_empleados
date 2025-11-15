@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio - Gestión de Empleados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); } /* Gradiente oscuro */
+        .hero { animation: fadeInUp 1s ease-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center text-white">
+    <div class="text-center hero">
+        <img src="[img]https://i.imgur.com/3eyh97Y.png[/img]" alt="Logo Empresa" class="mx-auto mb-6 rounded-xl shadow-lg border border-gray-700">
+        <h1 class="text-5xl font-bold text-orange-400 mb-4">Registro de Turnos Diarios</h1>
+        <p class="text-gray-300 mb-8 text-lg">Gestiona horas, turnos y empleados con eficiencia y estilo.</p>
+        <div class="space-x-4">
+            <a href="/login" class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-xl shadow-lg transition duration-300 transform hover:scale-105 font-semibold">
+                🚀 Iniciar Sesión
+            </a>
+            <a href="/register" class="bg-gray-700 hover:bg-gray-800 text-white px-8 py-4 rounded-xl shadow-lg transition duration-300 transform hover:scale-105 font-semibold">
+                📝 Registrarse
+            </a>
+        </div>
+    </div>
+    <footer class="mt-12 text-gray-400 text-sm">
+        &copy; 2023 Sistema de Asistencia
+    </footer>
+</body>
+</html>

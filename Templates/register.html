@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Gestión de Empleados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <h2 class="text-2xl font-bold text-center mb-6">Registro de Usuario</h2>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="text-red-500 mb-4">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+        <form action="/register" method="post">
+            <div class="mb-4">
+                <label class="block text-gray-700">Nombre</label>
+                <input type="text" name="nombre" class="w-full px-3 py-2 border rounded-lg" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Cédula</label>
+                <input type="text" name="cedula" class="w-full px-3 py-2 border rounded-lg" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Cargo</label>
+                <input type="text" name="cargo" class="w-full px-3 py-2 border rounded-lg" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Correo</label>
+                <input type="email" name="correo" class="w-full px-3 py-2 border rounded-lg" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Usuario</label>
+                <input type="text" name="usuario" class="w-full px-3 py-2 border rounded-lg" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Contraseña</label>
+                <input type="password" name="contrasena" class="w-full px-3 py-2 border rounded-lg" required>
+            </div>
+            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg">Registrarse</button>
+        </form>
+        <p class="text-center mt-4"><a href="/login" class="text-blue-500">¿Ya tienes cuenta? Inicia sesión</a></p>
+    </div>
+</body>
+</html>

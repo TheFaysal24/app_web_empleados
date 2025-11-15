@@ -1,0 +1,86 @@
+<!doctype html>
+<div class="flex items-center gap-3">
+{% if session.get('usuario') %}
+<span class="muted mr-2 hidden sm:inline">Hola, <strong>{{ session.get('nombre') }}</strong></span>
+<a href="{{ url_for('dashboard') }}" class="px-3 py-1 rounded-full text-sm card">Dashboard</a>
+<a href="{{ url_for('logout') }}" class="px-3 py-1 rounded-full text-sm card">Salir</a>
+{% else %}
+<a href="{{ url_for('login_page') }}" class="px-3 py-1 rounded-full text-sm card">Iniciar sesión</a>
+<a href="{{ url_for('register') }}" class="px-3 py-1 rounded-full text-sm card">Registro</a>
+{% endif %}
+
+
+<!-- Theme toggle -->
+<button id="themeToggle" aria-label="Cambiar tema" class="ml-2 px-3 py-2 rounded-lg focus-soft card" title="Tema">
+<svg id="icon-sun" class="w-5 h-5 inline-block" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<svg id="icon-moon" class="w-5 h-5 inline-block hidden" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+</div>
+</nav>
+
+
+<!-- Flash messages -->
+<div class="px-6">
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class="mt-2 space-y-2">
+{% for m in messages %}
+<div class="p-3 card rounded-lg" data-aos="fade-down">{{ m }}</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+</div>
+
+
+<main class="px-6 py-8 max-w-5xl mx-auto">
+{% block content %}{% endblock %}
+</main>
+
+
+<footer class="py-6 text-center muted">
+<small>© {{ datetime.datetime.now().year }} · Sistema de control de horas</small>
+</footer>
+
+
+<script>
+// AOS init
+AOS.init({ duration: 600, once: true });
+
+
+// Theme handling: "light", "dark" or "system"
+const root = document.documentElement;
+const iconSun = document.getElementById('icon-sun');
+const iconMoon = document.getElementById('icon-moon');
+
+
+function applyTheme(t) {
+if (t === 'system') {
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+} else {
+root.setAttribute('data-theme', t);
+}
+const current = root.getAttribute('data-theme');
+if (current === 'dark') { iconSun.classList.add('hidden'); iconMoon.classList.remove('hidden'); }
+else { iconSun.classList.remove('hidden'); iconMoon.classList.add('hidden'); }
+}
+
+
+// load saved
+const saved = localStorage.getItem('theme-preference') || 'system';
+applyTheme(saved);
+
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+let cur = localStorage.getItem('theme-preference') || 'system';
+let next = cur === 'light' ? 'dark' : cur === 'dark' ? 'system' : 'light';
+localStorage.setItem('theme-preference', next);
+applyTheme(next);
+});
+</script>
+
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

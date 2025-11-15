@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+{% block title %}Panel Admin{% endblock %}
+{% block content %}
+<h2>Panel Administrador</h2>
+<a href="{{ url_for('agregar_empleado') }}" class="btn btn-success mb-3">Agregar Empleado</a>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Usuario</th>
+            <th>Nombre</th>
+            <th>Cédula</th>
+            <th>Cargo</th>
+            <th>Correo</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u, info in usuarios.items() %}
+        <tr>
+            <td>{{ u }}</td>
+            <td>{{ info.nombre }}</td>
+            <td>{{ info.cedula if info.cedula else '-' }}</td>
+            <td>{{ info.cargo if info.cargo else '-' }}</td>
+            <td>{{ info.correo if info.correo else '-' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

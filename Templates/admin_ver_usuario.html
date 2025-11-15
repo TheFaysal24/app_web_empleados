@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block title %}Ver Usuario{% endblock %}
+{% block content %}
+<h3 class="text-primary">Historial de {{ usuario }}</h3>
+<a href="{{ url_for('admin_panel') }}" class="btn btn-outline-primary mb-3">⬅ Volver</a>
+
+<table class="table table-striped table-bordered">
+  <thead class="table-secondary">
+    <tr><th>Fecha</th><th>Inicio</th><th>Salida</th><th>Horas</th><th>Extras</th><th>Editar</th></tr>
+  </thead>
+  <tbody>
+  {% for fecha, reg in registros.items()|sort %}
+    <tr>
+      <td>{{ fecha }}</td>
+      <td>{{ reg.inicio or '-' }}</td>
+      <td>{{ reg.salida or '-' }}</td>
+      <td>{{ reg.horas_trabajadas or 0 }}</td>
+      <td>{{ reg.horas_extras or 0 }}</td>
+      <td><a href="{{ url_for('admin_editar_registro', usuario=usuario, fecha=fecha) }}" class="btn btn-sm btn-warning">Editar</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<canvas id="graficoHoras" height="120"></canvas>
+<script>
+fetch("{{ url_for('admin_datos_graficos', usuario=usuario) }}").then(r=>r.json()).then(data=>{
+  new Chart(document.getElementById('graficoHoras'), {
+    type: 'bar',
+    data: {
+      labels: data.labels,
+      datasets: [
+        {label:'Horas Trabajadas', data:data.horas, backgroundColor:'#0d6efd'},
+        {label:'Horas Extras', data:data.extras, backgroundColor:'#ffc107'}
+      ]
+    }
+  });
+});
+</script>
+{% endblock %}

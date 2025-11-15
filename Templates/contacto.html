@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Contacto</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(120deg, #1e1e2f, #2d2d44);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            animation: fadeIn 1.5s ease;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 1.2em;
+            margin: 5px 0;
+            text-align: center;
+        }
+        .contact-card {
+            background-color: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+            width: 350px;
+            text-align: center;
+            animation: slideUp 1s ease;
+        }
+        .btn {
+            margin-top: 20px;
+            background-color: #00adb5;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background-color: #02c39a;
+            transform: scale(1.1);
+        }
+        .fecha {
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+        @keyframes slideUp { from {transform: translateY(25px);} to {transform: translateY(0);} }
+    </style>
+</head>
+<body>
+    <div class="contact-card">
+        <h1>Contacto</h1>
+        <p><strong>Correo:</strong> lemolina0323@gmail.com</p>
+        <p><strong>Teléfono:</strong> +573234679281</p>
+        <p><strong>Dirección:</strong> Monteria, Colombia</p>
+
+        <div class="fecha">
+            {{ datetime.now().strftime('%A, %d de %B de %Y, %I:%M %p') }}
+        </div>
+
+        <a href="{{ url_for('home') }}" class="btn">Volver al inicio</a>
+    </div>
+</body>
+</html>

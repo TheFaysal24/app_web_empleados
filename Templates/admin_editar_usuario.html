@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block title %}Editar Usuario{% endblock %}
+{% block content %}
+<h3 class="text-primary">Editar Usuario: {{ usuario }}</h3>
+<form method="POST" action="{{ url_for('admin_editar_usuario', usuario=usuario) }}" class="card p-4 shadow">
+  <div class="row">
+    <div class="col-md-6 mb-3"><label>Nombre</label><input name="nombre" value="{{ datos.nombre }}" class="form-control"></div>
+    <div class="col-md-6 mb-3"><label>Cédula</label><input name="cedula" value="{{ datos.cedula }}" class="form-control"></div>
+  </div>
+  <div class="row">
+    <div class="col-md-6 mb-3"><label>Cargo</label><input name="cargo" value="{{ datos.cargo }}" class="form-control"></div>
+    <div class="col-md-6 mb-3"><label>Empresa</label><input name="empresa" value="{{ datos.empresa }}" class="form-control"></div>
+  </div>
+  <div class="row">
+    <div class="col-md-6 mb-3"><label>Correo</label><input type="email" name="correo" value="{{ datos.correo }}" class="form-control"></div>
+    <div class="col-md-6 mb-3"><label>Rol</label>
+      <select name="rol" class="form-select">
+        <option value="usuario" {% if not datos.admin %}selected{% endif %}>Empleado</option>
+        <option value="admin" {% if datos.admin %}selected{% endif %}>Administrador</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn btn-primary w-100">Guardar Cambios</button>
+</form>
+{% endblock %}

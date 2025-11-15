@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block title %}Agregar Usuario{% endblock %}
+{% block content %}
+<h3 class="text-primary">Agregar Nuevo Usuario</h3>
+<form method="POST" action="{{ url_for('admin_agregar_usuario') }}" class="card shadow p-4 mt-3">
+  <div class="row">
+    <div class="col-md-6 mb-3"><label>Nombre Completo</label><input name="nombre" class="form-control" required></div>
+    <div class="col-md-6 mb-3"><label>Cédula</label><input name="cedula" class="form-control" required></div>
+  </div>
+  <div class="row">
+    <div class="col-md-6 mb-3"><label>Cargo</label><input name="cargo" class="form-control"></div>
+    <div class="col-md-6 mb-3"><label>Empresa</label><input name="empresa" class="form-control"></div>
+  </div>
+  <div class="row">
+    <div class="col-md-6 mb-3"><label>Correo</label><input type="email" name="correo" class="form-control"></div>
+    <div class="col-md-6 mb-3"><label>Usuario</label><input name="usuario" class="form-control" required></div>
+  </div>
+  <div class="row">
+    <div class="col-md-6 mb-3"><label>Contraseña</label><input type="password" name="contrasena" class="form-control" required></div>
+    <div class="col-md-6 mb-3">
+      <label>Rol</label>
+      <select name="rol" class="form-select">
+        <option value="usuario">Empleado</option>
+        <option value="admin">Administrador</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn btn-success w-100">Guardar Usuario</button>
+</form>
+{% endblock %}

@@ -1,0 +1,3 @@
+// static/js/script.js
+// Pequeñas utilidades (placeholder)
+console.log('Script cargado — Control Horas');

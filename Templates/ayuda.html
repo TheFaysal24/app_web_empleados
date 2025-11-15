@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block title %}Ayuda{% endblock %}
+{% block content %}
+<div class="container fade-in">
+    <h2>Guía de Uso</h2>
+    <ul>
+        <li>Marcar Inicio y Fin de Turno diariamente.</li>
+        <li>Administradores pueden ver todos los registros y exportarlos.</li>
+        <li>Contacta soporte si hay problemas técnicos.</li>
+    </ul>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-3">Volver</a>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block title %}Iniciar Sesión{% endblock %}
+{% block content %}
+<div class="container fade-in">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card p-4">
+                <h3 class="text-center mb-4">Iniciar Sesión</h3>
+                {% with messages = get_flashed_messages() %}
+                  {% if messages %}
+                    {% for msg in messages %}
+                      <div class="alert alert-warning">{{ msg }}</div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+                <form action="{{ url_for('login') }}" method="POST">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" name="usuario" placeholder="Usuario" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="password" class="form-control" name="contrasena" placeholder="Contraseña" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+                </form>
+                <hr>
+                <div class="text-center">
+                    <a href="{{ url_for('registro') }}" class="btn btn-success w-100">Registrar Nuevo Colaborador</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
