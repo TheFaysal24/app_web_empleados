@@ -2,64 +2,123 @@
 {% block title %}Dashboard Premium{% endblock %}
 {% block content %}
 <style>
-  .dashboard-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 30px;
+  body {
+    background: #f5f7fa;
+    padding: 20px;
+  }
+
+  .top-navigation {
+    background: white;
+    padding: 15px 25px;
     border-radius: 15px;
-    margin-bottom: 30px;
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
-  .dashboard-header h2 {
-    margin: 0;
-    font-size: 2em;
-    font-weight: 700;
-  }
-
-  .time-buttons-header {
+  .nav-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
+    align-items: center;
   }
 
-  .btn-small {
+  .btn-action {
     border: none;
     color: white;
-    padding: 10px 18px;
-    border-radius: 6px;
+    padding: 10px 20px;
+    border-radius: 10px;
     font-weight: 600;
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.3s ease;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-  }
-
-  .btn-inicio-small {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  }
-
-  .btn-inicio-small:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
-    color: white;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     text-decoration: none;
   }
 
-  .btn-salida-small {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  .btn-inicio {
+    background: linear-gradient(135deg, #10b981, #34d399);
   }
 
-  .btn-salida-small:hover {
+  .btn-inicio:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
     color: white;
-    text-decoration: none;
+  }
+
+  .btn-salida {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+  }
+
+  .btn-salida:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(239, 68, 68, 0.4);
+    color: white;
+  }
+
+  .btn-admin {
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+  }
+
+  .btn-admin:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.4);
+    color: white;
+  }
+
+  .btn-backup {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  }
+
+  .btn-backup:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.4);
+    color: white;
+  }
+
+  .btn-export {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  }
+
+  .btn-export:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.4);
+    color: white;
+  }
+
+  .btn-logout {
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+  }
+
+  .btn-logout:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(107, 114, 128, 0.4);
+    color: white;
+  }
+
+  .dashboard-header {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .dashboard-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 2.5em;
+    font-weight: 700;
+  }
+
+  .dashboard-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1em;
   }
 
   .stat-cards-grid {
@@ -265,15 +324,29 @@
   }
 
   @media (max-width: 768px) {
-    .dashboard-header {
+    .top-navigation {
       flex-direction: column;
-      text-align: center;
       gap: 15px;
     }
 
-    .time-buttons-header {
+    .nav-actions {
+      flex-wrap: wrap;
       justify-content: center;
       width: 100%;
+    }
+
+    .btn-action {
+      flex: 1 1 auto;
+      min-width: 120px;
+    }
+
+    .dashboard-header {
+      padding: 25px;
+      text-align: center;
+    }
+
+    .dashboard-header h2 {
+      font-size: 1.8em;
     }
 
     .grid-2 {
@@ -290,22 +363,46 @@
   }
 </style>
 
-<!-- Header con botones integrados -->
+<!-- Navegación Superior -->
+<div class="top-navigation">
+  <div>
+    <h3 style="margin: 0; color: #0f2027; font-weight: 700;">
+      <i class="fas fa-users-cog"></i> Sistema de Empleados
+    </h3>
+  </div>
+  <div class="nav-actions">
+    <form method="POST" action="{{ url_for('marcar_inicio') }}" style="display: inline;">
+      <button type="submit" class="btn-action btn-inicio">
+        <i class="fas fa-play-circle"></i> Inicio
+      </button>
+    </form>
+    <form method="POST" action="{{ url_for('marcar_salida') }}" style="display: inline;">
+      <button type="submit" class="btn-action btn-salida">
+        <i class="fas fa-stop-circle"></i> Salida
+      </button>
+    </form>
+    {% if admin %}
+    <a href="{{ url_for('admin_usuarios') }}" class="btn-action btn-admin">
+      <i class="fas fa-users-cog"></i> Usuarios
+    </a>
+    <a href="{{ url_for('admin_backups') }}" class="btn-action btn-backup">
+      <i class="fas fa-database"></i> Backups
+    </a>
+    <a href="{{ url_for('exportar_registros') }}" class="btn-action btn-export">
+      <i class="fas fa-file-excel"></i> Exportar
+    </a>
+    {% endif %}
+    <a href="{{ url_for('logout') }}" class="btn-action btn-logout">
+      <i class="fas fa-sign-out-alt"></i> Salir
+    </a>
+  </div>
+</div>
+
+<!-- Header -->
 <div class="dashboard-header">
   <div>
-    <h2>📊 Dashboard Administrativo</h2>
-  </div>
-  <div class="time-buttons-header">
-    <form method="POST" action="{{ url_for('marcar_inicio') }}">
-      <button type="submit" class="btn-small btn-inicio-small">
-        <i class="fas fa-play"></i> Inicio
-      </button>
-    </form>
-    <form method="POST" action="{{ url_for('marcar_salida') }}">
-      <button type="submit" class="btn-small btn-salida-small">
-        <i class="fas fa-stop"></i> Salida
-      </button>
-    </form>
+    <h2>{% if admin %}👑 Panel Administrativo{% else %}📊 Mi Dashboard{% endif %}</h2>
+    <p>Bienvenido, <strong>{{ nombre }}</strong></p>
   </div>
 </div>
 
