@@ -729,45 +729,47 @@
   </a>
 </div>
 
+<!-- Variables de datos del servidor -->
+<script type="text/javascript">
+  var serverData = {
+    fechas: {{ fechas|default([])|tojson|safe }},
+    horas: {{ horas_fechas|default([])|tojson|safe }},
+    contadores: {{ contador_inicios|default({})|tojson|safe }}
+  };
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  // Inicializar gráficos después de que el DOM esté listo
+<script type="text/javascript">
   document.addEventListener('DOMContentLoaded', function() {
     
-    // Plugin para mostrar valores en barras
     const chartDataLabels = {
       id: 'chartDataLabels',
       afterDatasetsDraw(chart) {
         chart.data.datasets.forEach((datasetMeta, i) => {
           const meta = chart.getDatasetMeta(i);
           meta.data.forEach((bar, index) => {
-            const data = bar.$context.parsed.y;
-            if (data > 0) {
+            const barData = bar.$context.parsed.y;
+            if (barData > 0) {
               const ctx = chart.ctx;
               ctx.fillStyle = 'rgba(0,0,0,0.7)';
               ctx.font = 'bold 11px Arial';
               ctx.textAlign = 'center';
-              ctx.fillText(data.toFixed(1), bar.x, bar.y - 5);
+              ctx.fillText(barData.toFixed(1), bar.x, bar.y - 5);
             }
           });
         });
       }
     };
 
-    // Datos del servidor
-    var chartLabels = {{ fechas|default([])|tojson|safe }};
-    var horasData = {{ horas_fechas|default([])|tojson|safe }};
-    
-    // Gráfico de horas trabajadas
     const ctx1 = document.getElementById('graficoHoras');
-    if (ctx1 && chartLabels && horasData) {
+    if (ctx1 && serverData.fechas && serverData.horas) {
       new Chart(ctx1, {
         type: 'bar',
         data: {
-          labels: chartLabels,
+          labels: serverData.fechas,
           datasets: [{
             label: 'Horas trabajadas',
-            data: horasData,
+            data: serverData.horas,
             backgroundColor: [
               '#667eea',
               '#764ba2',
@@ -815,23 +817,19 @@
       });
     }
 
-    // Gráfico de inicios por usuario
     const ctx2 = document.getElementById('graficoInicios');
-    if (ctx2) {
-      var contadores = {{ contador_inicios|default({})|tojson|safe }};
-      
-      if (contadores && Object.keys(contadores).length > 0) {
-        const usuarios = Object.keys(contadores);
-        const inicios = Object.values(contadores);
-        const totalInicios = inicios.reduce((a, b) => a + b, 0);
-        const porcentajes = inicios.map(x => ((x / totalInicios) * 100).toFixed(1));
+    if (ctx2 && serverData.contadores && Object.keys(serverData.contadores).length > 0) {
+      const usuarios = Object.keys(serverData.contadores);
+      const inicios = Object.values(serverData.contadores);
+      const totalInicios = inicios.reduce((a, b) => a + b, 0);
+      const porcentajes = inicios.map(x => ((x / totalInicios) * 100).toFixed(1));
 
-        new Chart(ctx2, {
-      type: 'doughnut',
-      data: {
-        labels: usuarios.map((u, i) => u + ' (' + inicios[i] + ' veces, ' + porcentajes[i] + '%)'),
-        datasets: [{
-          data: inicios,
+      new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: usuarios.map((u, i) => u + ' (' + inicios[i] + ' veces, ' + porcentajes[i] + '%)'),
+          datasets: [{
+            data: inicios,
           backgroundColor: [
             '#667eea',
             '#764ba2',
@@ -869,12 +867,11 @@
               }
             }
           }
+          }
         }
-      }
-        });
-      }
+      });
     }
     
-  }); // Fin de DOMContentLoaded
+  });
 </script>
 {% endblock %}
