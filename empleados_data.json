@@ -24,7 +24,7 @@
             "correo": "luis.molina@inmel.co",
             "contrasena": "12345",
             "admin": false,
-            "bloqueado": false
+            "desbloquear": false
         }
     },
     "turnos": [
@@ -61,7 +61,13 @@
             "inicio": "2025-11-09T18:19:15.296233",
             "salida": "2025-11-09T18:20:15.616899",
             "horas_trabajadas": 0.02,
-            "horas_extras": 0
+            "horas_extras": 0,
+            "2025-11-15": {
+                "inicio": "2025-11-15T23:58:06.749063",
+                "salida": null,
+                "horas_trabajadas": 0,
+                "horas_extras": 0
+            }
         }
     }
 }

@@ -51,29 +51,28 @@
   }
 
   .dropdown-toggle {
-    background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
     color: white;
     border: none;
-    padding: 12px 25px;
-    border-radius: 12px;
+    padding: 10px 20px;
+    border-radius: 10px;
     cursor: pointer;
-    font-weight: 700;
-    font-size: 1em;
+    font-weight: 600;
+    font-size: 0.9em;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     transition: all 0.3s ease;
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   .dropdown-toggle:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
-    background: linear-gradient(135deg, #2563eb, #60a5fa);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(107, 114, 128, 0.4);
   }
 
   .dropdown-toggle i:last-child {
-    font-size: 0.8em;
+    font-size: 0.75em;
     transition: transform 0.3s ease;
   }
 
@@ -513,10 +512,10 @@
       </button>
     </form>
     
-    <!-- Menú Desplegable Grande y Visible -->
+    <!-- Menú Desplegable -->
     <div class="dropdown">
       <button class="dropdown-toggle">
-        <i class="fas fa-bars"></i> MENÚ <i class="fas fa-chevron-down"></i>
+        <i class="fas fa-bars"></i> Menú <i class="fas fa-chevron-down"></i>
       </button>
       <div class="dropdown-menu">
         <div class="menu-section">Principal</div>
@@ -539,13 +538,12 @@
           <i class="fas fa-file-download"></i> Exportar a CSV
         </a>
         {% endif %}
-        
-        <hr style="margin: 12px 0; border: none; border-top: 2px solid #e5e7eb;">
-        <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ef4444; font-weight: 700;">
-          <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-        </a>
       </div>
     </div>
+    
+    <a href="{{ url_for('logout') }}" class="btn-action btn-logout">
+      <i class="fas fa-sign-out-alt"></i> Salir
+    </a>
   </div>
 </div>
 
