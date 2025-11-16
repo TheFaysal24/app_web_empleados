@@ -4,9 +4,42 @@ import datetime
 import os
 import csv
 import io
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'clave_secreta_para_sesiones')
+
+# Inicializar scheduler para backups automáticos
+scheduler = BackgroundScheduler()
+
+def backup_automatico():
+    """Crea backup automático del archivo de datos"""
+    try:
+        fecha = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        if not os.path.exists('backups'):
+            os.makedirs('backups')
+        
+        if os.path.exists(DATA_FILE):
+            import shutil
+            backup_file = f'backups/empleados_data_backup_{fecha}.json'
+            shutil.copy2(DATA_FILE, backup_file)
+            print(f"✅ Backup automático creado: {backup_file}")
+            
+            # Limpiar backups antiguos (mantener solo los últimos 10)
+            archivos = sorted([f for f in os.listdir('backups') if f.endswith('.json')])
+            if len(archivos) > 10:
+                for archivo in archivos[:-10]:
+                    os.remove(os.path.join('backups', archivo))
+    except Exception as e:
+        print(f"❌ Error en backup automático: {e}")
+
+# Programar backup cada 10 días
+scheduler.add_job(func=backup_automatico, trigger="interval", days=10, id='backup_job')
+scheduler.start()
+
+# Apagar el scheduler cuando la app se cierre
+atexit.register(lambda: scheduler.shutdown())
 
 DATA_FILE = 'empleados_data.json'
 
@@ -588,6 +621,51 @@ def admin_editar_registro(usuario, fecha):
      
      flash('Registro no encontrado', 'error')
      return redirect(url_for('dashboard'))
+
+# ✅ Gestión de Backups (Admin)
+@app.route('/admin/backups')
+def admin_backups():
+     if 'usuario' not in session or not session.get('admin'):
+         flash('Acceso denegado', 'error')
+         return redirect(url_for('home'))
+     
+     backups_list = []
+     if os.path.exists('backups'):
+         archivos = sorted([f for f in os.listdir('backups') if f.endswith('.json')], reverse=True)
+         for archivo in archivos:
+             ruta = os.path.join('backups', archivo)
+             tamaño = os.path.getsize(ruta)
+             fecha_mod = datetime.datetime.fromtimestamp(os.path.getmtime(ruta))
+             backups_list.append({
+                 'nombre': archivo,
+                 'tamaño': round(tamaño / 1024, 2),  # KB
+                 'fecha': fecha_mod.strftime('%d/%m/%Y %H:%M:%S')
+             })
+     
+     return render_template('admin_backups.html', backups=backups_list)
+
+@app.route('/admin/crear_backup')
+def admin_crear_backup():
+     if 'usuario' not in session or not session.get('admin'):
+         flash('Acceso denegado', 'error')
+         return redirect(url_for('home'))
+     
+     backup_automatico()
+     flash('Backup creado exitosamente', 'message')
+     return redirect(url_for('admin_backups'))
+
+@app.route('/admin/descargar_backup/<nombre>')
+def admin_descargar_backup(nombre):
+     if 'usuario' not in session or not session.get('admin'):
+         flash('Acceso denegado', 'error')
+         return redirect(url_for('home'))
+     
+     ruta = os.path.join('backups', nombre)
+     if os.path.exists(ruta):
+         return send_file(ruta, as_attachment=True, download_name=nombre)
+     else:
+         flash('Backup no encontrado', 'error')
+         return redirect(url_for('admin_backups'))
 
 # -------------------
 # Ejecutar aplicación

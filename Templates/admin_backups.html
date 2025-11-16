@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Backups - Admin{% endblock %}
+{% block content %}
+<style>
+  .backups-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .backups-header h2 {
+    margin: 0;
+    font-size: 2em;
+  }
+
+  .btn-crear-backup {
+    background: white;
+    color: #667eea;
+    padding: 12px 24px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-crear-backup:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    color: #764ba2;
+  }
+
+  .info-card {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    border-left: 5px solid #667eea;
+  }
+
+  .info-card h4 {
+    color: #667eea;
+    margin-bottom: 10px;
+  }
+
+  .info-card p {
+    color: #666;
+    margin: 5px 0;
+  }
+
+  .backups-table {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  thead th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background 0.3s ease;
+  }
+
+  tbody tr:hover {
+    background: #f8f9fa;
+  }
+
+  tbody td {
+    padding: 15px;
+  }
+
+  .btn-descargar {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-descargar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(56, 239, 125, 0.4);
+    color: white;
+  }
+
+  .no-backups {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+  }
+
+  .no-backups i {
+    font-size: 80px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .back-link:hover {
+    color: #764ba2;
+    transform: translateX(-5px);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    background: #e0e0e0;
+    color: #666;
+  }
+</style>
+
+<a href="{{ url_for('admin_usuarios') }}" class="back-link">
+  <i class="fas fa-arrow-left"></i> Volver a Gestión de Usuarios
+</a>
+
+<div class="backups-header">
+  <div>
+    <h2><i class="fas fa-database"></i> Gestión de Backups</h2>
+    <p style="margin: 10px 0 0 0; opacity: 0.95;">Backups automáticos cada 10 días</p>
+  </div>
+  <a href="{{ url_for('admin_crear_backup') }}" class="btn-crear-backup">
+    <i class="fas fa-plus-circle"></i> Crear Backup Ahora
+  </a>
+</div>
+
+<div class="info-card">
+  <h4><i class="fas fa-info-circle"></i> Información del Sistema de Backups</h4>
+  <p><strong>Frecuencia:</strong> Automático cada 10 días</p>
+  <p><strong>Retención:</strong> Se mantienen los últimos 10 backups</p>
+  <p><strong>Ubicación:</strong> Carpeta <code>backups/</code></p>
+  <p><strong>⚠️ Sin disco persistente:</strong> Los backups se pierden cuando Render reinicia. Descárgalos regularmente.</p>
+</div>
+
+{% if backups %}
+<div class="backups-table">
+  <table>
+    <thead>
+      <tr>
+        <th><i class="fas fa-file"></i> Nombre del Archivo</th>
+        <th><i class="fas fa-calendar"></i> Fecha</th>
+        <th><i class="fas fa-hdd"></i> Tamaño</th>
+        <th><i class="fas fa-cog"></i> Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for backup in backups %}
+      <tr>
+        <td>
+          <i class="fas fa-file-archive" style="color: #667eea; margin-right: 8px;"></i>
+          {{ backup.nombre }}
+        </td>
+        <td>{{ backup.fecha }}</td>
+        <td>{{ backup.tamaño }} KB</td>
+        <td>
+          <a href="{{ url_for('admin_descargar_backup', nombre=backup.nombre) }}" class="btn-descargar">
+            <i class="fas fa-download"></i> Descargar
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="backups-table">
+  <div class="no-backups">
+    <i class="fas fa-folder-open"></i>
+    <h3>No hay backups disponibles</h3>
+    <p>Haz click en "Crear Backup Ahora" para generar el primer backup</p>
+  </div>
+</div>
+{% endif %}
+
+<div class="info-card" style="margin-top: 30px; border-left-color: #ff6b6b;">
+  <h4><i class="fas fa-exclamation-triangle"></i> Recomendaciones Importantes</h4>
+  <p>✅ Descarga los backups cada semana a tu computadora</p>
+  <p>✅ Guarda copias en Google Drive, Dropbox o un disco externo</p>
+  <p>✅ Verifica ocasionalmente que los backups contengan datos correctos</p>
+  <p>⚠️ Sin disco persistente en Render, los backups se pierden al reiniciar el servidor (~cada 15 días)</p>
+</div>
+
+{% endblock %}
