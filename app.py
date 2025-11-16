@@ -4,42 +4,33 @@ import datetime
 import os
 import csv
 import io
-from apscheduler.schedulers.background import BackgroundScheduler
-import atexit
+import shutil
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'clave_secreta_para_sesiones')
 
-# Inicializar scheduler para backups automáticos
-scheduler = BackgroundScheduler()
-
+# Función de backup manual (sin scheduler automático)
 def backup_automatico():
-    """Crea backup automático del archivo de datos"""
+    """Crea backup manual del archivo de datos"""
     try:
         fecha = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         if not os.path.exists('backups'):
             os.makedirs('backups')
         
         if os.path.exists(DATA_FILE):
-            import shutil
             backup_file = f'backups/empleados_data_backup_{fecha}.json'
             shutil.copy2(DATA_FILE, backup_file)
-            print(f"✅ Backup automático creado: {backup_file}")
+            print(f"✅ Backup creado: {backup_file}")
             
             # Limpiar backups antiguos (mantener solo los últimos 10)
             archivos = sorted([f for f in os.listdir('backups') if f.endswith('.json')])
             if len(archivos) > 10:
                 for archivo in archivos[:-10]:
                     os.remove(os.path.join('backups', archivo))
+            return True
     except Exception as e:
-        print(f"❌ Error en backup automático: {e}")
-
-# Programar backup cada 10 días
-scheduler.add_job(func=backup_automatico, trigger="interval", days=10, id='backup_job')
-scheduler.start()
-
-# Apagar el scheduler cuando la app se cierre
-atexit.register(lambda: scheduler.shutdown())
+        print(f"❌ Error en backup: {e}")
+        return False
 
 DATA_FILE = 'empleados_data.json'
 
