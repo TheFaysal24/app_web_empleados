@@ -284,9 +284,10 @@
       {% endif %}
       
       {% if not datos.get('admin') %}
-        <form method="POST" action="{{ url_for('admin_eliminar_usuario', usuario=usuario) }}" 
+        <form method="POST" action="{{ url_for('admin_eliminar_usuario') }}" 
               onsubmit="return confirm('¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.')" 
               style="display: inline;">
+          <input type="hidden" name="usuario" value="{{ usuario }}">
           <button type="submit" class="btn btn-danger">
             <i class="fas fa-trash"></i> Eliminar Usuario
           </button>

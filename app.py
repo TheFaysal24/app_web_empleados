@@ -553,11 +553,17 @@ def admin_eliminar_registro(usuario, fecha):
      return redirect(url_for('admin_usuarios'))
 
 # ✅ Eliminar usuario (Admin)
-@app.route('/admin/eliminar_usuario/<usuario>', methods=['POST'])
-def admin_eliminar_usuario(usuario):
+@app.route('/admin/eliminar_usuario', methods=['POST'])
+def admin_eliminar_usuario():
      if 'usuario' not in session or not session.get('admin'):
          flash('Acceso denegado', 'error')
          return redirect(url_for('home'))
+     
+     usuario = request.form.get('usuario')
+     
+     if not usuario:
+         flash('Usuario no especificado', 'error')
+         return redirect(url_for('admin_usuarios'))
      
      if usuario == session['usuario']:
          flash('No puedes eliminar tu propia cuenta', 'error')
