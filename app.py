@@ -887,44 +887,50 @@ def ver_turnos_asignados():
     data = cargar_datos()
     usuario = session['usuario']
     admin = session.get('admin', False)
+    
+    # Inicializar assigned_shifts
+    assigned_shifts = {}
 
     if admin:
         # Mostrar todos los turnos asignados con datos completos
-        assigned_shifts = {}
-        for dia, horas in data['turnos']['shifts'].items():
-            for hora, assigned_user in horas.items():
-                if assigned_user:
-                    if assigned_user not in assigned_shifts:
-                        assigned_shifts[assigned_user] = []
-                    user_data = data['usuarios'].get(assigned_user, {})
-                    assigned_shifts[assigned_user].append({
-                        'dia': dia,
-                        'hora': hora,
-                        'usuario': assigned_user,
-                        'nombre': user_data.get('nombre', assigned_user),
-                        'cedula': user_data.get('cedula', 'N/A'),
-                        'cargo': user_data.get('cargo', 'Gestor Operativo')
-                    })
+        if 'turnos' in data and 'shifts' in data['turnos']:
+            for dia, horas in data['turnos']['shifts'].items():
+                if horas and isinstance(horas, dict):
+                    for hora, assigned_user in horas.items():
+                        if assigned_user and assigned_user in data.get('usuarios', {}):
+                            if assigned_user not in assigned_shifts:
+                                assigned_shifts[assigned_user] = []
+                            user_data = data['usuarios'].get(assigned_user, {})
+                            assigned_shifts[assigned_user].append({
+                                'dia': dia,
+                                'hora': hora,
+                                'usuario': assigned_user,
+                                'nombre': user_data.get('nombre', assigned_user),
+                                'cedula': user_data.get('cedula', 'N/A'),
+                                'cargo': user_data.get('cargo', 'Gestor Operativo')
+                            })
     else:
         # Mostrar solo turnos del usuario actual
-        assigned_shifts = {usuario: []}
-        for dia, horas in data['turnos']['shifts'].items():
-            for hora, assigned_user in horas.items():
-                if assigned_user == usuario:
-                    user_data = data['usuarios'][usuario]
-                    assigned_shifts[usuario].append({
-                        'dia': dia,
-                        'hora': hora,
-                        'usuario': usuario,
-                        'nombre': user_data.get('nombre', usuario),
-                        'cedula': user_data.get('cedula', 'N/A'),
-                        'cargo': user_data.get('cargo', 'Gestor Operativo')
-                    })
+        assigned_shifts[usuario] = []
+        if 'turnos' in data and 'shifts' in data['turnos']:
+            for dia, horas in data['turnos']['shifts'].items():
+                if horas and isinstance(horas, dict):
+                    for hora, assigned_user in horas.items():
+                        if assigned_user == usuario and usuario in data.get('usuarios', {}):
+                            user_data = data['usuarios'][usuario]
+                            assigned_shifts[usuario].append({
+                                'dia': dia,
+                                'hora': hora,
+                                'usuario': usuario,
+                                'nombre': user_data.get('nombre', usuario),
+                                'cedula': user_data.get('cedula', 'N/A'),
+                                'cargo': user_data.get('cargo', 'Gestor Operativo')
+                            })
 
     return render_template('ver_turnos_asignados.html',
-                         assigned_shifts=assigned_shifts,
+                         assigned_shifts=assigned_shifts or {},
                          admin=admin,
-                         data=data,
+                         data=data or {},
                          session=session)
 
 # Función auxiliar para validar selección de turno
