@@ -396,13 +396,13 @@
                 <span class="badge badge-dia">
                   <i class="fas fa-calendar-day"></i>
                   {% set dias = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado'} %}
-                  {{ dias[turno.dia] }}
+                  {{ dias.get(turno.get('dia', 'monday'), 'N/A') }}
                 </span>
               </td>
               <td>
                 <span class="badge badge-hora">
                   <i class="fas fa-clock"></i>
-                  {{ turno.hora }}
+                  {{ turno.get('hora', 'N/A') }}
                 </span>
               </td>
               <td>
