@@ -49,10 +49,22 @@ def cargar_datos():
                 'nombre': 'Luis Molina',
                 'cedula': '',
                 'cargo': 'Coordinador',
-                'correo': 'lemolina0323@gmail.com'
+                'correo': 'lemolina0323@gmail.com',
+                'role': 'manager'
             }
         },
-        'turnos': [],
+        'turnos': {
+            'shifts': {
+                'monday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
+                'tuesday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
+                'wednesday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
+                'thursday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
+                'friday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
+                'saturday': {'08:00': None}
+            },
+            'monthly_assignments': {},
+            'current_month': datetime.datetime.now().strftime('%Y-%m')
+        },
         'registros': {}
     }
 
@@ -160,17 +172,13 @@ def dashboard():
 
      year = datetime.datetime.now().year
 
-     empleados_horas = {}
      fechas_horas = {}
      for usr, info in data['usuarios'].items():
-         total_horas = 0
          for fecha, reg in data['registros'].get(usr, {}).items():
              if isinstance(reg, dict):
-                 total_horas += reg.get('horas_trabajadas', 0)
                  if fecha not in fechas_horas:
                      fechas_horas[fecha] = 0
                  fechas_horas[fecha] += reg.get('horas_trabajadas', 0)
-         empleados_horas[info['nombre']] = total_horas
 
      fechas_ordenadas = sorted(fechas_horas.keys())[-7:]
      horas_fechas = [fechas_horas[fecha] for fecha in fechas_ordenadas]
@@ -180,15 +188,15 @@ def dashboard():
      usuarios_iniciados_hoy = 0
      contador_inicios = {}
      costo_horas_extras = {}
-     
+
      # Salario mínimo Colombia 2025: $1,384,308
      salario_minimo = 1384308
      valor_hora_ordinaria = salario_minimo / (30 * 8)  # $5,764.61
-     
+
      for usr, regs in data['registros'].items():
          contador_inicios[usr] = len(regs)
          costo_total = 0
-         
+
          for fecha, reg in regs.items():
              if isinstance(reg, dict):
                  horas_extras = reg.get('horas_extras', 0)
@@ -196,24 +204,39 @@ def dashboard():
                  try:
                      fecha_obj = datetime.datetime.fromisoformat(fecha + 'T00:00:00')
                      dia_semana = fecha_obj.weekday()  # 0=lunes, 4=viernes, 5=sábado, 6=domingo
-                     
+
                      if dia_semana >= 5:  # Sábado o domingo
                          multiplicador = 1.75 if dia_semana == 5 else 2.0
                      else:  # Entre semana
                          multiplicador = 1.25
-                     
+
                      costo_diario = horas_extras * valor_hora_ordinaria * multiplicador
                      costo_total += costo_diario
                  except:
                      pass
-         
+
          costo_horas_extras[usr] = round(costo_total, 2)
-         
+
          if hoy in regs and regs[hoy].get('inicio'):
              usuarios_iniciados_hoy += 1
-     
+
      total_usuarios_nuevos = len(data['usuarios'])
      costo_total_empresa = sum(costo_horas_extras.values())
+
+     # Filtrar datos para usuarios no admin
+     if not admin:
+         usuario_actual = session['usuario']
+         # Filtrar fechas_horas para solo registros del usuario actual
+         fechas_horas_filtradas = {}
+         for fecha, reg in data['registros'].get(usuario_actual, {}).items():
+             if isinstance(reg, dict):
+                 fechas_horas_filtradas[fecha] = reg.get('horas_trabajadas', 0)
+         fechas_ordenadas = sorted(fechas_horas_filtradas.keys())[-7:]
+         horas_fechas = [fechas_horas_filtradas.get(fecha, 0) for fecha in fechas_ordenadas]
+         contador_inicios = {usuario_actual: contador_inicios.get(usuario_actual, 0)}
+         costo_horas_extras = {usuario_actual: costo_horas_extras.get(usuario_actual, 0)}
+         costo_total_empresa = costo_horas_extras.get(usuario_actual, 0)
+         total_usuarios_nuevos = 1  # Solo mostrar 1 para el usuario actual
 
      return render_template(
          'dashboard.html',
@@ -693,6 +716,135 @@ def admin_descargar_backup(nombre):
      else:
          flash('Backup no encontrado', 'error')
          return redirect(url_for('admin_backups'))
+
+# ✅ Seleccionar turno semanal
+@app.route('/seleccionar_turno', methods=['GET', 'POST'])
+def seleccionar_turno():
+    if 'usuario' not in session:
+        flash('Debes iniciar sesión primero', 'error')
+        return redirect(url_for('login'))
+
+    data = cargar_datos()
+    usuario = session['usuario']
+    user_role = data['usuarios'][usuario].get('role', 'collaborator')
+    current_month = data['turnos']['current_month']
+
+    if request.method == 'POST':
+        dia = request.form.get('dia')
+        hora = request.form.get('hora')
+
+        if not dia or not hora:
+            flash('Selecciona un día y hora válidos', 'error')
+            return redirect(url_for('seleccionar_turno'))
+
+        # Validar que el turno esté disponible
+        if data['turnos']['shifts'][dia][hora] is not None:
+            flash('Este turno ya está ocupado', 'error')
+            return redirect(url_for('seleccionar_turno'))
+
+        # Validar restricciones de rol y ciclo mensual
+        if not validar_turno_usuario(data, usuario, user_role, dia, hora):
+            flash('No puedes seleccionar este turno según las reglas', 'error')
+            return redirect(url_for('seleccionar_turno'))
+
+        # Asignar turno
+        data['turnos']['shifts'][dia][hora] = usuario
+
+        # Registrar asignación mensual
+        if usuario not in data['turnos']['monthly_assignments']:
+            data['turnos']['monthly_assignments'][usuario] = []
+        data['turnos']['monthly_assignments'][usuario].append(f"{dia}_{hora}")
+
+        guardar_datos(data)
+        flash('Turno seleccionado exitosamente', 'message')
+        return redirect(url_for('ver_turnos_asignados'))
+
+    # Preparar datos para el template
+    shifts = data['turnos']['shifts']
+    available_shifts = {}
+
+    for dia, horas in shifts.items():
+        available_shifts[dia] = {}
+        for hora, assigned_user in horas.items():
+            if assigned_user is None:
+                # Verificar si el usuario puede seleccionar este turno
+                if validar_turno_usuario(data, usuario, user_role, dia, hora):
+                    available_shifts[dia][hora] = True
+                else:
+                    available_shifts[dia][hora] = False
+            else:
+                available_shifts[dia][hora] = False
+
+    return render_template('seleccionar_turno.html',
+                         shifts=shifts,
+                         available_shifts=available_shifts,
+                         user_role=user_role)
+
+# ✅ Ver turnos asignados
+@app.route('/ver_turnos_asignados')
+def ver_turnos_asignados():
+    if 'usuario' not in session:
+        flash('Debes iniciar sesión primero', 'error')
+        return redirect(url_for('login'))
+
+    data = cargar_datos()
+    usuario = session['usuario']
+    admin = session.get('admin', False)
+
+    if admin:
+        # Mostrar todos los turnos asignados
+        assigned_shifts = {}
+        for dia, horas in data['turnos']['shifts'].items():
+            for hora, assigned_user in horas.items():
+                if assigned_user:
+                    if assigned_user not in assigned_shifts:
+                        assigned_shifts[assigned_user] = []
+                    assigned_shifts[assigned_user].append({
+                        'dia': dia,
+                        'hora': hora,
+                        'usuario': assigned_user,
+                        'nombre': data['usuarios'].get(assigned_user, {}).get('nombre', assigned_user)
+                    })
+    else:
+        # Mostrar solo turnos del usuario actual
+        assigned_shifts = {usuario: []}
+        for dia, horas in data['turnos']['shifts'].items():
+            for hora, assigned_user in horas.items():
+                if assigned_user == usuario:
+                    assigned_shifts[usuario].append({
+                        'dia': dia,
+                        'hora': hora,
+                        'usuario': usuario,
+                        'nombre': data['usuarios'][usuario]['nombre']
+                    })
+
+    return render_template('ver_turnos_asignados.html',
+                         assigned_shifts=assigned_shifts,
+                         admin=admin)
+
+# Función auxiliar para validar selección de turno
+def validar_turno_usuario(data, usuario, user_role, dia, hora):
+    current_month = data['turnos']['current_month']
+    monthly_assignments = data['turnos']['monthly_assignments'].get(usuario, [])
+
+    # Contar turnos asignados este mes
+    turnos_mes = len(monthly_assignments)
+
+    # Si ya tiene 4 turnos, no puede seleccionar más hasta próximo mes
+    if turnos_mes >= 4:
+        return False
+
+    # Managers pueden seleccionar cualquier turno disponible
+    if user_role == 'manager':
+        return True
+
+    # Collaborators tienen restricciones
+    # Solo pueden seleccionar turnos de 8:00 en adelante los días de semana
+    if dia in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']:
+        if hora in ['06:30', '08:00']:
+            return False
+
+    return True
 
 # -------------------
 # Ejecutar aplicación
