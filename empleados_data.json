@@ -67,6 +67,12 @@
                 "salida": null,
                 "horas_trabajadas": 0,
                 "horas_extras": 0
+            },
+            "2025-11-16": {
+                "inicio": "2025-11-16T00:02:58.781378",
+                "salida": "2025-11-16T00:03:00.298760",
+                "horas_trabajadas": 0.0,
+                "horas_extras": 0
             }
         }
     }

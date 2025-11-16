@@ -444,7 +444,7 @@ def cambiar_contrasena():
 
     return redirect(url_for('ajustes'))
 
-# ✅ Recuperar contraseña (flujo simple)
+# ✅ Recuperar contraseña (genera nueva contraseña y envía notificación)
 @app.route('/recuperar_contrasena', methods=['GET', 'POST'])
 def recuperar_contrasena():
     if request.method == 'POST':
@@ -452,7 +452,26 @@ def recuperar_contrasena():
         data = cargar_datos()
         for usr, info in data['usuarios'].items():
             if info['correo'] == correo:
-                flash(f'Se envió un enlace de recuperación a {correo}', 'message')
+                # Generar nueva contraseña aleatoria
+                import random
+                import string
+                nueva_contrasena = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+                data['usuarios'][usr]['contrasena'] = nueva_contrasena
+                guardar_datos(data)
+
+                # Enviar notificación por email (mailto)
+                import urllib.parse
+                asunto = urllib.parse.quote("Recuperación de Contraseña - Sistema Empleados")
+                cuerpo = urllib.parse.quote(f"Hola {info['nombre']},\n\nTu nueva contraseña es: {nueva_contrasena}\n\nPor favor, cámbiala después de iniciar sesión.\n\nSaludos,\nSistema de Empleados")
+                mailto_link = f"mailto:{correo}?subject={asunto}&body={cuerpo}"
+
+                # También generar enlace de WhatsApp si hay número (asumiendo que el correo incluye número o agregar campo)
+                whatsapp_link = ""
+                if 'telefono' in info and info['telefono']:
+                    whatsapp_msg = urllib.parse.quote(f"Hola {info['nombre']}, tu nueva contraseña es: {nueva_contrasena}. Cámbiala después de iniciar sesión.")
+                    whatsapp_link = f"https://wa.me/{info['telefono']}?text={whatsapp_msg}"
+
+                flash(f'Se generó nueva contraseña. <a href="{mailto_link}" target="_blank">Enviar por Email</a>' + (f' | <a href="{whatsapp_link}" target="_blank">Enviar por WhatsApp</a>' if whatsapp_link else ''), 'message')
                 return redirect(url_for('login'))
         flash('Correo no encontrado', 'error')
         return redirect(url_for('recuperar_contrasena'))
