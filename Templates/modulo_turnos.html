@@ -428,18 +428,23 @@
     </div>
   </div>
 
-  <!-- Asignación por Usuario -->
+  <!-- Tabla Resumen por Gestor -->
   <div class="historial-section">
-    <h3><i class="fas fa-users"></i> Turnos por Usuario</h3>
+    <h3><i class="fas fa-users"></i> Vista Semanal por Gestor</h3>
     <div style="overflow-x: auto;">
       <table class="historial-table">
         <thead>
           <tr>
-            <th>Usuario</th>
+            <th>Gestor</th>
             <th>Cédula</th>
             <th>Cargo</th>
-            <th>Turnos Totales</th>
-            <th>Patrón de Rotación</th>
+            <th>Lunes</th>
+            <th>Martes</th>
+            <th>Miércoles</th>
+            <th>Jueves</th>
+            <th>Viernes</th>
+            <th>Sábado</th>
+            <th>Total</th>
           </tr>
         </thead>
         <tbody>
@@ -448,11 +453,27 @@
             <td><strong>{{ usuario_info.nombre }}</strong></td>
             <td>{{ usuario_info.cedula }}</td>
             <td><span class="badge badge-info">{{ usuario_info.cargo }}</span></td>
-            <td><span class="badge badge-success">{{ usuario_info.total_turnos }} turnos</span></td>
-            <td>
-              {% for hora in usuario_info.patron %}
-              <span class="badge badge-warning">{{ hora }}</span>
-              {% endfor %}
+            
+            {% set dias_orden = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] %}
+            {% for dia in dias_orden %}
+              <td style="text-align: center;">
+                {% set turno_encontrado = false %}
+                {% if data and data.get('turnos') and data.get('turnos').get('shifts') %}
+                  {% for hora, usr in data['turnos']['shifts'].get(dia, {}).items() %}
+                    {% if usr == usuario_info.usuario %}
+                      <span class="badge badge-success">{{ hora }}</span>
+                      {% set turno_encontrado = true %}
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+                {% if not turno_encontrado %}
+                  <span style="color: #ccc;">-</span>
+                {% endif %}
+              </td>
+            {% endfor %}
+            
+            <td style="text-align: center;">
+              <span class="badge badge-warning">{{ usuario_info.total_turnos }}</span>
             </td>
           </tr>
           {% endfor %}

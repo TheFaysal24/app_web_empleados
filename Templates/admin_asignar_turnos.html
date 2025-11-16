@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Asignar Turnos - Admin{% endblock %}
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .container {
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .header-card {
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 20px;
+    padding: 35px;
+    margin-bottom: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .header-card h2 {
+    margin: 0 0 10px 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.5em;
+    font-weight: 800;
+  }
+
+  .asignar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+  }
+
+  .dia-panel {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .dia-panel h4 {
+    color: #667eea;
+    margin: 0 0 20px 0;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+    font-size: 1.3em;
+    font-weight: 700;
+  }
+
+  .turno-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 120px;
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+
+  .turno-hora {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 1.1em;
+  }
+
+  .select-gestor {
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .select-gestor:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .btn-asignar {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-asignar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
+  }
+
+  .btn-limpiar {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+
+  .btn-limpiar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(239, 68, 68, 0.4);
+  }
+
+  .nav-buttons {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    display: flex;
+    gap: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(107, 114, 128, 0.3);
+  }
+
+  .resumen-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .resumen-card h3 {
+    color: #667eea;
+    margin: 0 0 20px 0;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+    font-size: 1.5em;
+    font-weight: 700;
+  }
+
+  .gestor-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+  }
+
+  .gestor-box {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border-left: 5px solid #667eea;
+    padding: 15px;
+    border-radius: 10px;
+  }
+
+  .gestor-box strong {
+    color: #667eea;
+    font-size: 1.1em;
+  }
+
+  .turno-badge {
+    display: inline-block;
+    background: white;
+    padding: 4px 10px;
+    border-radius: 5px;
+    margin: 3px;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #667eea;
+  }
+</style>
+
+<div class="container">
+  <div class="nav-buttons">
+    <a href="{{ url_for('dashboard') }}" class="btn-back">
+      <i class="fas fa-arrow-left"></i> Dashboard
+    </a>
+  </div>
+
+  <div class="header-card">
+    <h2><i class="fas fa-user-cog"></i> Panel de Asignación de Turnos</h2>
+    <p style="color: #666; font-size: 1.1em;">Asigna turnos a cada gestor operativo para la semana</p>
+  </div>
+
+  <!-- Resumen de Asignaciones -->
+  <div class="resumen-card">
+    <h3><i class="fas fa-users"></i> Resumen de Turnos Asignados Esta Semana</h3>
+    <div class="gestor-summary">
+      {% for usr, info in gestores.items() %}
+      <div class="gestor-box">
+        <strong>{{ info.nombre }}</strong>
+        <div style="font-size: 0.85em; color: #666; margin: 5px 0;">
+          <i class="fas fa-id-card"></i> {{ info.cedula }}
+        </div>
+        <div style="margin-top: 10px;">
+          {% set turnos_gestor = [] %}
+          {% for dia, horas in shifts.items() %}
+            {% for hora, usuario in horas.items() %}
+              {% if usuario == usr %}
+                {% set _ = turnos_gestor.append(hora) %}
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+          
+          {% if turnos_gestor %}
+            {% for turno in turnos_gestor %}
+            <span class="turno-badge"><i class="fas fa-clock"></i> {{ turno }}</span>
+            {% endfor %}
+          {% else %}
+            <span style="color: #999; font-size: 0.9em;">Sin turnos asignados</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Panel de Asignación por Día -->
+  <div class="asignar-grid">
+    {% set dias_nombres = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado'} %}
+    {% set dias_iconos = {'monday': '🌅', 'tuesday': '🌄', 'wednesday': '🌞', 'thursday': '☀️', 'friday': '🌤️', 'saturday': '🌈'} %}
+    
+    {% for dia, nombre in dias_nombres.items() %}
+    <div class="dia-panel">
+      <h4>{{ dias_iconos[dia] }} {{ nombre }}</h4>
+      
+      {% if dia in shifts %}
+        {% for hora, usuario_actual in shifts[dia].items() %}
+        <div class="turno-row">
+          <div class="turno-hora">{{ hora }}</div>
+          
+          <form method="POST" action="{{ url_for('admin_asignar_turno_manual') }}" style="display: contents;">
+            <input type="hidden" name="dia" value="{{ dia }}">
+            <input type="hidden" name="hora" value="{{ hora }}">
+            
+            <select name="usuario" class="select-gestor" onchange="this.form.submit()">
+              <option value="">-- Disponible --</option>
+              {% for usr, info in gestores.items() %}
+              <option value="{{ usr }}" {% if usuario_actual == usr %}selected{% endif %}>
+                {{ info.nombre }} ({{ info.cedula }})
+              </option>
+              {% endfor %}
+            </select>
+          </form>
+          
+          {% if usuario_actual %}
+          <form method="POST" action="{{ url_for('admin_limpiar_turno') }}" style="display: inline;">
+            <input type="hidden" name="dia" value="{{ dia }}">
+            <input type="hidden" name="hora" value="{{ hora }}">
+            <button type="submit" class="btn-limpiar">
+              <i class="fas fa-times"></i>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

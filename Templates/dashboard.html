@@ -537,6 +537,9 @@
 
         {% if admin %}
         <div class="menu-section" style="margin-top: 10px;">Administración</div>
+        <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item">
+          <i class="fas fa-user-cog"></i> Asignar Turnos
+        </a>
         <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">
           <i class="fas fa-users"></i> Gestión de Usuarios
         </a>
@@ -651,36 +654,73 @@
 
 <!-- Resumen Semanal de Turnos -->
 <div class="table-card">
-  <h3 class="section-title">📆 Resumen Semanal - Turnos por Gestor</h3>
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
-    {% if data and data.get('turnos') and data.get('turnos').get('shifts') %}
-    {% set resumen_semanal = {} %}
-    {% for dia, horas in data['turnos']['shifts'].items() %}
-      {% for hora, usr in horas.items() %}
-        {% if usr %}
-          {% if usr not in resumen_semanal %}
-            {% set _ = resumen_semanal.update({usr: []}) %}
-          {% endif %}
-          {% set _ = resumen_semanal[usr].append({'dia': dia, 'hora': hora}) %}
-        {% endif %}
-      {% endfor %}
-    {% endfor %}
-    
-    {% for usr, turnos in resumen_semanal.items() %}
-    <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-left: 5px solid #667eea; padding: 15px; border-radius: 10px;">
-      <div style="font-weight: 700; color: #667eea; margin-bottom: 8px; font-size: 1.1em;">
-        <i class="fas fa-user-circle"></i> {{ data['usuarios'].get(usr, {}).get('nombre', usr) }}
-      </div>
-      <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">
-        <i class="fas fa-id-card"></i> Cédula: {{ data['usuarios'].get(usr, {}).get('cedula', 'N/A') }}
-      </div>
-      <div style="font-size: 0.85em; color: #999;">
-        <i class="fas fa-calendar-check"></i> {{ turnos|length }} turno(s) esta semana
-      </div>
-    </div>
-    {% endfor %}
+  <h3 class="section-title">
+    <i class="fas fa-calendar-week"></i> Resumen Semanal - Turnos por Gestor
+    {% if admin %}
+    <a href="{{ url_for('admin_asignar_turnos') }}" style="float: right; background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 0.85em; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+      <i class="fas fa-user-cog"></i> Asignar Turnos
+    </a>
     {% endif %}
+  </h3>
+  
+  {% if data and data.get('turnos') and data.get('turnos').get('shifts') %}
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+        <tr>
+          <th style="padding: 12px; text-align: left;">Gestor</th>
+          <th style="padding: 12px; text-align: left;">Cédula</th>
+          <th style="padding: 12px; text-align: left;">Cargo</th>
+          <th style="padding: 12px; text-align: center;">Lunes</th>
+          <th style="padding: 12px; text-align: center;">Martes</th>
+          <th style="padding: 12px; text-align: center;">Miércoles</th>
+          <th style="padding: 12px; text-align: center;">Jueves</th>
+          <th style="padding: 12px; text-align: center;">Viernes</th>
+          <th style="padding: 12px; text-align: center;">Sábado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set cedulas_gestores = ["1070963486", "1067949514", "1140870406", "1068416077"] %}
+        {% for usr, info in data['usuarios'].items() %}
+          {% if info.get('cedula') in cedulas_gestores %}
+          <tr style="border-bottom: 1px solid #e0e0e0;">
+            <td style="padding: 12px; font-weight: 700;">{{ info.get('nombre', usr) }}</td>
+            <td style="padding: 12px;">{{ info.get('cedula', 'N/A') }}</td>
+            <td style="padding: 12px;">{{ info.get('cargo', 'Gestor') }}</td>
+            
+            {% set dias_orden = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] %}
+            {% for dia in dias_orden %}
+              <td style="padding: 12px; text-align: center;">
+                {% set turno_dia = [] %}
+                {% if data['turnos']['shifts'].get(dia) %}
+                  {% for hora, usuario in data['turnos']['shifts'][dia].items() %}
+                    {% if usuario == usr %}
+                      {% set _ = turno_dia.append(hora) %}
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+                
+                {% if turno_dia %}
+                  {% for hora in turno_dia %}
+                  <span class="badge badge-success">{{ hora }}</span>
+                  {% endfor %}
+                {% else %}
+                  <span style="color: #ccc;">-</span>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
+  {% else %}
+  <div class="no-data">
+    <i class="fas fa-calendar-times" style="font-size: 3em; opacity: 0.3;"></i>
+    <p>No hay turnos asignados</p>
+  </div>
+  {% endif %}
 </div>
 
 <!-- Tabla de turnos asignados -->

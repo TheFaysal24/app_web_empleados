@@ -1002,6 +1002,105 @@ def eliminar_turno():
 
     return redirect(url_for('ver_turnos_asignados'))
 
+# ✅ Panel de asignación manual de turnos (Admin)
+@app.route('/admin/asignar_turnos')
+def admin_asignar_turnos():
+    if 'usuario' not in session or not session.get('admin'):
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('home'))
+    
+    data = cargar_datos()
+    
+    # Obtener solo gestores (usuarios con cédula en el sistema de turnos)
+    cedulas_gestores = ["1070963486", "1067949514", "1140870406", "1068416077"]
+    gestores = {}
+    
+    for usr, info in data.get('usuarios', {}).items():
+        if info.get('cedula') in cedulas_gestores:
+            gestores[usr] = {
+                'nombre': info.get('nombre', usr),
+                'cedula': info.get('cedula', 'N/A'),
+                'cargo': info.get('cargo', 'Gestor Operativo')
+            }
+    
+    return render_template('admin_asignar_turnos.html',
+                         shifts=data.get('turnos', {}).get('shifts', {}),
+                         gestores=gestores,
+                         data=data)
+
+# ✅ Asignar turno manual (Admin)
+@app.route('/admin/asignar_turno_manual', methods=['POST'])
+def admin_asignar_turno_manual():
+    if 'usuario' not in session or not session.get('admin'):
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('home'))
+    
+    data = cargar_datos()
+    dia = request.form.get('dia')
+    hora = request.form.get('hora')
+    usuario = request.form.get('usuario')
+    
+    if dia and hora:
+        if usuario:
+            # Asignar turno al usuario
+            data['turnos']['shifts'][dia][hora] = usuario
+            
+            # Actualizar asignaciones mensuales
+            if 'monthly_assignments' not in data['turnos']:
+                data['turnos']['monthly_assignments'] = {}
+            if usuario not in data['turnos']['monthly_assignments']:
+                data['turnos']['monthly_assignments'][usuario] = []
+            
+            turno_key = f"{dia}_{hora}"
+            if turno_key not in data['turnos']['monthly_assignments'][usuario]:
+                data['turnos']['monthly_assignments'][usuario].append(turno_key)
+            
+            flash(f'✅ Turno asignado a {data["usuarios"][usuario]["nombre"]}', 'message')
+        else:
+            # Limpiar el turno
+            usuario_anterior = data['turnos']['shifts'][dia][hora]
+            data['turnos']['shifts'][dia][hora] = None
+            
+            # Remover de asignaciones
+            if usuario_anterior and 'monthly_assignments' in data['turnos']:
+                if usuario_anterior in data['turnos']['monthly_assignments']:
+                    turno_key = f"{dia}_{hora}"
+                    if turno_key in data['turnos']['monthly_assignments'][usuario_anterior]:
+                        data['turnos']['monthly_assignments'][usuario_anterior].remove(turno_key)
+            
+            flash('✅ Turno liberado', 'message')
+        
+        guardar_datos(data)
+    
+    return redirect(url_for('admin_asignar_turnos'))
+
+# ✅ Limpiar turno (Admin)
+@app.route('/admin/limpiar_turno', methods=['POST'])
+def admin_limpiar_turno():
+    if 'usuario' not in session or not session.get('admin'):
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('home'))
+    
+    data = cargar_datos()
+    dia = request.form.get('dia')
+    hora = request.form.get('hora')
+    
+    if dia and hora and dia in data['turnos']['shifts']:
+        usuario_anterior = data['turnos']['shifts'][dia][hora]
+        data['turnos']['shifts'][dia][hora] = None
+        
+        # Remover de asignaciones mensuales
+        if usuario_anterior and 'monthly_assignments' in data['turnos']:
+            if usuario_anterior in data['turnos']['monthly_assignments']:
+                turno_key = f"{dia}_{hora}"
+                if turno_key in data['turnos']['monthly_assignments'][usuario_anterior]:
+                    data['turnos']['monthly_assignments'][usuario_anterior].remove(turno_key)
+        
+        guardar_datos(data)
+        flash('✅ Turno liberado', 'message')
+    
+    return redirect(url_for('admin_asignar_turnos'))
+
 # Función auxiliar para validar selección de turno
 def validar_turno_usuario(data, usuario, user_role, dia, hora):
     current_month = data['turnos']['current_month']
@@ -1170,14 +1269,17 @@ def obtener_usuarios_con_turnos(data):
         "1068416077": ["09:00", "08:00", "06:30"]
     }
     
-    for usuario, info in data['usuarios'].items():
+    for usuario, info in data.get('usuarios', {}).items():
         cedula = info.get('cedula', '')
         if cedula in patrones_cedula:
             # Contar turnos del usuario
-            total_turnos = sum(1 for dia in data['turnos']['shifts'].values() 
-                             for usr in dia.values() if usr == usuario)
+            total_turnos = 0
+            if 'turnos' in data and 'shifts' in data['turnos']:
+                total_turnos = sum(1 for dia in data['turnos']['shifts'].values() 
+                                 for usr in dia.values() if usr == usuario)
             
             usuarios_info.append({
+                'usuario': usuario,
                 'nombre': info.get('nombre', usuario),
                 'cedula': cedula,
                 'cargo': info.get('cargo', 'N/A'),
