@@ -269,34 +269,34 @@
   .dashboard-header {
     background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
     color: white;
-    padding: 40px;
+    padding: 25px 35px;
     border-radius: 15px;
-    margin-bottom: 30px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   }
 
   .dashboard-header h2 {
-    margin: 0 0 10px 0;
-    font-size: 2.5em;
+    margin: 0 0 8px 0;
+    font-size: 2em;
     font-weight: 700;
   }
 
   .dashboard-header p {
     margin: 0;
     opacity: 0.9;
-    font-size: 1.1em;
+    font-size: 1em;
   }
 
   .stat-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
   }
 
   .stat-card {
     background: white;
-    padding: 20px;
+    padding: 16px;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     border-left: 5px solid;
@@ -308,8 +308,8 @@
   }
 
   .stat-card h5 {
-    margin: 0 0 10px 0;
-    font-size: 0.85em;
+    margin: 0 0 8px 0;
+    font-size: 0.75em;
     color: #666;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -317,7 +317,7 @@
   }
 
   .stat-value {
-    font-size: 2.2em;
+    font-size: 1.8em;
     font-weight: 700;
     color: #667eea;
   }
@@ -345,18 +345,18 @@
   .section-title {
     color: #667eea;
     font-weight: 700;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1.3em;
+    font-size: 1.2em;
   }
 
   .table-card {
     background: white;
     border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 30px;
+    padding: 20px;
+    margin-bottom: 20px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     border: 1px solid rgba(102, 126, 234, 0.1);
   }
@@ -538,6 +538,7 @@
     </span>
   </div>
   <div class="nav-actions">
+    {% if not admin %}
     <form method="POST" action="{{ url_for('marcar_inicio') }}" style="display: inline;">
       <button type="submit" class="btn-action btn-inicio">
         <i class="fas fa-play-circle"></i> Inicio
@@ -548,6 +549,7 @@
         <i class="fas fa-stop-circle"></i> Salida
       </button>
     </form>
+    {% endif %}
     
     <a href="{{ url_for('logout') }}" class="btn-action btn-logout">
       <i class="fas fa-sign-out-alt"></i> Salir
@@ -603,8 +605,8 @@
 <!-- Header -->
 <div class="dashboard-header">
   <div>
-    <h2>{% if admin %}👑 Panel Administrativo{% else %}📊 Mi Dashboard{% endif %}</h2>
-    <p>Control de asistencia y gestión de personal</p>
+    <h2>{% if admin %}👑 Panel de Gestión Ejecutiva{% else %}📊 Mi Panel de Control{% endif %}</h2>
+    <p>{% if admin %}Centro de comando y control del sistema{% else %}Control de asistencia y gestión personal{% endif %}</p>
   </div>
 </div>
 
@@ -640,7 +642,7 @@
 
 <!-- Tabla de registros -->
 <div class="table-card">
-  <h3 class="section-title">📋 Registros de Asistencia por Usuario</h3>
+  <h3 class="section-title"><i class="fas fa-clipboard-list"></i> Control de Asistencia</h3>
   {% if registros %}
     <div style="overflow-x: auto;">
       <table>
@@ -779,7 +781,7 @@
 {% if admin %}
 <div class="table-card">
   <h3 class="section-title">
-    <i class="fas fa-bolt"></i> Acciones Rápidas de Administrador
+    <i class="fas fa-tools"></i> Centro de Control Administrativo
   </h3>
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
     <a href="{{ url_for('admin_asignar_turnos') }}" style="background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 15px 20px; border-radius: 12px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(16, 185, 129, 0.3)'">
