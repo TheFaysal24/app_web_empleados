@@ -800,38 +800,62 @@ def seleccionar_turno():
 
     data = cargar_datos()
     usuario = session['usuario']
-    user_role = data['usuarios'][usuario].get('role', 'collaborator')
-    current_month = data['turnos']['current_month']
+    cedula = data['usuarios'][usuario].get('cedula', '')
 
     if request.method == 'POST':
-        dia = request.form.get('dia')
-        hora = request.form.get('hora')
+        turno = request.form.get('turno')  # Formato: "dia_hora"
 
-        if not dia or not hora:
-            flash('Selecciona un día y hora válidos', 'error')
+        if not turno:
+            flash('Selecciona un turno válido', 'error')
             return redirect(url_for('seleccionar_turno'))
+
+        dia, hora = turno.split('_')
 
         # Validar que el turno esté disponible
         if data['turnos']['shifts'][dia][hora] is not None:
             flash('Este turno ya está ocupado', 'error')
             return redirect(url_for('seleccionar_turno'))
 
-        # Validar restricciones de rol y ciclo mensual
-        if not validar_turno_usuario(data, usuario, user_role, dia, hora):
-            flash('No puedes seleccionar este turno según las reglas', 'error')
-            return redirect(url_for('seleccionar_turno'))
-
         # Asignar turno
         data['turnos']['shifts'][dia][hora] = usuario
 
         # Registrar asignación mensual
+        if 'monthly_assignments' not in data['turnos']:
+            data['turnos']['monthly_assignments'] = {}
         if usuario not in data['turnos']['monthly_assignments']:
             data['turnos']['monthly_assignments'][usuario] = []
         data['turnos']['monthly_assignments'][usuario].append(f"{dia}_{hora}")
 
         guardar_datos(data)
-        flash('Turno seleccionado exitosamente', 'message')
+        flash('✅ Turno seleccionado exitosamente', 'message')
         return redirect(url_for('ver_turnos_asignados'))
+
+    # Obtener patrones de turnos por cédula
+    patron_turnos_cedula = {
+        "1070963486": ["06:30", "08:30"],
+        "1067949514": ["08:00", "06:30"],
+        "1140870406": ["08:30", "09:00"],
+        "1068416077": ["09:00", "08:00", "06:30"]
+    }
+
+    # Determinar qué turnos puede seleccionar según su cédula
+    turnos_permitidos = patron_turnos_cedula.get(cedula, [])
+
+    # Obtener turnos ya usados por este usuario en el historial
+    turnos_usados_usuario = {}
+    if 'historial_semanal' in data['turnos']:
+        for semana, info_semana in data['turnos']['historial_semanal'].items():
+            if usuario in info_semana.get('asignaciones', {}):
+                for asignacion in info_semana['asignaciones'][usuario]:
+                    dia = asignacion['dia_semana']
+                    hora = asignacion['hora']
+                    # Mapear nombre de día a clave
+                    dia_map = {'lunes': 'monday', 'martes': 'tuesday', 'miercoles': 'wednesday',
+                              'jueves': 'thursday', 'viernes': 'friday', 'sabado': 'saturday'}
+                    dia_key = dia_map.get(dia, dia)
+                    if dia_key not in turnos_usados_usuario:
+                        turnos_usados_usuario[dia_key] = []
+                    turnos_usados_usuario[dia_key].append(hora)
 
     # Preparar datos para el template
     shifts = data['turnos']['shifts']
@@ -840,19 +864,18 @@ def seleccionar_turno():
     for dia, horas in shifts.items():
         available_shifts[dia] = {}
         for hora, assigned_user in horas.items():
-            if assigned_user is None:
-                # Verificar si el usuario puede seleccionar este turno
-                if validar_turno_usuario(data, usuario, user_role, dia, hora):
-                    available_shifts[dia][hora] = True
-                else:
-                    available_shifts[dia][hora] = False
-            else:
-                available_shifts[dia][hora] = False
+            # Solo disponible si: está en sus turnos permitidos, no está ocupado, y no lo ha usado
+            esta_en_patron = hora in turnos_permitidos
+            no_ocupado = assigned_user is None
+            no_usado = hora not in turnos_usados_usuario.get(dia, [])
+            
+            available_shifts[dia][hora] = esta_en_patron and no_ocupado and no_usado
 
     return render_template('seleccionar_turno.html',
                          shifts=shifts,
                          available_shifts=available_shifts,
-                         user_role=user_role)
+                         turnos_usados_usuario=turnos_usados_usuario,
+                         session=session)
 
 # ✅ Ver turnos asignados
 @app.route('/ver_turnos_asignados')
@@ -866,18 +889,21 @@ def ver_turnos_asignados():
     admin = session.get('admin', False)
 
     if admin:
-        # Mostrar todos los turnos asignados
+        # Mostrar todos los turnos asignados con datos completos
         assigned_shifts = {}
         for dia, horas in data['turnos']['shifts'].items():
             for hora, assigned_user in horas.items():
                 if assigned_user:
                     if assigned_user not in assigned_shifts:
                         assigned_shifts[assigned_user] = []
+                    user_data = data['usuarios'].get(assigned_user, {})
                     assigned_shifts[assigned_user].append({
                         'dia': dia,
                         'hora': hora,
                         'usuario': assigned_user,
-                        'nombre': data['usuarios'].get(assigned_user, {}).get('nombre', assigned_user)
+                        'nombre': user_data.get('nombre', assigned_user),
+                        'cedula': user_data.get('cedula', 'N/A'),
+                        'cargo': user_data.get('cargo', 'Gestor Operativo')
                     })
     else:
         # Mostrar solo turnos del usuario actual
@@ -885,16 +911,21 @@ def ver_turnos_asignados():
         for dia, horas in data['turnos']['shifts'].items():
             for hora, assigned_user in horas.items():
                 if assigned_user == usuario:
+                    user_data = data['usuarios'][usuario]
                     assigned_shifts[usuario].append({
                         'dia': dia,
                         'hora': hora,
                         'usuario': usuario,
-                        'nombre': data['usuarios'][usuario]['nombre']
+                        'nombre': user_data.get('nombre', usuario),
+                        'cedula': user_data.get('cedula', 'N/A'),
+                        'cargo': user_data.get('cargo', 'Gestor Operativo')
                     })
 
     return render_template('ver_turnos_asignados.html',
                          assigned_shifts=assigned_shifts,
-                         admin=admin)
+                         admin=admin,
+                         data=data,
+                         session=session)
 
 # Función auxiliar para validar selección de turno
 def validar_turno_usuario(data, usuario, user_role, dia, hora):

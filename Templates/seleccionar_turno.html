@@ -1,91 +1,460 @@
 {% extends "base.html" %}
 {% block title %}Seleccionar Turno{% endblock %}
 {% block content %}
-<div class="container mt-4">
-    <h2 class="text-center mb-4">Seleccionar Turno Semanal</h2>
+<style>
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+  }
 
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-body">
-                    <p class="text-muted mb-3">
-                        {% if user_role == 'manager' %}
-                            Como gerente, puedes seleccionar cualquier turno disponible.
-                        {% else %}
-                            Como colaborador, solo puedes seleccionar turnos de 08:00 en adelante de lunes a viernes.
-                        {% endif %}
-                    </p>
+  .turnos-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
 
-                    <form method="POST" action="{{ url_for('seleccionar_turno') }}">
-                        <div class="mb-3">
-                            <label for="dia" class="form-label">Selecciona el día:</label>
-                            <select name="dia" id="dia" class="form-select" required>
-                                <option value="">-- Seleccionar día --</option>
-                                <option value="monday">Lunes</option>
-                                <option value="tuesday">Martes</option>
-                                <option value="wednesday">Miércoles</option>
-                                <option value="thursday">Jueves</option>
-                                <option value="friday">Viernes</option>
-                                <option value="saturday">Sábado</option>
-                            </select>
-                        </div>
+  .header-card {
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    animation: slideDown 0.6s ease;
+  }
 
-                        <div class="mb-3">
-                            <label for="hora" class="form-label">Selecciona la hora:</label>
-                            <select name="hora" id="hora" class="form-select" required>
-                                <option value="">-- Seleccionar hora --</option>
-                                <option value="06:30">06:30</option>
-                                <option value="08:00">08:00</option>
-                                <option value="08:30">08:30</option>
-                                <option value="09:00">09:00</option>
-                            </select>
-                        </div>
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
-                        <button type="submit" class="btn btn-primary w-100">Seleccionar Turno</button>
-                    </form>
+  .header-card h2 {
+    margin: 0 0 10px 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.5em;
+    font-weight: 800;
+  }
 
-                    <hr>
+  .user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    animation: pulse 2s ease infinite;
+  }
 
-                    <h5>Turnos Disponibles:</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Día</th>
-                                    <th>06:30</th>
-                                    <th>08:00</th>
-                                    <th>08:30</th>
-                                    <th>09:00</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for dia, horas in shifts.items() %}
-                                <tr>
-                                    <td>{{ dia.title() }}</td>
-                                    {% for hora, assigned in horas.items() %}
-                                    <td>
-                                        {% if assigned %}
-                                            <span class="badge bg-danger">Ocupado</span>
-                                        {% elif available_shifts[dia][hora] %}
-                                            <span class="badge bg-success">Disponible</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">No disponible</span>
-                                        {% endif %}
-                                    </td>
-                                    {% endfor %}
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
 
-                    <div class="mt-3">
-                        <a href="{{ url_for('ver_turnos_asignados') }}" class="btn btn-outline-primary">Ver Mis Turnos</a>
-                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Volver al Dashboard</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+  .info-panel {
+    background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+    border-left: 5px solid #667eea;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    animation: fadeIn 0.8s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .turnos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+  }
+
+  .dia-card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    position: relative;
+    overflow: hidden;
+    animation: scaleIn 0.6s ease;
+    animation-fill-mode: both;
+  }
+
+  .dia-card:nth-child(1) { animation-delay: 0.1s; }
+  .dia-card:nth-child(2) { animation-delay: 0.2s; }
+  .dia-card:nth-child(3) { animation-delay: 0.3s; }
+  .dia-card:nth-child(4) { animation-delay: 0.4s; }
+  .dia-card:nth-child(5) { animation-delay: 0.5s; }
+  .dia-card:nth-child(6) { animation-delay: 0.6s; }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .dia-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+  }
+
+  .dia-card:hover::before {
+    transform: scaleX(1);
+  }
+
+  .dia-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 25px 60px rgba(102, 126, 234, 0.3);
+  }
+
+  .dia-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  .dia-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5em;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  }
+
+  .dia-nombre {
+    font-size: 1.4em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .turno-selector {
+    margin-bottom: 15px;
+  }
+
+  .turno-option {
+    position: relative;
+    margin-bottom: 12px;
+  }
+
+  .turno-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .turno-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .turno-label::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .turno-label:hover::before {
+    left: 100%;
+  }
+
+  .turno-option input[type="radio"]:checked + .turno-label {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-color: #667eea;
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+  }
+
+  .turno-label:hover {
+    border-color: #667eea;
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .turno-hora {
+    font-size: 1.2em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .turno-estado {
+    font-size: 0.85em;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .estado-disponible {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .estado-usado {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .estado-ocupado {
+    background: #fef3c7;
+    color: #854d0e;
+  }
+
+  .turno-option input[type="radio"]:disabled + .turno-label {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f3f4f6;
+  }
+
+  .turno-option input[type="radio"]:disabled + .turno-label:hover {
+    transform: none;
+    border-color: transparent;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1em;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+    transition: all 0.3s ease;
+    margin-top: 20px;
+  }
+
+  .btn-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(16, 185, 129, 0.5);
+  }
+
+  .btn-submit:active {
+    transform: translateY(-1px);
+  }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(107, 114, 128, 0.3);
+  }
+
+  .btn-back:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(107, 114, 128, 0.4);
+    color: white;
+  }
+
+  .navigation {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px 30px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+  }
+
+  @media (max-width: 768px) {
+    .turnos-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="turnos-container">
+  <!-- Navegación -->
+  <div class="navigation">
+    <a href="{{ url_for('dashboard') }}" class="btn-back">
+      <i class="fas fa-arrow-left"></i> Volver al Dashboard
+    </a>
+  </div>
+
+  <!-- Header -->
+  <div class="header-card">
+    <h2><i class="fas fa-calendar-plus"></i> Seleccionar Mi Turno</h2>
+    <p style="color: #666; font-size: 1.1em; margin: 0;">Elige tu horario de trabajo para la semana</p>
+    
+    <div style="margin-top: 20px;">
+      <span class="user-badge">
+        <i class="fas fa-user-circle"></i>
+        {{ session['nombre'] }}
+      </span>
     </div>
+
+    <div class="info-panel">
+      <strong><i class="fas fa-info-circle"></i> Información:</strong>
+      <ul style="margin: 10px 0 0 20px; color: #666;">
+        <li>Los turnos <span class="estado-usado">Ya Usados</span> son los que completaste esta semana</li>
+        <li>Solo puedes seleccionar turnos <span class="estado-disponible">Disponibles</span> que te corresponden</li>
+        <li>Los turnos <span class="estado-ocupado">Ocupados</span> ya fueron tomados por otro gestor</li>
+        <li>Tus turnos disponibles se asignan según tu cédula de identidad</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Grid de Turnos -->
+  <form method="POST">
+    <div class="turnos-grid">
+      {% set dias_nombres = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado'} %}
+      {% set dias_iconos = {'monday': '🌅', 'tuesday': '🌄', 'wednesday': '🌞', 'thursday': '☀️', 'friday': '🌤️', 'saturday': '🌈'} %}
+      
+      {% for dia, nombre in dias_nombres.items() %}
+      <div class="dia-card">
+        <div class="dia-header">
+          <div class="dia-icon">{{ dias_iconos[dia] }}</div>
+          <div class="dia-nombre">{{ nombre }}</div>
+        </div>
+
+        <div class="turno-selector">
+          {% if dia in shifts %}
+            {% for hora, usuario in shifts[dia].items() %}
+            <div class="turno-option">
+              {% set esta_disponible = available_shifts.get(dia, {}).get(hora, False) %}
+              {% set ya_usado = hora in turnos_usados_usuario.get(dia, []) %}
+              {% set ocupado = usuario != None %}
+              
+              <input 
+                type="radio" 
+                id="{{ dia }}_{{ hora }}" 
+                name="turno" 
+                value="{{ dia }}_{{ hora }}"
+                {% if not esta_disponible or ya_usado or ocupado %}disabled{% endif %}
+              >
+              <label for="{{ dia }}_{{ hora }}" class="turno-label">
+                <div class="turno-hora">
+                  <i class="fas fa-clock"></i>
+                  {{ hora }}
+                </div>
+                <div class="turno-estado 
+                  {% if ya_usado %}estado-usado
+                  {% elif ocupado %}estado-ocupado
+                  {% elif esta_disponible %}estado-disponible
+                  {% else %}estado-ocupado{% endif %}">
+                  {% if ya_usado %}
+                    <i class="fas fa-check-circle"></i> Ya Usado
+                  {% elif ocupado %}
+                    <i class="fas fa-user-check"></i> Ocupado
+                  {% elif esta_disponible %}
+                    <i class="fas fa-circle-check"></i> Disponible
+                  {% else %}
+                    <i class="fas fa-ban"></i> No Disponible
+                  {% endif %}
+                </div>
+              </label>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="header-card" style="text-align: center;">
+      <button type="submit" class="btn-submit">
+        <i class="fas fa-check-circle"></i> Confirmar Selección de Turno
+      </button>
+    </div>
+  </form>
 </div>
+
+<script>
+  // Animación de selección
+  document.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      const label = this.nextElementSibling;
+      
+      // Crear efecto de confetti
+      for(let i = 0; i < 10; i++) {
+        const particle = document.createElement('div');
+        particle.style.cssText = `
+          position: fixed;
+          width: 5px;
+          height: 5px;
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          border-radius: 50%;
+          pointer-events: none;
+          animation: confetti 1s ease-out forwards;
+        `;
+        particle.style.left = label.getBoundingClientRect().left + Math.random() * label.offsetWidth + 'px';
+        particle.style.top = label.getBoundingClientRect().top + 'px';
+        document.body.appendChild(particle);
+        
+        setTimeout(() => particle.remove(), 1000);
+      }
+    });
+  });
+</script>
+
+<style>
+  @keyframes confetti {
+    to {
+      transform: translateY(-100px) rotate(360deg);
+      opacity: 0;
+    }
+  }
+</style>
+
 {% endblock %}
