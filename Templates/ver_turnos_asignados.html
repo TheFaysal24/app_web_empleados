@@ -386,10 +386,10 @@
               <td>
                 <span class="badge badge-cedula">
                   <i class="fas fa-id-card"></i>
-                  {{ data['usuarios'][usuario].get('cedula', 'N/A') }}
+                  {{ turno.cedula }}
                 </span>
               </td>
-              <td>{{ data['usuarios'][usuario].get('cargo', 'Gestor Operativo') }}</td>
+              <td>{{ turno.cargo }}</td>
               {% endif %}
               <td>
                 <span class="badge badge-dia">
