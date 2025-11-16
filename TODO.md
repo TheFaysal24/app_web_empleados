@@ -51,3 +51,21 @@
 - Update chart axis colors and grid lines
 - Update legend and tooltip colors in charts
 - Test the application to ensure all changes are working correctly
+
+## 10. Implement User Dashboard ✅ COMPLETED
+- Create a personalized dashboard route '/user_dashboard' for regular users
+- Show user's attendance status, hours worked, overtime costs
+- Include charts for last 7 days of work hours
+- Display basic statistics like total entries and overtime costs
+- Ensure non-admin users see only their own data
+
+## 11. Test Registration with Automatic Assignment ✅ COMPLETED
+- ID identification and automatic shift marking implemented in register() function
+- Position selection functionality added to registro.html template
+- Shifts assigned correctly based on ID patterns in asignar_turnos_automaticos() function
+
+## 12. Verify Dashboard Traceability ✅ COMPLETED
+- Full interactive traceability implemented in dashboard and user_dashboard routes
+- Shifts module visibility confirmed for all users through navigation links
+- Navigation between dashboard and shift-related pages working correctly
+- Flask application running successfully on http://127.0.0.1:5000

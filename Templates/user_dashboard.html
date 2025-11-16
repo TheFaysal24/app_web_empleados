@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+{% block title %}Panel de Control{% endblock %}
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  .dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .header-section {
+    text-align: center;
+    margin-bottom: 40px;
+    color: white;
+  }
+
+  .header-section h1 {
+    font-size: 2.5em;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+
+  .header-section p {
+    font-size: 1.2em;
+    opacity: 0.9;
+    margin-bottom: 20px;
+  }
+
+  .user-info-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .user-details {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2em;
+    font-weight: 700;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .user-text h2 {
+    margin: 0;
+    color: #333;
+    font-size: 1.8em;
+    font-weight: 600;
+  }
+
+  .user-text p {
+    margin: 5px 0 0 0;
+    color: #666;
+    font-size: 1em;
+  }
+
+  .attendance-status {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .status-indicator {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-active {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+  }
+
+  .status-inactive {
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    color: white;
+  }
+
+  .attendance-btn {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .attendance-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .attendance-btn.exit {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  }
+
+  .attendance-btn.exit:hover {
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  }
+
+  .shortcuts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+  }
+
+  .shortcut-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 30px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shortcut-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+  }
+
+  .shortcut-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+    color: #333;
+  }
+
+  .shortcut-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2em;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .shortcut-title {
+    font-size: 1.4em;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #333;
+  }
+
+  .shortcut-description {
+    color: #666;
+    font-size: 0.95em;
+    line-height: 1.5;
+    margin-bottom: 15px;
+  }
+
+  .shortcut-action {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+  }
+
+  .shortcut-card:hover .shortcut-action {
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    transform: scale(1.05);
+  }
+
+  .admin-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.7em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .logout-section {
+    text-align: center;
+    margin-top: 40px;
+  }
+
+  .logout-btn {
+    background: rgba(255, 255, 255, 0.9);
+    color: #666;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+
+  .logout-btn:hover {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    color: #333;
+  }
+
+  @media (max-width: 768px) {
+    .header-section h1 {
+      font-size: 2em;
+    }
+
+    .user-info-card {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .shortcuts-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .shortcut-card {
+      padding: 25px;
+    }
+
+    .shortcut-icon {
+      width: 60px;
+      height: 60px;
+      font-size: 1.5em;
+    }
+  }
+</style>
+
+<div class="dashboard-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <h1>{% if admin %}👑 Panel Ejecutivo{% else %}🏠 Mi Panel Personal{% endif %}</h1>
+    <p>{% if admin %}Centro de control y gestión del sistema{% else %}Acceso rápido a tus funciones principales{% endif %}</p>
+  </div>
+
+  <!-- User Info Card -->
+  <div class="user-info-card">
+    <div class="user-details">
+      <div class="user-avatar">
+        {{ nombre[0]|upper }}
+      </div>
+      <div class="user-text">
+        <h2>{{ nombre }}</h2>
+        <p>{{ session.get('cargo', 'Usuario del Sistema') }}{% if admin %} - Administrador{% endif %}</p>
+      </div>
+    </div>
+
+    {% if not admin %}
+    <div class="attendance-status">
+      <div class="status-indicator {{ 'status-active' if attendance_status == 'active' else 'status-inactive' }}">
+        <i class="fas fa-{{ 'circle' if attendance_status == 'active' else 'circle' }}"></i>
+        {{ 'En Jornada' if attendance_status == 'active' else 'Fuera de Jornada' }}
+      </div>
+      <form method="POST" action="{{ url_for('marcar_asistencia') }}" style="display: inline;">
+        <button type="submit" class="attendance-btn {{ 'exit' if attendance_status == 'active' else '' }}">
+          <i class="fas fa-{{ 'sign-out-alt' if attendance_status == 'active' else 'sign-in-alt' }}"></i>
+          {{ 'Marcar Salida' if attendance_status == 'active' else 'Marcar Entrada' }}
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Shortcuts Grid -->
+  <div class="shortcuts-grid">
+    {% if not admin %}
+    <!-- Regular User Shortcuts -->
+    <a href="{{ url_for('dashboard') }}" class="shortcut-card">
+      <div class="shortcut-icon">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="shortcut-title">Dashboard</div>
+      <div class="shortcut-description">
+        Visualiza tus estadísticas de asistencia, horas trabajadas y rendimiento personal.
+      </div>
+      <div class="shortcut-action">Ver Dashboard</div>
+    </a>
+
+    <a href="{{ url_for('modulo_turnos') }}" class="shortcut-card">
+      <div class="shortcut-icon">
+        <i class="fas fa-calendar-week"></i>
+      </div>
+      <div class="shortcut-title">Módulo de Turnos</div>
+      <div class="shortcut-description">
+        Consulta el calendario semanal, historial de turnos y asignaciones.
+      </div>
+      <div class="shortcut-action">Ver Turnos</div>
+    </a>
+
+    <a href="{{ url_for('seleccionar_turno') }}" class="shortcut-card">
+      <div class="shortcut-icon">
+        <i class="fas fa-calendar-plus"></i>
+      </div>
+      <div class="shortcut-title">Gestión de Turnos</div>
+      <div class="shortcut-description">
+        Selecciona y administra tus turnos de trabajo según disponibilidad.
+      </div>
+      <div class="shortcut-action">Seleccionar Turno</div>
+    </a>
+
+    <a href="{{ url_for('ver_turnos_asignados') }}" class="shortcut-card">
+      <div class="shortcut-icon">
+        <i class="fas fa-calendar-check"></i>
+      </div>
+      <div class="shortcut-title">Mis Turnos</div>
+      <div class="shortcut-description">
+        Revisa los turnos que tienes asignados actualmente.
+      </div>
+      <div class="shortcut-action">Ver Asignaciones</div>
+    </a>
+    {% else %}
+    <!-- Admin Shortcuts -->
+    <a href="{{ url_for('admin_usuarios') }}" class="shortcut-card">
+      <div class="admin-badge">Admin</div>
+      <div class="shortcut-icon">
+        <i class="fas fa-users-cog"></i>
+      </div>
+      <div class="shortcut-title">Gestión de Usuarios</div>
+      <div class="shortcut-description">
+        Administra usuarios, roles, permisos y configuraciones del sistema.
+      </div>
+      <div class="shortcut-action">Administrar</div>
+    </a>
+
+    <a href="{{ url_for('admin_asignar_turnos') }}" class="shortcut-card">
+      <div class="admin-badge">Admin</div>
+      <div class="shortcut-icon">
+        <i class="fas fa-user-cog"></i>
+      </div>
+      <div class="shortcut-title">Asignación de Turnos</div>
+      <div class="shortcut-description">
+        Gestiona la asignación manual de turnos para todos los empleados.
+      </div>
+      <div class="shortcut-action">Asignar Turnos</div>
+    </a>
+
+    <a href="{{ url_for('dashboard') }}" class="shortcut-card">
+      <div class="admin-badge">Admin</div>
+      <div class="shortcut-icon">
+        <i class="fas fa-chart-bar"></i>
+      </div>
+      <div class="shortcut-title">Panel de Control</div>
+      <div class="shortcut-description">
+        Visualiza estadísticas globales, reportes y métricas del sistema.
+      </div>
+      <div class="shortcut-action">Ver Reportes</div>
+    </a>
+
+    <a href="{{ url_for('admin_backups') }}" class="shortcut-card">
+      <div class="admin-badge">Admin</div>
+      <div class="shortcut-icon">
+        <i class="fas fa-database"></i>
+      </div>
+      <div class="shortcut-title">Sistema de Backups</div>
+      <div class="shortcut-description">
+        Gestiona copias de seguridad y recuperación de datos del sistema.
+      </div>
+      <div class="shortcut-action">Administrar Backups</div>
+    </a>
+
+    <a href="{{ url_for('exportar_registros') }}" class="shortcut-card">
+      <div class="admin-badge">Admin</div>
+      <div class="shortcut-icon">
+        <i class="fas fa-file-download"></i>
+      </div>
+      <div class="shortcut-title">Exportar Datos</div>
+      <div class="shortcut-description">
+        Exporta reportes y datos del sistema en formato CSV.
+      </div>
+      <div class="shortcut-action">Exportar</div>
+    </a>
+
+    <a href="{{ url_for('modulo_turnos') }}" class="shortcut-card">
+      <div class="admin-badge">Admin</div>
+      <div class="shortcut-icon">
+        <i class="fas fa-calendar-week"></i>
+      </div>
+      <div class="shortcut-title">Módulo de Turnos</div>
+      <div class="shortcut-description">
+        Supervisa el calendario completo y el historial de asignaciones.
+      </div>
+      <div class="shortcut-action">Ver Turnos</div>
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Logout Section -->
+  <div class="logout-section">
+    <a href="{{ url_for('logout') }}" class="logout-btn">
+      <i class="fas fa-sign-out-alt"></i>
+      Cerrar Sesión
+    </a>
+  </div>
+</div>
+{% endblock %}

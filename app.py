@@ -263,6 +263,76 @@ def logout():
     flash('Sesión cerrada', 'message')
     return redirect(url_for('home'))
 
+# ✅ User Dashboard - Panel personalizado para usuarios regulares
+@app.route('/user_dashboard')
+@login_required
+def user_dashboard():
+    if 'usuario' not in session:
+        flash('Debes iniciar sesión primero', 'error')
+        return redirect(url_for('login'))
+
+    data = cargar_datos()
+    usuario = session['usuario']
+    admin = session.get('admin', False)
+
+    # Calcular estado de asistencia
+    hoy = datetime.date.today().isoformat()
+    registros = data['registros'].get(usuario, {})
+    attendance_status = 'inactive'
+    if hoy in registros and registros[hoy].get('inicio') and not registros[hoy].get('salida'):
+        attendance_status = 'active'
+
+    # Preparar datos para el template
+    registros_limpios = {}
+    for usr, regs in registros.items():
+        registros_limpios[usr] = {}
+        for key, value in regs.items():
+            if isinstance(value, dict) and 'inicio' in value:
+                registros_limpios[usr][key] = value
+
+    year = datetime.datetime.now().year
+
+    fechas_horas = {}
+    for fecha, reg in registros.items():
+        if isinstance(reg, dict):
+            fechas_horas[fecha] = reg.get('horas_trabajadas', 0)
+
+    fechas_ordenadas = sorted(fechas_horas.keys())[-7:]
+    horas_fechas = [fechas_horas[fecha] for fecha in fechas_ordenadas]
+
+    # Estadísticas básicas para el usuario
+    contador_inicios = len(registros)
+    costo_horas_extras = 0
+    salario_minimo = 1384308
+    valor_hora_ordinaria = salario_minimo / (30 * 8)
+
+    for fecha, reg in registros.items():
+        if isinstance(reg, dict):
+            horas_extras = reg.get('horas_extras', 0)
+            try:
+                fecha_obj = datetime.datetime.fromisoformat(fecha + 'T00:00:00')
+                dia_semana = fecha_obj.weekday()
+                if dia_semana >= 5:
+                    multiplicador = 1.75 if dia_semana == 5 else 2.0
+                else:
+                    multiplicador = 1.25
+                costo_horas_extras += horas_extras * valor_hora_ordinaria * multiplicador
+            except:
+                pass
+
+    return render_template('user_dashboard.html',
+                         registros=registros_limpios,
+                         admin=admin,
+                         nombre=session.get('nombre', 'Usuario'),
+                         year=year,
+                         fechas=fechas_ordenadas,
+                         horas_fechas=horas_fechas,
+                         attendance_status=attendance_status,
+                         contador_inicios=contador_inicios,
+                         costo_horas_extras=round(costo_horas_extras, 2),
+                         valor_hora_ordinaria=round(valor_hora_ordinaria, 2),
+                         session=session)
+
 # ✅ Dashboard - Usuarios normales ven solo su info, admins ven todo
 @app.route('/dashboard')
 @login_required
@@ -418,13 +488,13 @@ def marcar_salida():
 
     if usuario in data['registros'] and hoy in data['registros'][usuario] and data['registros'][usuario][hoy]['inicio']:
         inicio = datetime.datetime.fromisoformat(data['registros'][usuario][hoy]['inicio'])
-        
+
         # Calcular horas totales (con almuerzo incluido)
         horas_totales_con_almuerzo = (ahora - inicio).total_seconds() / 3600
-        
+
         # Restar 1 hora de almuerzo para obtener horas netas trabajadas
         horas_trabajadas_netas = max(0, horas_totales_con_almuerzo - 1)
-        
+
         # Calcular horas extras: después de 8 horas netas trabajadas
         horas_extras = max(0, horas_trabajadas_netas - 8)
 
@@ -436,6 +506,59 @@ def marcar_salida():
         flash(f'Salida registrada. Horas trabajadas: {round(horas_trabajadas_netas,2)}h, Extras: {round(horas_extras,2)}h', 'message')
     else:
         flash('No hay registro de inicio.', 'error')
+
+    return redirect(url_for('dashboard'))
+
+# ✅ Marcar asistencia (Entrada/Salida inteligente)
+@app.route('/marcar_asistencia', methods=['POST'])
+@login_required
+def marcar_asistencia():
+    if 'usuario' not in session:
+        return redirect(url_for('login'))
+
+    data = cargar_datos()
+    usuario = session['usuario']
+    hoy = datetime.date.today().isoformat()
+    ahora = datetime.datetime.now()
+
+    # Inicializar registros del usuario si no existen
+    if usuario not in data['registros']:
+        data['registros'][usuario] = {}
+
+    # Verificar si ya marcó entrada hoy
+    if hoy in data['registros'][usuario] and data['registros'][usuario][hoy].get('inicio') and not data['registros'][usuario][hoy].get('salida'):
+        # Ya marcó entrada, ahora marcar salida
+        inicio = datetime.datetime.fromisoformat(data['registros'][usuario][hoy]['inicio'])
+
+        # Calcular horas totales (con almuerzo incluido)
+        horas_totales_con_almuerzo = (ahora - inicio).total_seconds() / 3600
+
+        # Restar 1 hora de almuerzo para obtener horas netas trabajadas
+        horas_trabajadas_netas = max(0, horas_totales_con_almuerzo - 1)
+
+        # Calcular horas extras: después de 8 horas netas trabajadas
+        horas_extras = max(0, horas_trabajadas_netas - 8)
+
+        data['registros'][usuario][hoy]['salida'] = ahora.isoformat()
+        data['registros'][usuario][hoy]['horas_trabajadas'] = round(horas_trabajadas_netas, 2)
+        data['registros'][usuario][hoy]['horas_extras'] = round(horas_extras, 2)
+        guardar_datos(data)
+
+        flash(f'✅ Salida registrada. Horas trabajadas: {round(horas_trabajadas_netas,2)}h, Extras: {round(horas_extras,2)}h', 'message')
+    else:
+        # No ha marcado entrada hoy, marcar entrada
+        if hoy in data['registros'][usuario] and data['registros'][usuario][hoy].get('inicio'):
+            flash('Ya registraste tu inicio hoy', 'error')
+            return redirect(url_for('dashboard'))
+
+        data['registros'][usuario][hoy] = {
+            'inicio': ahora.isoformat(),
+            'salida': None,
+            'horas_trabajadas': 0,
+            'horas_extras': 0
+        }
+        guardar_datos(data)
+        flash('✅ Hora de inicio registrada', 'message')
 
     return redirect(url_for('dashboard'))
 
