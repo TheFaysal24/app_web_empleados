@@ -1101,6 +1101,127 @@ def admin_limpiar_turno():
     
     return redirect(url_for('admin_asignar_turnos'))
 
+# ✅ Panel de edición completa de usuario (Admin)
+@app.route('/admin/editar_completo/<usuario>')
+def admin_editar_completo(usuario):
+    if 'usuario' not in session or not session.get('admin'):
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('home'))
+    
+    data = cargar_datos()
+    
+    if usuario not in data.get('usuarios', {}):
+        flash('Usuario no encontrado', 'error')
+        return redirect(url_for('admin_usuarios'))
+    
+    usuario_data = data['usuarios'][usuario]
+    registros = data.get('registros', {}).get(usuario, {})
+    
+    return render_template('admin_editar_completo.html',
+                         usuario=usuario,
+                         usuario_data=usuario_data,
+                         registros=registros)
+
+# ✅ Actualizar usuario completo (Admin)
+@app.route('/admin/actualizar_usuario_completo', methods=['POST'])
+def admin_actualizar_usuario_completo():
+    if 'usuario' not in session or not session.get('admin'):
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('home'))
+    
+    data = cargar_datos()
+    usuario = request.form.get('usuario')
+    
+    if usuario in data['usuarios']:
+        data['usuarios'][usuario]['nombre'] = request.form.get('nombre')
+        data['usuarios'][usuario]['cedula'] = request.form.get('cedula')
+        data['usuarios'][usuario]['cargo'] = request.form.get('cargo')
+        data['usuarios'][usuario]['correo'] = request.form.get('correo')
+        data['usuarios'][usuario]['telefono'] = request.form.get('telefono', '')
+        data['usuarios'][usuario]['admin'] = request.form.get('admin') == 'true'
+        
+        # Cambiar contraseña si se proporcionó
+        nueva_contrasena = request.form.get('contrasena')
+        if nueva_contrasena:
+            data['usuarios'][usuario]['contrasena'] = nueva_contrasena
+        
+        guardar_datos(data)
+        flash('✅ Usuario actualizado completamente', 'message')
+    
+    return redirect(url_for('admin_usuarios'))
+
+# ✅ Actualizar registro de asistencia (Admin - AJAX)
+@app.route('/admin/actualizar_registro', methods=['POST'])
+def admin_actualizar_registro():
+    if 'usuario' not in session or not session.get('admin'):
+        return {'success': False, 'error': 'Acceso denegado'}, 403
+    
+    data = cargar_datos()
+    usuario = request.form.get('usuario')
+    fecha = request.form.get('fecha')
+    inicio = request.form.get('inicio')
+    salida = request.form.get('salida')
+    
+    if usuario in data['registros'] and fecha in data['registros'][usuario]:
+        try:
+            data['registros'][usuario][fecha]['inicio'] = inicio
+            data['registros'][usuario][fecha]['salida'] = salida
+            
+            # Recalcular horas
+            if inicio and salida:
+                inicio_dt = datetime.datetime.fromisoformat(inicio)
+                salida_dt = datetime.datetime.fromisoformat(salida)
+                horas_totales = (salida_dt - inicio_dt).total_seconds() / 3600
+                horas_netas = max(0, horas_totales - 1)  # Descontar almuerzo
+                horas_extras = max(0, horas_netas - 8)
+                
+                data['registros'][usuario][fecha]['horas_trabajadas'] = round(horas_netas, 2)
+                data['registros'][usuario][fecha]['horas_extras'] = round(horas_extras, 2)
+            
+            guardar_datos(data)
+            return {'success': True}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}, 400
+    
+    return {'success': False, 'error': 'Registro no encontrado'}, 404
+
+# ✅ Eliminar usuario (Admin)
+@app.route('/admin/eliminar_usuario/<usuario>')
+def admin_eliminar_usuario(usuario):
+    if 'usuario' not in session or not session.get('admin'):
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('home'))
+    
+    data = cargar_datos()
+    
+    if usuario in data['usuarios']:
+        # No permitir eliminar el propio usuario admin
+        if usuario == session['usuario']:
+            flash('No puedes eliminar tu propio usuario', 'error')
+            return redirect(url_for('admin_usuarios'))
+        
+        # Eliminar usuario
+        del data['usuarios'][usuario]
+        
+        # Limpiar sus registros
+        if usuario in data.get('registros', {}):
+            del data['registros'][usuario]
+        
+        # Limpiar sus turnos
+        if 'turnos' in data:
+            for dia in data['turnos'].get('shifts', {}).values():
+                for hora in list(dia.keys()):
+                    if dia[hora] == usuario:
+                        dia[hora] = None
+            
+            if usuario in data['turnos'].get('monthly_assignments', {}):
+                del data['turnos']['monthly_assignments'][usuario]
+        
+        guardar_datos(data)
+        flash(f'✅ Usuario {usuario} eliminado completamente', 'message')
+    
+    return redirect(url_for('admin_usuarios'))
+
 # Función auxiliar para validar selección de turno
 def validar_turno_usuario(data, usuario, user_role, dia, hora):
     current_month = data['turnos']['current_month']

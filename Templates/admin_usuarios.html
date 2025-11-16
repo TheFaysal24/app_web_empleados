@@ -279,6 +279,10 @@
     </div>
 
     <div class="user-actions">
+      <a href="{{ url_for('admin_editar_completo', usuario=usuario) }}" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+        <i class="fas fa-edit"></i> Edición Completa
+      </a>
+      
       <a href="{{ url_for('admin_cambiar_clave') }}?usuario={{ usuario }}" class="btn btn-primary">
         <i class="fas fa-key"></i> Cambiar Contraseña
       </a>
@@ -300,14 +304,9 @@
       {% endif %}
       
       {% if not datos.get('admin') %}
-        <form method="POST" action="{{ url_for('admin_eliminar_usuario') }}" 
-              onsubmit="return confirm('¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.')" 
-              style="display: inline;">
-          <input type="hidden" name="usuario" value="{{ usuario }}">
-          <button type="submit" class="btn btn-danger">
-            <i class="fas fa-trash"></i> Eliminar Usuario
-          </button>
-        </form>
+        <button type="button" class="btn btn-danger" onclick="if(confirm('¿Eliminar {{ datos.nombre }}? Esto eliminará sus registros y turnos.')) window.location.href='{{ url_for('admin_eliminar_usuario', usuario=usuario) }}'">
+          <i class="fas fa-trash"></i> Eliminar
+        </button>
       {% endif %}
     </div>
 

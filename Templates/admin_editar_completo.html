@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% block title %}Edición Completa - Admin{% endblock %}
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .header-card {
+    background: white;
+    border-radius: 20px;
+    padding: 35px;
+    margin-bottom: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  }
+
+  .header-card h2 {
+    margin: 0 0 10px 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.5em;
+    font-weight: 800;
+  }
+
+  .usuario-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  .usuario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  .usuario-nombre {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #667eea;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+    display: block;
+    font-size: 0.9em;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .btn-guardar {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-guardar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .btn-eliminar {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    box-shadow: 0 8px 20px rgba(107, 114, 128, 0.3);
+  }
+
+  .section-divider {
+    margin: 25px 0;
+    border-top: 2px solid #e0e0e0;
+    padding-top: 20px;
+  }
+
+  .section-title {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 15px;
+  }
+
+  .registro-row {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: 120px 1fr 1fr 1fr 100px;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 0.85em;
+    font-weight: 600;
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+</style>
+
+<div class="container">
+  <div style="background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); display: flex; justify-content: space-between;">
+    <a href="{{ url_for('admin_usuarios') }}" class="btn-back">
+      <i class="fas fa-arrow-left"></i> Volver a Usuarios
+    </a>
+  </div>
+
+  <div class="header-card">
+    <h2><i class="fas fa-user-edit"></i> Edición Total de Usuario</h2>
+    <p style="color: #666; font-size: 1.1em;">Control completo sobre todos los datos del usuario</p>
+  </div>
+
+  <!-- Formulario de Edición Completa -->
+  <div class="usuario-card">
+    <div class="usuario-header">
+      <div class="usuario-nombre">
+        <i class="fas fa-user-circle"></i> {{ usuario_data.get('nombre', usuario) }}
+      </div>
+      <span class="badge">{{ usuario }}</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin_actualizar_usuario_completo') }}">
+      <input type="hidden" name="usuario" value="{{ usuario }}">
+      
+      <!-- Datos Personales -->
+      <div class="section-title"><i class="fas fa-id-card"></i> Información Personal</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nombre Completo</label>
+          <input type="text" name="nombre" class="form-control" value="{{ usuario_data.get('nombre', '') }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cédula</label>
+          <input type="text" name="cedula" class="form-control" value="{{ usuario_data.get('cedula', '') }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo</label>
+          <select name="cargo" class="form-control" required>
+            <option value="">Seleccionar...</option>
+            <option value="GESTOR OPERATIVO" {% if usuario_data.get('cargo') == 'GESTOR OPERATIVO' %}selected{% endif %}>GESTOR OPERATIVO</option>
+            <option value="TECNICO MINTIC" {% if usuario_data.get('cargo') == 'TECNICO MINTIC' %}selected{% endif %}>TÉCNICO MINTIC</option>
+            <option value="LIDER DE PROCESO" {% if usuario_data.get('cargo') == 'LIDER DE PROCESO' %}selected{% endif %}>LÍDER DE PROCESO</option>
+            <option value="SUPERVISOR DE CAMPO" {% if usuario_data.get('cargo') == 'SUPERVISOR DE CAMPO' %}selected{% endif %}>SUPERVISOR DE CAMPO</option>
+            <option value="COORDINADOR" {% if usuario_data.get('cargo') == 'COORDINADOR' %}selected{% endif %}>COORDINADOR</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo Electrónico</label>
+          <input type="email" name="correo" class="form-control" value="{{ usuario_data.get('correo', '') }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono/WhatsApp</label>
+          <input type="text" name="telefono" class="form-control" value="{{ usuario_data.get('telefono', '') }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nueva Contraseña</label>
+          <input type="password" name="contrasena" class="form-control" placeholder="Dejar vacío para mantener actual">
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <!-- Permisos -->
+      <div class="section-title"><i class="fas fa-shield-alt"></i> Permisos y Roles</div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <input type="checkbox" name="admin" value="true" {% if usuario_data.get('admin') %}checked{% endif %} style="width: 20px; height: 20px;">
+          <span style="font-weight: 600;">¿Es Administrador?</span>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 15px; margin-top: 25px;">
+        <button type="submit" class="btn-guardar">
+          <i class="fas fa-save"></i> Guardar Todos los Cambios
+        </button>
+        <button type="button" class="btn-eliminar" onclick="if(confirm('¿Seguro que deseas eliminar este usuario?')) window.location.href='{{ url_for('admin_eliminar_usuario', usuario=usuario) }}'">
+          <i class="fas fa-trash-alt"></i> Eliminar Usuario
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Registros de Asistencia -->
+  <div class="usuario-card">
+    <div class="section-title"><i class="fas fa-clock-rotate-left"></i> Registros de Asistencia</div>
+    
+    {% if registros %}
+    <div style="max-height: 400px; overflow-y: auto;">
+      {% for fecha, reg in registros.items() %}
+      {% if reg is mapping and 'inicio' in reg %}
+      <div class="registro-row">
+        <div><strong>{{ fecha }}</strong></div>
+        <div>
+          <input type="text" value="{{ reg.get('inicio', '')[:16] }}" id="inicio_{{ fecha }}" style="padding: 5px; border: 1px solid #ddd; border-radius: 5px; width: 100%;">
+        </div>
+        <div>
+          <input type="text" value="{{ reg.get('salida', '')[:16] }}" id="salida_{{ fecha }}" style="padding: 5px; border: 1px solid #ddd; border-radius: 5px; width: 100%;">
+        </div>
+        <div class="badge">{{ reg.get('horas_trabajadas', 0) }}h trabajadas</div>
+        <button onclick="actualizarRegistro('{{ usuario }}', '{{ fecha }}')" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+          <i class="fas fa-save"></i>
+        </button>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: #999; text-align: center; padding: 20px;">Sin registros de asistencia</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function actualizarRegistro(usuario, fecha) {
+  const inicio = document.getElementById('inicio_' + fecha).value;
+  const salida = document.getElementById('salida_' + fecha).value;
+  
+  fetch('{{ url_for("admin_actualizar_registro") }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'usuario=' + encodeURIComponent(usuario) + 
+          '&fecha=' + encodeURIComponent(fecha) + 
+          '&inicio=' + encodeURIComponent(inicio) + 
+          '&salida=' + encodeURIComponent(salida)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if(data.success) {
+      alert('✅ Registro actualizado');
+      location.reload();
+    } else {
+      alert('❌ Error: ' + data.error);
+    }
+  });
+}
+</script>
+
+{% endblock %}
