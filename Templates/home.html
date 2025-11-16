@@ -5,37 +5,51 @@
   * {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
   }
 
   body {
-    background: linear-gradient(-45deg, #1e3c72, #2a5298, #7e22ce, #581c87);
-    background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
+    background: url('{{ url_for("static", filename="img/fondo_empresa.jpg") }}') no-repeat center center fixed;
+    background-size: cover;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
   }
 
-  @keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+  /* Overlay para mejor legibilidad */
+  body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(30, 60, 114, 0.85), rgba(42, 82, 152, 0.85), rgba(126, 34, 206, 0.85), rgba(88, 28, 135, 0.85));
+    z-index: 1;
   }
 
   .home-container {
+    position: relative;
+    z-index: 2;
     text-align: center;
     color: white;
-    max-width: 800px;
-    padding: 40px;
-    animation: fadeIn 1s ease;
+    max-width: 900px;
+    padding: 50px 30px;
+    animation: fadeInUp 1.2s ease;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   }
 
-  @keyframes fadeIn {
+  @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateY(30px);
+      transform: translateY(50px);
     }
     to {
       opacity: 1;
@@ -43,142 +57,246 @@
     }
   }
 
-  .logo {
-    font-size: 120px;
-    margin-bottom: 30px;
-    animation: bounce 2s ease-in-out infinite;
+  .logo-section {
+    margin-bottom: 40px;
   }
 
-  @keyframes bounce {
+  .logo {
+    font-size: 80px;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
+    animation: gentleFloat 3s ease-in-out infinite;
+  }
+
+  @keyframes gentleFloat {
     0%, 100% {
-      transform: translateY(0);
+      transform: translateY(0px);
     }
     50% {
-      transform: translateY(-20px);
+      transform: translateY(-10px);
     }
+  }
+
+  .company-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    padding: 12px 25px;
+    border-radius: 50px;
+    font-size: 0.9em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
   }
 
   h1 {
-    font-size: 3.5em;
-    font-weight: 700;
-    margin-bottom: 20px;
-    text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+    font-size: 3.2em;
+    font-weight: 800;
+    margin-bottom: 15px;
+    text-shadow: 3px 3px 15px rgba(0,0,0,0.4);
+    background: linear-gradient(135deg, #ffffff, #f0f8ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
   }
 
   .subtitle {
-    font-size: 1.5em;
+    font-size: 1.3em;
     margin-bottom: 50px;
     opacity: 0.95;
     line-height: 1.6;
+    font-weight: 300;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .buttons {
     display: flex;
-    gap: 20px;
+    gap: 25px;
     justify-content: center;
     flex-wrap: wrap;
+    margin-bottom: 60px;
   }
 
   .btn {
-    padding: 18px 40px;
-    font-size: 1.2em;
+    padding: 20px 45px;
+    font-size: 1.1em;
     font-weight: 700;
     border: none;
-    border-radius: 12px;
+    border-radius: 15px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     text-decoration: none;
     display: inline-block;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .btn:hover::before {
+    left: 100%;
   }
 
   .btn-primary {
-    background: white;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
     color: #1e3c72;
+    box-shadow: 0 12px 35px rgba(255, 255, 255, 0.3);
   }
 
   .btn-primary:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(255, 255, 255, 0.4);
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: 0 20px 50px rgba(255, 255, 255, 0.4);
+    color: #0f1419;
   }
 
   .btn-secondary {
-    background: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
     color: white;
-    border: 2px solid white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
   }
 
   .btn-secondary:hover {
-    background: white;
-    color: #1e3c72;
-    transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(255, 255, 255, 0.4);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: 0 20px 50px rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
   }
 
   .features {
-    margin-top: 60px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 25px;
+    max-width: 800px;
+    margin: 0 auto;
   }
 
   .feature {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 30px;
-    border-radius: 15px;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 35px 25px;
+    border-radius: 20px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.6s;
+  }
+
+  .feature:hover::before {
+    left: 100%;
   }
 
   .feature:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
   }
 
   .feature-icon {
-    font-size: 3em;
-    margin-bottom: 15px;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    display: block;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
   }
 
   .feature h3 {
-    font-size: 1.3em;
-    margin-bottom: 10px;
+    font-size: 1.2em;
+    margin-bottom: 12px;
+    font-weight: 600;
   }
 
   .feature p {
     opacity: 0.9;
-    font-size: 1em;
+    font-size: 0.95em;
+    line-height: 1.5;
   }
 
   @media (max-width: 768px) {
+    .home-container {
+      margin: 20px;
+      padding: 40px 25px;
+    }
+
     h1 {
-      font-size: 2.5em;
+      font-size: 2.4em;
     }
 
     .subtitle {
-      font-size: 1.2em;
+      font-size: 1.1em;
     }
 
     .buttons {
       flex-direction: column;
+      gap: 15px;
     }
 
     .btn {
       width: 100%;
+      padding: 18px 30px;
     }
 
     .features {
       grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .feature {
+      padding: 25px 20px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 2em;
+    }
+
+    .logo {
+      font-size: 60px;
+    }
+
+    .company-badge {
+      font-size: 0.8em;
+      padding: 10px 20px;
     }
   }
 </style>
 
 <div class="home-container">
-  <div class="logo">📊</div>
-  <h1>Sistema de Gestión de Empleados</h1>
+  <div class="logo-section">
+    <div class="logo">🏢</div>
+    <div class="company-badge">Sistema Empresarial</div>
+  </div>
+
+  <h1>Sistema de Gestión<br>de Empleados</h1>
   <p class="subtitle">
     Control profesional de asistencia, registro de horas y gestión de personal.<br>
-    Simple, seguro y eficiente.
+    Tecnología avanzada para empresas modernas.
   </p>
 
   <div class="buttons">
@@ -194,22 +312,22 @@
     <div class="feature">
       <div class="feature-icon">⏰</div>
       <h3>Control de Tiempo</h3>
-      <p>Marca entrada y salida fácilmente</p>
+      <p>Registro preciso de entradas y salidas con seguimiento automático</p>
     </div>
     <div class="feature">
-      <div class="feature-icon">📈</div>
-      <h3>Estadísticas</h3>
-      <p>Visualiza horas trabajadas y extras</p>
+      <div class="feature-icon">📊</div>
+      <h3>Análisis Avanzado</h3>
+      <p>Reportes detallados y estadísticas de productividad</p>
     </div>
     <div class="feature">
-      <div class="feature-icon">🔒</div>
-      <h3>Seguro</h3>
-      <p>HTTPS y protección de datos</p>
+      <div class="feature-icon">🔐</div>
+      <h3>Seguridad Total</h3>
+      <p>Protección de datos con encriptación y autenticación robusta</p>
     </div>
     <div class="feature">
-      <div class="feature-icon">📱</div>
-      <h3>Multiplataforma</h3>
-      <p>Accede desde cualquier dispositivo</p>
+      <div class="feature-icon">🌐</div>
+      <h3>Acceso Universal</h3>
+      <p>Disponible en todos tus dispositivos, desde cualquier lugar</p>
     </div>
   </div>
 </div>
