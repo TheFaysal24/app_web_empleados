@@ -9,17 +9,19 @@
   }
 
   body {
-    background: url('{{ url_for("static", filename="img/fondo_empresa.jpg") }}') no-repeat center center fixed;
-    background-size: cover;
+    background: linear-gradient(-45deg, #1e3c72, #2a5298, #667eea, #764ba2, #f093fb, #f5576c, #4facfe, #00f2fe, #43e97b, #38f9d7);
+    background-size: 400% 400%;
+    animation: gradientShift 20s ease infinite;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     position: relative;
+    overflow: hidden;
   }
 
-  /* Overlay para mejor legibilidad */
+  /* Elementos decorativos animados */
   body::before {
     content: '';
     position: absolute;
@@ -27,8 +29,45 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(30, 60, 114, 0.85), rgba(42, 82, 152, 0.85), rgba(126, 34, 206, 0.85), rgba(88, 28, 135, 0.85));
+    background:
+      radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(120, 219, 226, 0.3) 0%, transparent 50%);
+    animation: float 6s ease-in-out infinite;
     z-index: 1;
+  }
+
+  body::after {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    animation: drift 8s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    25% { background-position: 100% 50%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-20px) rotate(120deg); }
+    66% { transform: translateY(10px) rotate(240deg); }
+  }
+
+  @keyframes drift {
+    0% { transform: translate(0, 0) scale(1); opacity: 0.1; }
+    50% { transform: translate(100px, -50px) scale(1.2); opacity: 0.2; }
+    100% { transform: translate(0, 0) scale(1); opacity: 0.1; }
   }
 
   .home-container {
@@ -62,32 +101,42 @@
   }
 
   .logo {
-    font-size: 80px;
+    font-size: 70px;
     margin-bottom: 20px;
-    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
-    animation: gentleFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.6));
+    animation: gentleFloat 4s ease-in-out infinite;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
   }
 
   @keyframes gentleFloat {
     0%, 100% {
-      transform: translateY(0px);
+      transform: translateY(0px) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-8px) rotate(1deg);
     }
     50% {
-      transform: translateY(-10px);
+      transform: translateY(-15px) rotate(0deg);
+    }
+    75% {
+      transform: translateY(-8px) rotate(-1deg);
     }
   }
 
   .company-badge {
     display: inline-block;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    padding: 12px 25px;
-    border-radius: 50px;
-    font-size: 0.9em;
-    font-weight: 600;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 0.85em;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     margin-bottom: 20px;
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    color: rgba(255, 255, 255, 0.9);
   }
 
   h1 {
@@ -122,19 +171,20 @@
   }
 
   .btn {
-    padding: 20px 45px;
-    font-size: 1.1em;
-    font-weight: 700;
+    padding: 14px 28px;
+    font-size: 0.95em;
+    font-weight: 600;
     border: none;
-    border-radius: 15px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     text-decoration: none;
     display: inline-block;
     position: relative;
     overflow: hidden;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
+    min-width: 140px;
   }
 
   .btn::before {
@@ -295,8 +345,7 @@
 
   <h1>Sistema de Gestión<br>de Empleados</h1>
   <p class="subtitle">
-    Control profesional de asistencia, registro de horas y gestión de personal.<br>
-    Tecnología avanzada para empresas modernas.
+    Control profesional de asistencia, registro de horas y gestión de personal.
   </p>
 
   <div class="buttons">
