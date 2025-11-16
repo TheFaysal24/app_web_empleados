@@ -649,8 +649,9 @@
 <div class="table-card">
   <h3 class="section-title">📅 Turnos Asignados - {{ "Mes Actual" }}</h3>
   {% set turnos_data = namespace(shifts={}) %}
+  {% if data and data.get('turnos') and data.get('turnos').get('monthly_assignments') %}
   {% for usr, assignments in data['turnos']['monthly_assignments'].items() %}
-    {% if admin or usr == session['usuario'] %}
+    {% if assignments and (admin or usr == session.get('usuario')) %}
       {% for turno_key in assignments %}
         {% set dia, hora = turno_key.split('_') %}
         {% if usr not in turnos_data.shifts %}
@@ -660,6 +661,7 @@
       {% endfor %}
     {% endif %}
   {% endfor %}
+  {% endif %}
   {% if turnos_data.shifts %}
     <div style="overflow-x: auto;">
       <table>
