@@ -220,9 +220,23 @@
   }
 </style>
 
-<a href="{{ url_for('dashboard') }}" class="back-link">
-  <i class="fas fa-arrow-left"></i> Volver al Dashboard
-</a>
+<!-- Navegación Superior -->
+<div style="background: white; padding: 18px 30px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: center;">
+  <a href="{{ url_for('dashboard') }}" style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 700; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); transition: all 0.3s ease;">
+    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+  </a>
+  <div style="display: flex; gap: 12px;">
+    <a href="{{ url_for('admin_backups') }}" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9em; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: all 0.3s ease;">
+      <i class="fas fa-database"></i> Backups
+    </a>
+    <a href="{{ url_for('exportar_registros') }}" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9em; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: all 0.3s ease;">
+      <i class="fas fa-file-excel"></i> Exportar
+    </a>
+    <a href="{{ url_for('logout') }}" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #ef4444, #f87171); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9em; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); transition: all 0.3s ease;">
+      <i class="fas fa-sign-out-alt"></i> Salir
+    </a>
+  </div>
+</div>
 
 <div class="admin-header">
   <h2><i class="fas fa-users-cog"></i> Gestión de Usuarios</h2>

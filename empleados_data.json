@@ -22,16 +22,9 @@
             "cargo": "Coordinador Mintic",
             "empresa": "INMEL",
             "correo": "luis.molina@inmel.co",
-            "contrasena": "12345678",
-            "admin": false
-        },
-        "Angiecc": {
-            "nombre": "Angie",
-            "cedula": "1233341147",
-            "cargo": "Estudiante ",
-            "correo": "angiecuadradoc@gmail.com",
-            "contrasena": "Mathias24",
-            "admin": false
+            "contrasena": "12345",
+            "admin": false,
+            "bloqueado": false
         }
     },
     "turnos": [
@@ -62,12 +55,6 @@
                 "salida": "2025-11-13T11:23:50.960823",
                 "horas_trabajadas": 0.36,
                 "horas_extras": 0
-            },
-            "2025-11-15": {
-                "inicio": "2025-11-15T21:57:19.989474",
-                "salida": "2025-11-15T23:38:48.566607",
-                "horas_trabajadas": 1.69,
-                "horas_extras": 0
             }
         },
         "Luis.Molina": {
@@ -75,7 +62,6 @@
             "salida": "2025-11-09T18:20:15.616899",
             "horas_trabajadas": 0.02,
             "horas_extras": 0
-        },
-        "Angiecc": {}
+        }
     }
 }
