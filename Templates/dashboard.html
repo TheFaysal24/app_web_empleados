@@ -331,7 +331,7 @@
   }
 
   .stat-card.azul {
-    border-left-color: #667eea;
+    border-left-color: #4facfe;
   }
 
   .stat-card.naranja {
@@ -358,7 +358,7 @@
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(79, 172, 254, 0.1);
   }
 
   .table-card table {
@@ -423,7 +423,7 @@
     padding: 25px;
     margin-bottom: 30px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(79, 172, 254, 0.1);
   }
 
   .chart-card h4 {
@@ -438,14 +438,14 @@
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(79, 172, 254, 0.1);
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
   }
 
   .btn-export-small {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     color: white;
     padding: 10px 16px;
@@ -454,7 +454,7 @@
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 3px 10px rgba(79, 172, 254, 0.3);
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -462,7 +462,7 @@
 
   .btn-export-small:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
     color: white;
     text-decoration: none;
   }
@@ -709,7 +709,7 @@
   {% if data and data.get('turnos') and data.get('turnos').get('shifts') %}
   <div style="overflow-x: auto;">
     <table style="width: 100%; border-collapse: collapse;">
-      <thead style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+      <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
         <tr>
           <th style="padding: 12px; text-align: left;">Gestor</th>
           <th style="padding: 12px; text-align: left;">Cargo</th>
@@ -756,7 +756,7 @@
             
             {% if admin %}
             <td style="padding: 12px; text-align: center;">
-              <a href="{{ url_for('admin_asignar_turnos') }}" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.85em; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); display: inline-flex; align-items: center; gap: 6px;">
+              <a href="{{ url_for('admin_asignar_turnos') }}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.85em; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); display: inline-flex; align-items: center; gap: 6px;">
                 <i class="fas fa-edit"></i> Editar
               </a>
             </td>
@@ -801,12 +801,12 @@
 <!-- Gráficos debajo de la tabla -->
 <div class="grid-2">
   <div class="chart-card">
-    <h4>📈 Horas Trabajadas (Últimos 7 días)</h4>
+    <h4>📈 Horas por Día (Últimos 7 días)</h4>
     <canvas id="graficoHoras" style="max-height: 300px;"></canvas>
   </div>
 
   <div class="chart-card">
-    <h4>👤 Inicios por Usuario</h4>
+    <h4>👤 Horas por Usuario (Semana)</h4>
     <canvas id="graficoInicios" style="max-height: 300px;"></canvas>
   </div>
 </div>
@@ -819,9 +819,87 @@
   </div>
 
   <div class="chart-card">
-    <h4>📊 Distribución de Cargos</h4>
+    <h4>📊 Horas por Usuario (Mes)</h4>
     <canvas id="graficoCargos" style="max-height: 300px;"></canvas>
   </div>
+</div>
+
+<!-- Tabla de registros completa -->
+<div class="table-card">
+  <h3 class="section-title"><i class="fas fa-table"></i> Todos los Registros</h3>
+  {% if registros %}
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Fecha</th>
+            <th>Hora Inicio</th>
+            <th>Hora Salida</th>
+            <th>Horas Trabajadas</th>
+            <th>Horas Extras</th>
+            <th>💰 Costo Extras</th>
+            <th>Total Horas (Día)</th>
+            <th>💰 Costo Total (Día)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set total_horas_semana = namespace(count=0) %}
+          {% set total_costos_semana = namespace(count=0) %}
+          {% set total_horas_mes = namespace(count=0) %}
+          {% set total_costos_mes = namespace(count=0) %}
+
+          {% for usr, regs in registros.items() %}
+            {% if regs and regs is mapping %}
+              {% for fecha, reg in regs.items() %}
+                {% if reg is mapping %}
+                  <tr>
+                    <td><strong>{{ usr }}</strong></td>
+                    <td>{{ fecha }}</td>
+                    <td>{{ reg.get('inicio', '')[:16][11:] if reg.get('inicio') else '-' }}</td>
+                    <td>{{ reg.get('salida', '')[:16][11:] if reg.get('salida') else '-' }}</td>
+                    <td><span class="badge badge-success">{{ reg.get('horas_trabajadas', 0) }}h</span></td>
+                    <td><span class="badge badge-warning">{{ reg.get('horas_extras', 0) }}h</span></td>
+                    <td><span class="badge badge-cost">$ {{ "{:,.0f}".format(reg.get('costo_horas_extras', 0)) }}</span></td>
+                    <td><span class="badge badge-info">{{ reg.get('horas_trabajadas', 0) + reg.get('horas_extras', 0) }}h</span></td>
+                    <td><span class="badge badge-cost">$ {{ "{:,.0f}".format(reg.get('costo_total_dia', 0)) }}</span></td>
+                  </tr>
+                  {% set total_horas_semana.count = total_horas_semana.count + reg.get('horas_trabajadas', 0) %}
+                  {% set total_costos_semana.count = total_costos_semana.count + reg.get('costo_horas_extras', 0) %}
+                  {% set total_horas_mes.count = total_horas_mes.count + reg.get('horas_trabajadas', 0) %}
+                  {% set total_costos_mes.count = total_costos_mes.count + reg.get('costo_horas_extras', 0) %}
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Resumen semanal y mensual -->
+    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+      <h4 style="margin: 0 0 10px 0; color: #667eea;">📊 Resumen de Horas y Costos</h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div style="text-align: center;">
+          <strong>Horas Semana:</strong> {{ total_horas_semana.count }}h
+        </div>
+        <div style="text-align: center;">
+          <strong>Costo Extras Semana:</strong> $ {{ "{:,.0f}".format(total_costos_semana.count) }}
+        </div>
+        <div style="text-align: center;">
+          <strong>Horas Mes:</strong> {{ total_horas_mes.count }}h
+        </div>
+        <div style="text-align: center;">
+          <strong>Costo Extras Mes:</strong> $ {{ "{:,.0f}".format(total_costos_mes.count) }}
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="no-data">
+      <i class="fas fa-inbox" style="font-size: 3em; opacity: 0.3;"></i>
+      <p>No hay registros disponibles. Comienza a registrar turnos.</p>
+    </div>
+  {% endif %}
 </div>
 
 <!-- Variables de datos del servidor -->
@@ -872,8 +950,8 @@
               '#764ba2',
               '#f093fb',
               '#f5576c',
-              '#4facfe',
-              '#00f2fe',
+              '#667eea',
+              '#764ba2',
               '#fa709a'
             ],
             borderRadius: 6,
@@ -947,7 +1025,7 @@
             backgroundColor: [
               'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
               'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
             ].slice(0, topUsuarios.length),
@@ -1031,358 +1109,7 @@
             backgroundColor: [
               'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
               'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-              'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
-              'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
-            ].slice(0, topCostos.length),
-            borderRadius: 8,
-            borderSkipped: false,
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return '$' + context.parsed.y.toLocaleString();
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                color: '#667eea',
-                font: { weight: 'bold', size: 11 },
-                callback: function(value) {
-                  return '$' + value.toLocaleString();
-                }
-              },
-              grid: {
-                color: 'rgba(102, 126, 234, 0.1)'
-              }
-            },
-            x: {
-              ticks: {
-                color: '#667eea',
-                font: { weight: 'bold', size: 10 },
-                maxRotation: 0,
-                minRotation: 0
-              },
-              grid: {
-                display: false
-              }
-            }
-          }
-        },
-        plugins: [chartDataLabels]
-      });
-    }
-
-    // Gráfico de distribución de cargos
-    const ctx4 = document.getElementById('graficoCargos');
-    if (ctx4 && serverData.usuarios && Object.keys(serverData.usuarios).length > 0) {
-      const cargosCount = {};
-      
-      Object.values(serverData.usuarios).forEach(user => {
-        const cargo = user.cargo || 'Sin definir';
-        cargosCount[cargo] = (cargosCount[cargo] || 0) + 1;
-      });
-
-      const cargos = Object.keys(cargosCount);
-      const cantidades = Object.values(cargosCount);
-
-      new Chart(ctx4, {
-        type: 'pie',
-        data: {
-          labels: cargos.map((c, i) => c + ' (' + cantidades[i] + ')'),
-          datasets: [{
-            data: cantidades,
-            backgroundColor: [
-              '#667eea',
-              '#764ba2',
-              '#f093fb',
-              '#f5576c',
-              '#4facfe',
-              '#00f2fe',
-              '#fa709a',
-              '#11998e',
-              '#38ef7d'
-            ],
-            borderColor: '#fff',
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                font: { size: 10, weight: 'bold' },
-                color: '#667eea',
-                padding: 8
-              }
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const value = context.parsed;
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percentage = ((value / total) * 100).toFixed(1);
-                  return value + ' empleados (' + percentage + '%)';
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-    
-  });
-</script>
-{% endblock %}
-=======
-  <div class="chart-card">
-    <h4>📈 Horas Trabajadas (Últimos 7 días)</h4>
-    <canvas id="graficoHoras" style="max-height: 300px;"></canvas>
-  </div>
-
-  <div class="chart-card">
-    <h4>👤 Inicios por Usuario</h4>
-    <canvas id="graficoInicios" style="max-height: 300px;"></canvas>
-  </div>
-</div>
-
-<!-- Segundo fila de gráficos -->
-<div class="grid-2">
-  <div class="chart-card">
-    <h4>💰 Costo Horas Extras por Usuario</h4>
-    <canvas id="graficoCostos" style="max-height: 300px;"></canvas>
-  </div>
-
-  <div class="chart-card">
-    <h4>📊 Distribución de Cargos</h4>
-    <canvas id="graficoCargos" style="max-height: 300px;"></canvas>
-  </div>
-</div>
-
-<!-- Variables de datos del servidor -->
-<script type="text/javascript">
-  var serverData = {
-    fechas: {{ fechas|default([])|tojson|safe }},
-    horas: {{ horas_fechas|default([])|tojson|safe }},
-    contadores: {{ contador_inicios|default({})|tojson|safe }},
-    costos: {{ costo_horas_extras|default({})|tojson|safe }},
-    usuarios: {{ data.get('usuarios', {})|tojson|safe }}
-  };
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script type="text/javascript">
-  document.addEventListener('DOMContentLoaded', function() {
-
-    const chartDataLabels = {
-      id: 'chartDataLabels',
-      afterDatasetsDraw(chart) {
-        chart.data.datasets.forEach((datasetMeta, i) => {
-          const meta = chart.getDatasetMeta(i);
-          meta.data.forEach((bar, index) => {
-            const barData = bar.$context.parsed.y;
-            if (barData > 0) {
-              const ctx = chart.ctx;
-              ctx.fillStyle = 'rgba(0,0,0,0.7)';
-              ctx.font = 'bold 11px Arial';
-              ctx.textAlign = 'center';
-              ctx.fillText(barData.toFixed(1), bar.x, bar.y - 5);
-            }
-          });
-        });
-      }
-    };
-
-    const ctx1 = document.getElementById('graficoHoras');
-    if (ctx1 && serverData.fechas && serverData.horas) {
-      new Chart(ctx1, {
-        type: 'bar',
-        data: {
-          labels: serverData.fechas,
-          datasets: [{
-            label: 'Horas trabajadas',
-            data: serverData.horas,
-            backgroundColor: [
-              '#667eea',
-              '#764ba2',
-              '#f093fb',
-              '#f5576c',
-              '#4facfe',
-              '#00f2fe',
-              '#fa709a'
-            ],
-            borderRadius: 6,
-            borderSkipped: false
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                color: '#667eea',
-                font: { weight: 'bold', size: 11 }
-              },
-              grid: {
-                color: 'rgba(102, 126, 234, 0.1)'
-              }
-            },
-            x: {
-              ticks: {
-                color: '#667eea',
-                font: { weight: 'bold', size: 11 }
-              },
-              grid: {
-                display: false
-              }
-            }
-          }
-        },
-        plugins: [chartDataLabels]
-      });
-    }
-
-    const ctx2 = document.getElementById('graficoInicios');
-    if (ctx2 && serverData.contadores && Object.keys(serverData.contadores).length > 0) {
-      const usuarios = Object.keys(serverData.contadores);
-      const inicios = Object.values(serverData.contadores);
-      const totalInicios = inicios.reduce((a, b) => a + b, 0);
-      const porcentajes = inicios.map(x => ((x / totalInicios) * 100).toFixed(1));
-
-      // Crear datos combinados para mostrar en el gráfico
-      const combinedData = usuarios.map((u, i) => ({
-        usuario: u,
-        inicios: inicios[i],
-        porcentaje: porcentajes[i]
-      }));
-
-      // Ordenar por cantidad de inicios descendente
-      combinedData.sort((a, b) => b.inicios - a.inicios);
-
-      // Tomar solo los top 5 para mejor visualización
-      const topData = combinedData.slice(0, 5);
-      const topUsuarios = topData.map(d => d.usuario);
-      const topInicios = topData.map(d => d.inicios);
-      const topPorcentajes = topData.map(d => d.porcentaje);
-
-      new Chart(ctx2, {
-        type: 'bar',
-        data: {
-          labels: topUsuarios.map((u, i) => u + '\n' + topInicios[i] + ' (' + topPorcentajes[i] + '%)'),
-          datasets: [{
-            label: 'Inicios por Usuario',
-            data: topInicios,
-            backgroundColor: [
               'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-              'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
-              'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
-            ].slice(0, topUsuarios.length),
-            borderRadius: 8,
-            borderSkipped: false,
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const value = context.parsed.y;
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percentage = ((value / total) * 100).toFixed(1);
-                  return value + ' inicios (' + percentage + '%)';
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                color: '#667eea',
-                font: { weight: 'bold', size: 11 },
-                stepSize: 1
-              },
-              grid: {
-                color: 'rgba(102, 126, 234, 0.1)'
-              }
-            },
-            x: {
-              ticks: {
-                color: '#667eea',
-                font: { weight: 'bold', size: 10 },
-                maxRotation: 0,
-                minRotation: 0
-              },
-              grid: {
-                display: false
-              }
-            }
-          }
-        },
-        plugins: [chartDataLabels]
-      });
-    }
-
-    // Gráfico de costos de horas extras
-    const ctx3 = document.getElementById('graficoCostos');
-    if (ctx3 && serverData.costos && Object.keys(serverData.costos).length > 0) {
-      const usuariosCostos = Object.keys(serverData.costos);
-      const valoresCostos = Object.values(serverData.costos);
-
-      // Filtrar solo valores mayores a 0
-      const datosFiltrados = usuariosCostos.map((u, i) => ({
-        usuario: u,
-        costo: valoresCostos[i]
-      })).filter(d => d.costo > 0);
-
-      // Ordenar por costo descendente
-      datosFiltrados.sort((a, b) => b.costo - a.costo);
-
-      // Tomar top 5
-      const topCostos = datosFiltrados.slice(0, 5);
-
-      new Chart(ctx3, {
-        type: 'bar',
-        data: {
-          labels: topCostos.map(d => d.usuario),
-          datasets: [{
-            label: 'Costo Horas Extras ($)',
-            data: topCostos.map(d => d.costo),
-            backgroundColor: [
-              'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
-              'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
               'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
               'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
             ].slice(0, topCostos.length),
@@ -1461,8 +1188,8 @@
               '#764ba2',
               '#f093fb',
               '#f5576c',
-              '#4facfe',
-              '#00f2fe',
+              '#667eea',
+              '#764ba2',
               '#fa709a',
               '#11998e',
               '#38ef7d'
@@ -1498,198 +1225,6 @@
       });
     }
 
-  });
-</script>
-{% endblock %}
-
-<!-- Botones de exportación -->
-<div class="export-buttons">
-  <h5 style="width: 100%; margin: 0 0 10px 0; color: #667eea; font-weight: 700;">⬇️ Descargar Datos</h5>
-  <a href="{{ url_for('exportar_registros') }}" class="btn-export-small">
-    <i class="fas fa-download"></i> Registros CSV
-  </a>
-  <a href="{{ url_for('exportar_datos') }}" class="btn-export-small">
-    <i class="fas fa-file-csv"></i> Datos Completos
-  </a>
-</div>
-
-<!-- Variables de datos del servidor -->
-<script type="text/javascript">
-  var serverData = {
-    fechas: {{ fechas|default([])|tojson|safe }},
-    horas: {{ horas_fechas|default([])|tojson|safe }},
-    contadores: {{ contador_inicios|default({})|tojson|safe }}
-  };
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script type="text/javascript">
-  document.addEventListener('DOMContentLoaded', function() {
-    
-    const chartDataLabels = {
-      id: 'chartDataLabels',
-      afterDatasetsDraw(chart) {
-        chart.data.datasets.forEach((datasetMeta, i) => {
-          const meta = chart.getDatasetMeta(i);
-          meta.data.forEach((bar, index) => {
-            const barData = bar.$context.parsed.y;
-            if (barData > 0) {
-              const ctx = chart.ctx;
-              ctx.fillStyle = 'rgba(0,0,0,0.7)';
-              ctx.font = 'bold 11px Arial';
-              ctx.textAlign = 'center';
-              ctx.fillText(barData.toFixed(1), bar.x, bar.y - 5);
-            }
-          });
-        });
-      }
-    };
-
-    const ctx1 = document.getElementById('graficoHoras');
-    if (ctx1 && serverData.fechas && serverData.horas) {
-      new Chart(ctx1, {
-        type: 'bar',
-        data: {
-          labels: serverData.fechas,
-          datasets: [{
-            label: 'Horas trabajadas',
-            data: serverData.horas,
-            backgroundColor: [
-              '#667eea',
-              '#764ba2',
-              '#f093fb',
-              '#f5576c',
-              '#4facfe',
-              '#00f2fe',
-              '#fa709a'
-            ],
-            borderRadius: 6,
-            borderSkipped: false
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                color: '#667eea',
-                font: { weight: 'bold', size: 11 }
-              },
-              grid: {
-                color: 'rgba(102, 126, 234, 0.1)'
-              }
-            },
-            x: {
-              ticks: {
-                color: '#667eea',
-                font: { weight: 'bold', size: 11 }
-              },
-              grid: {
-                display: false
-              }
-            }
-          }
-        },
-        plugins: [chartDataLabels]
-      });
-    }
-
-    const ctx2 = document.getElementById('graficoInicios');
-    if (ctx2 && serverData.contadores && Object.keys(serverData.contadores).length > 0) {
-      const usuarios = Object.keys(serverData.contadores);
-      const inicios = Object.values(serverData.contadores);
-      const totalInicios = inicios.reduce((a, b) => a + b, 0);
-      const porcentajes = inicios.map(x => ((x / totalInicios) * 100).toFixed(1));
-
-      // Crear datos combinados para mostrar en el gráfico
-      const combinedData = usuarios.map((u, i) => ({
-        usuario: u,
-        inicios: inicios[i],
-        porcentaje: porcentajes[i]
-      }));
-
-      // Ordenar por cantidad de inicios descendente
-      combinedData.sort((a, b) => b.inicios - a.inicios);
-
-      // Tomar solo los top 5 para mejor visualización
-      const topData = combinedData.slice(0, 5);
-      const topUsuarios = topData.map(d => d.usuario);
-      const topInicios = topData.map(d => d.inicios);
-      const topPorcentajes = topData.map(d => d.porcentaje);
-
-      new Chart(ctx2, {
-        type: 'bar',
-        data: {
-          labels: topUsuarios.map((u, i) => u + '\n' + topInicios[i] + ' (' + topPorcentajes[i] + '%)'),
-          datasets: [{
-            label: 'Inicios por Usuario',
-            data: topInicios,
-            backgroundColor: [
-              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-              'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
-              'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
-            ].slice(0, topUsuarios.length),
-            borderRadius: 8,
-            borderSkipped: false,
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const value = context.parsed.y;
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percentage = ((value / total) * 100).toFixed(1);
-                  return value + ' inicios (' + percentage + '%)';
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                color: '#667eea',
-                font: { weight: 'bold', size: 11 },
-                stepSize: 1
-              },
-              grid: {
-                color: 'rgba(102, 126, 234, 0.1)'
-              }
-            },
-            x: {
-              ticks: {
-                color: '#667eea',
-                font: { weight: 'bold', size: 10 },
-                maxRotation: 0,
-                minRotation: 0
-              },
-              grid: {
-                display: false
-              }
-            }
-          }
-        },
-        plugins: [chartDataLabels]
-      });
-    }
-    
   });
 </script>
 {% endblock %}
