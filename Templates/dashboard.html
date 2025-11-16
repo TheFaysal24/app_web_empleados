@@ -616,24 +616,28 @@
         </thead>
         <tbody>
           {% set row_count = namespace(count=0) %}
+          {% if registros %}
           {% for usr, regs in registros.items() %}
+            {% if regs and regs is mapping %}
             {% set last_reg = regs.items()|list|last %}
-            {% if last_reg %}
+            {% if last_reg and last_reg|length == 2 and last_reg[1] is mapping %}
               <tr>
                 <td><strong>{{ usr }}</strong></td>
-                <td><span class="badge badge-success">{{ contador_inicios.get(usr, 0) }} veces</span></td>
+                <td><span class="badge badge-success">{{ contador_inicios.get(usr, 0) if contador_inicios else 0 }} veces</span></td>
                 <td>{{ last_reg[0] }}</td>
-                <td>{{ last_reg[1].inicio[11:16] if last_reg[1].inicio else '-' }}</td>
-                <td>{{ last_reg[1].salida[11:16] if last_reg[1].salida else '-' }}</td>
-                <td><span class="badge badge-success">{{ last_reg[1].horas_trabajadas }}h</span></td>
+                <td>{{ last_reg[1].get('inicio', '')[:16][11:] if last_reg[1].get('inicio') else '-' }}</td>
+                <td>{{ last_reg[1].get('salida', '')[:16][11:] if last_reg[1].get('salida') else '-' }}</td>
+                <td><span class="badge badge-success">{{ last_reg[1].get('horas_trabajadas', 0) }}h</span></td>
                 {% if admin %}
-                <td><span class="badge badge-warning">{{ last_reg[1].horas_extras }}h</span></td>
-                <td><span class="badge badge-cost">$ {{ "{:,.0f}".format(costo_horas_extras.get(usr, 0)) }}</span></td>
+                <td><span class="badge badge-warning">{{ last_reg[1].get('horas_extras', 0) }}h</span></td>
+                <td><span class="badge badge-cost">$ {{ "{:,.0f}".format(costo_horas_extras.get(usr, 0) if costo_horas_extras else 0) }}</span></td>
                 {% endif %}
               </tr>
               {% set row_count.count = row_count.count + 1 %}
             {% endif %}
+            {% endif %}
           {% endfor %}
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -674,16 +678,22 @@
           </tr>
         </thead>
         <tbody>
+          {% if turnos_data.shifts %}
           {% for usr, shifts_list in turnos_data.shifts.items() %}
+            {% if shifts_list %}
             {% for shift in shifts_list %}
+              {% if shift %}
               <tr>
                 <td><strong>{{ usr }}</strong></td>
-                <td>{{ shift.dia.title() }}</td>
-                <td>{{ shift.hora }}</td>
+                <td>{{ shift.get('dia', '').title() if shift.get('dia') else 'N/A' }}</td>
+                <td>{{ shift.get('hora', 'N/A') }}</td>
                 <td><span class="badge badge-info">Asignado</span></td>
               </tr>
+              {% endif %}
             {% endfor %}
+            {% endif %}
           {% endfor %}
+          {% endif %}
         </tbody>
       </table>
     </div>

@@ -297,21 +297,23 @@ def dashboard():
          costo_total_empresa = costo_horas_extras.get(usuario_actual, 0)
          total_usuarios_nuevos = 1  # Solo mostrar 1 para el usuario actual
 
+     # Asegurar que todos los valores sean válidos (nunca None)
      return render_template(
          'dashboard.html',
-         registros=registros_limpios,
-         admin=admin,
-         nombre=session['nombre'],
+         registros=registros_limpios or {},
+         admin=admin or False,
+         nombre=session.get('nombre', 'Usuario'),
          year=year,
-         fechas=fechas_ordenadas,
-         horas_fechas=horas_fechas,
-         usuarios_iniciados_hoy=usuarios_iniciados_hoy,
-         contador_inicios=contador_inicios,
-         total_usuarios_nuevos=total_usuarios_nuevos,
-         costo_horas_extras=costo_horas_extras,
-         costo_total_empresa=costo_total_empresa,
-         valor_hora_ordinaria=round(valor_hora_ordinaria, 2),
-         data=data
+         fechas=fechas_ordenadas or [],
+         horas_fechas=horas_fechas or [],
+         usuarios_iniciados_hoy=usuarios_iniciados_hoy or 0,
+         contador_inicios=contador_inicios or {},
+         total_usuarios_nuevos=total_usuarios_nuevos or 0,
+         costo_horas_extras=costo_horas_extras or {},
+         costo_total_empresa=costo_total_empresa or 0,
+         valor_hora_ordinaria=round(valor_hora_ordinaria, 2) if valor_hora_ordinaria else 0,
+         data=data or {'usuarios': {}, 'turnos': {'shifts': {}, 'monthly_assignments': {}}},
+         session=session
      )
 
 # ✅ Marcar inicio
