@@ -265,18 +265,20 @@
     </div>
 
     <div class="user-actions">
-      <a href="{{ url_for('admin_cambiar_clave', usuario=usuario) }}" class="btn btn-primary">
+      <a href="{{ url_for('admin_cambiar_clave') }}?usuario={{ usuario }}" class="btn btn-primary">
         <i class="fas fa-key"></i> Cambiar Contraseña
       </a>
       
       {% if datos.get('bloqueado') %}
-        <form method="POST" action="{{ url_for('admin_desbloquear', usuario=usuario) }}" style="display: inline;">
+        <form method="POST" action="{{ url_for('admin_desbloquear') }}" style="display: inline;">
+          <input type="hidden" name="usuario" value="{{ usuario }}">
           <button type="submit" class="btn btn-success">
             <i class="fas fa-unlock"></i> Desbloquear
           </button>
         </form>
       {% else %}
-        <form method="POST" action="{{ url_for('admin_bloquear', usuario=usuario) }}" style="display: inline;">
+        <form method="POST" action="{{ url_for('admin_bloquear') }}" style="display: inline;">
+          <input type="hidden" name="usuario" value="{{ usuario }}">
           <button type="submit" class="btn btn-warning">
             <i class="fas fa-ban"></i> Bloquear
           </button>
@@ -316,11 +318,13 @@
             </p>
           </div>
           <div class="registro-actions">
-            <a href="{{ url_for('admin_editar_registro', usuario=usuario, fecha=fecha) }}" class="btn btn-primary btn-sm">
+            <a href="{{ url_for('admin_editar_registro') }}?usuario={{ usuario }}&fecha={{ fecha }}" class="btn btn-primary btn-sm">
               <i class="fas fa-edit"></i> Editar
             </a>
-            <form method="POST" action="{{ url_for('admin_eliminar_registro', usuario=usuario, fecha=fecha) }}" 
+            <form method="POST" action="{{ url_for('admin_eliminar_registro') }}" 
                   onsubmit="return confirm('¿Eliminar este registro?')" style="display: inline;">
+              <input type="hidden" name="usuario" value="{{ usuario }}">
+              <input type="hidden" name="fecha" value="{{ fecha }}">
               <button type="submit" class="btn btn-danger btn-sm">
                 <i class="fas fa-trash"></i> Borrar
               </button>

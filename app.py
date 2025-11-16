@@ -472,8 +472,8 @@ def admin_usuarios():
      return render_template('admin_usuarios.html', usuarios=usuarios, registros=registros)
 
 # ✅ Cambiar contraseña de usuario (Admin)
-@app.route('/admin/cambiar_clave/<usuario>', methods=['GET', 'POST'])
-def admin_cambiar_clave(usuario):
+@app.route('/admin/cambiar_clave', methods=['GET', 'POST'])
+def admin_cambiar_clave():
      if 'usuario' not in session or not session.get('admin'):
          flash('Acceso denegado', 'error')
          return redirect(url_for('home'))
@@ -481,6 +481,7 @@ def admin_cambiar_clave(usuario):
      data = cargar_datos()
      
      if request.method == 'POST':
+         usuario = request.form.get('usuario')
          nueva_clave = request.form.get('nueva_clave')
          
          if usuario in data['usuarios'] and nueva_clave:
@@ -492,22 +493,24 @@ def admin_cambiar_clave(usuario):
          
          return redirect(url_for('admin_usuarios'))
      
-     if usuario in data['usuarios']:
+     usuario = request.args.get('usuario')
+     if usuario and usuario in data['usuarios']:
          return render_template('admin_cambiar_clave.html', usuario=usuario, datos=data['usuarios'][usuario])
      
      flash('Usuario no encontrado', 'error')
      return redirect(url_for('admin_usuarios'))
 
 # ✅ Desbloquear usuario (Admin)
-@app.route('/admin/desbloquear/<usuario>', methods=['POST'])
-def admin_desbloquear(usuario):
+@app.route('/admin/desbloquear', methods=['POST'])
+def admin_desbloquear():
      if 'usuario' not in session or not session.get('admin'):
          flash('Acceso denegado', 'error')
          return redirect(url_for('home'))
      
+     usuario = request.form.get('usuario')
      data = cargar_datos()
      
-     if usuario in data['usuarios']:
+     if usuario and usuario in data['usuarios']:
          data['usuarios'][usuario]['bloqueado'] = False
          guardar_datos(data)
          flash(f'Usuario {usuario} desbloqueado', 'message')
@@ -517,15 +520,16 @@ def admin_desbloquear(usuario):
      return redirect(url_for('admin_usuarios'))
 
 # ✅ Bloquear usuario (Admin)
-@app.route('/admin/bloquear/<usuario>', methods=['POST'])
-def admin_bloquear(usuario):
+@app.route('/admin/bloquear', methods=['POST'])
+def admin_bloquear():
      if 'usuario' not in session or not session.get('admin'):
          flash('Acceso denegado', 'error')
          return redirect(url_for('home'))
      
+     usuario = request.form.get('usuario')
      data = cargar_datos()
      
-     if usuario in data['usuarios']:
+     if usuario and usuario in data['usuarios']:
          data['usuarios'][usuario]['bloqueado'] = True
          guardar_datos(data)
          flash(f'Usuario {usuario} bloqueado', 'message')
@@ -535,15 +539,17 @@ def admin_bloquear(usuario):
      return redirect(url_for('admin_usuarios'))
 
 # ✅ Eliminar registro (Admin)
-@app.route('/admin/eliminar_registro/<usuario>/<fecha>', methods=['POST'])
-def admin_eliminar_registro(usuario, fecha):
+@app.route('/admin/eliminar_registro', methods=['POST'])
+def admin_eliminar_registro():
      if 'usuario' not in session or not session.get('admin'):
          flash('Acceso denegado', 'error')
          return redirect(url_for('dashboard'))
      
+     usuario = request.form.get('usuario')
+     fecha = request.form.get('fecha')
      data = cargar_datos()
      
-     if usuario in data['registros'] and fecha in data['registros'][usuario]:
+     if usuario and fecha and usuario in data['registros'] and fecha in data['registros'][usuario]:
          del data['registros'][usuario][fecha]
          guardar_datos(data)
          flash(f'Registro del {fecha} eliminado para {usuario}', 'message')
@@ -583,8 +589,8 @@ def admin_eliminar_usuario():
      return redirect(url_for('admin_usuarios'))
 
 # ✅ Editar registro (Admin)
-@app.route('/admin/editar_registro/<usuario>/<fecha>', methods=['GET', 'POST'])
-def admin_editar_registro(usuario, fecha):
+@app.route('/admin/editar_registro', methods=['GET', 'POST'])
+def admin_editar_registro():
      if 'usuario' not in session or not session.get('admin'):
          flash('Acceso denegado', 'error')
          return redirect(url_for('dashboard'))
@@ -592,10 +598,12 @@ def admin_editar_registro(usuario, fecha):
      data = cargar_datos()
      
      if request.method == 'POST':
+         usuario = request.form.get('usuario')
+         fecha = request.form.get('fecha')
          inicio = request.form.get('inicio')
          salida = request.form.get('salida')
          
-         if usuario in data['registros'] and fecha in data['registros'][usuario]:
+         if usuario and fecha and usuario in data['registros'] and fecha in data['registros'][usuario]:
              data['registros'][usuario][fecha]['inicio'] = inicio
              data['registros'][usuario][fecha]['salida'] = salida
              
@@ -610,14 +618,17 @@ def admin_editar_registro(usuario, fecha):
              
              guardar_datos(data)
              flash('Registro actualizado correctamente', 'message')
-             return redirect(url_for('dashboard'))
+             return redirect(url_for('admin_usuarios'))
      
-     if usuario in data['registros'] and fecha in data['registros'][usuario]:
+     usuario = request.args.get('usuario')
+     fecha = request.args.get('fecha')
+     
+     if usuario and fecha and usuario in data['registros'] and fecha in data['registros'][usuario]:
          registro = data['registros'][usuario][fecha]
          return render_template('editar_registro.html', usuario=usuario, fecha=fecha, registro=registro)
      
      flash('Registro no encontrado', 'error')
-     return redirect(url_for('dashboard'))
+     return redirect(url_for('admin_usuarios'))
 
 # ✅ Gestión de Backups (Admin)
 @app.route('/admin/backups')

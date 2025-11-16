@@ -110,7 +110,8 @@
     <p><strong><i class="fas fa-briefcase"></i> Cargo:</strong> {{ datos.cargo }}</p>
   </div>
 
-  <form method="POST" action="{{ url_for('admin_cambiar_clave', usuario=usuario) }}">
+  <form method="POST" action="{{ url_for('admin_cambiar_clave') }}">
+    <input type="hidden" name="usuario" value="{{ usuario }}">
     <div class="form-group">
       <label class="form-label" for="nueva_clave">
         <i class="fas fa-lock"></i> Nueva Contraseña
