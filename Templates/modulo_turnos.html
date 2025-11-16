@@ -401,7 +401,6 @@
             <th>Semana</th>
             <th>Fecha Inicio</th>
             <th>Usuario</th>
-            <th>Cédula</th>
             <th>Cargo</th>
             <th>Turnos Asignados</th>
             <th>Estado</th>
@@ -413,7 +412,6 @@
             <td><strong>Semana {{ registro.semana }}</strong></td>
             <td>{{ registro.fecha_inicio }}</td>
             <td>{{ registro.usuario }}</td>
-            <td>{{ registro.cedula }}</td>
             <td><span class="badge badge-info">{{ registro.cargo }}</span></td>
             <td>
               {% for turno in registro.turnos %}
@@ -436,7 +434,6 @@
         <thead>
           <tr>
             <th>Gestor</th>
-            <th>Cédula</th>
             <th>Cargo</th>
             <th>Lunes</th>
             <th>Martes</th>
@@ -451,7 +448,6 @@
           {% for usuario_info in usuarios_turnos %}
           <tr>
             <td><strong>{{ usuario_info.nombre }}</strong></td>
-            <td>{{ usuario_info.cedula }}</td>
             <td><span class="badge badge-info">{{ usuario_info.cargo }}</span></td>
             
             {% set dias_orden = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] %}

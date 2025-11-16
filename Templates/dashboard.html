@@ -712,7 +712,6 @@
       <thead style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
         <tr>
           <th style="padding: 12px; text-align: left;">Gestor</th>
-          <th style="padding: 12px; text-align: left;">Cédula</th>
           <th style="padding: 12px; text-align: left;">Cargo</th>
           <th style="padding: 12px; text-align: center;">Lunes</th>
           <th style="padding: 12px; text-align: center;">Martes</th>
@@ -731,7 +730,6 @@
           {% if info.get('cedula') in cedulas_gestores %}
           <tr style="border-bottom: 1px solid #e0e0e0;">
             <td style="padding: 12px; font-weight: 700;">{{ info.get('nombre', usr) }}</td>
-            <td style="padding: 12px;">{{ info.get('cedula', 'N/A') }}</td>
             <td style="padding: 12px;">{{ info.get('cargo', 'Gestor') }}</td>
             
             {% set dias_orden = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] %}

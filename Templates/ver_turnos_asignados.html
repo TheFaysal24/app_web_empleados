@@ -364,7 +364,6 @@
           <tr>
             {% if admin %}
             <th><i class="fas fa-user"></i> Gestor</th>
-            <th><i class="fas fa-id-card"></i> Cédula</th>
             <th><i class="fas fa-briefcase"></i> Cargo</th>
             {% endif %}
             <th><i class="fas fa-calendar"></i> Día</th>
@@ -385,12 +384,6 @@
                 <span class="badge badge-usuario">
                   <i class="fas fa-user-tie"></i>
                   {{ turno.get('nombre', usuario) }}
-                </span>
-              </td>
-              <td>
-                <span class="badge badge-cedula">
-                  <i class="fas fa-id-card"></i>
-                  {{ turno.get('cedula', 'N/A') }}
                 </span>
               </td>
               <td>{{ turno.get('cargo', 'Gestor Operativo') }}</td>
