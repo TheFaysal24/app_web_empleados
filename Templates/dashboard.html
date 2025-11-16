@@ -657,11 +657,13 @@
   {% for usr, assignments in data['turnos']['monthly_assignments'].items() %}
     {% if assignments and (admin or usr == session.get('usuario')) %}
       {% for turno_key in assignments %}
+        {% if turno_key and '_' in turno_key %}
         {% set dia, hora = turno_key.split('_') %}
         {% if usr not in turnos_data.shifts %}
-          {% set turnos_data.shifts = turnos_data.shifts.update({usr: []}) %}
+          {% set _ = turnos_data.shifts.update({usr: []}) %}
         {% endif %}
         {% set _ = turnos_data.shifts[usr].append({'dia': dia, 'hora': hora}) %}
+        {% endif %}
       {% endfor %}
     {% endif %}
   {% endfor %}

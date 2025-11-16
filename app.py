@@ -166,7 +166,7 @@ def asignar_turnos_automaticos(data, cedula, usuario):
                 if turno_key not in data['turnos']['monthly_assignments'][usuario]:
                     data['turnos']['monthly_assignments'][usuario].append(turno_key)
 
-# ✅ Registro
+# ✅ Registro - Actualiza usuarios existentes por cédula
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -175,12 +175,33 @@ def register():
         cargo = request.form['cargo']
         correo = request.form['correo']
         telefono = request.form.get('telefono', '')
-        usuario = request.form['usuario']
+        usuario_login = request.form['usuario']
         contrasena = request.form['contrasena']
 
         data = cargar_datos()
-        if usuario not in data['usuarios']:
-            data['usuarios'][usuario] = {
+        
+        # Buscar si ya existe un usuario con esta cédula
+        usuario_existente = None
+        for usr, info in data['usuarios'].items():
+            if info.get('cedula') == cedula:
+                usuario_existente = usr
+                break
+        
+        if usuario_existente:
+            # Actualizar información del usuario existente
+            data['usuarios'][usuario_existente].update({
+                'nombre': nombre,
+                'cargo': cargo,
+                'correo': correo,
+                'telefono': telefono,
+                'contrasena': contrasena
+            })
+            flash(f'✅ Bienvenido {nombre}! Tu información ha sido actualizada. Usa el usuario: {usuario_existente}', 'message')
+            guardar_datos(data)
+            return redirect(url_for('login'))
+        elif usuario_login not in data['usuarios']:
+            # Crear nuevo usuario si no existe
+            data['usuarios'][usuario_login] = {
                 'nombre': nombre,
                 'cedula': cedula,
                 'cargo': cargo,
@@ -189,13 +210,12 @@ def register():
                 'contrasena': contrasena,
                 'admin': False
             }
-            # Asignar turnos automáticamente si la cédula está en la lista
-            asignar_turnos_automaticos(data, cedula, usuario)
+            asignar_turnos_automaticos(data, cedula, usuario_login)
             guardar_datos(data)
-            flash('Usuario registrado con éxito. Turnos asignados automáticamente si aplica.', 'message')
+            flash('✅ Usuario registrado con éxito. Turnos asignados automáticamente.', 'message')
             return redirect(url_for('login'))
         else:
-            flash('El usuario ya existe.', 'error')
+            flash('El nombre de usuario ya existe.', 'error')
             return redirect(url_for('register'))
     return render_template('register.html')
 
