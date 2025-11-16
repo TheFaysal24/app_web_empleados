@@ -356,15 +356,22 @@ def marcar_salida():
 
     if usuario in data['registros'] and hoy in data['registros'][usuario] and data['registros'][usuario][hoy]['inicio']:
         inicio = datetime.datetime.fromisoformat(data['registros'][usuario][hoy]['inicio'])
-        horas_trabajadas = (ahora - inicio).total_seconds() / 3600
-        horas_extras = max(0, horas_trabajadas - 8 if ahora.weekday() < 5 else horas_trabajadas - 4)
+        
+        # Calcular horas totales (con almuerzo incluido)
+        horas_totales_con_almuerzo = (ahora - inicio).total_seconds() / 3600
+        
+        # Restar 1 hora de almuerzo para obtener horas netas trabajadas
+        horas_trabajadas_netas = max(0, horas_totales_con_almuerzo - 1)
+        
+        # Calcular horas extras: después de 8 horas netas trabajadas
+        horas_extras = max(0, horas_trabajadas_netas - 8)
 
         data['registros'][usuario][hoy]['salida'] = ahora.isoformat()
-        data['registros'][usuario][hoy]['horas_trabajadas'] = round(horas_trabajadas, 2)
+        data['registros'][usuario][hoy]['horas_trabajadas'] = round(horas_trabajadas_netas, 2)
         data['registros'][usuario][hoy]['horas_extras'] = round(horas_extras, 2)
         guardar_datos(data)
 
-        flash(f'Salida registrada. Horas: {round(horas_trabajadas,2)}h, Extras: {round(horas_extras,2)}h', 'message')
+        flash(f'Salida registrada. Horas trabajadas: {round(horas_trabajadas_netas,2)}h, Extras: {round(horas_extras,2)}h', 'message')
     else:
         flash('No hay registro de inicio.', 'error')
 

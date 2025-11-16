@@ -586,10 +586,12 @@
       {{ total.count }}
     </div>
   </div>
+  {% if admin %}
   <div class="stat-card morado">
     <h5>💰 Costo Horas Extras</h5>
     <div class="stat-value" style="font-size: 1.8em;">$ {{ "{:,.0f}".format(costo_total_empresa) }}</div>
   </div>
+  {% endif %}
 </div>
 
 <!-- Tabla de registros -->
@@ -606,8 +608,10 @@
             <th>Hora Inicio</th>
             <th>Hora Salida</th>
             <th>Horas Trabajadas</th>
+            {% if admin %}
             <th>Horas Extras</th>
             <th>💰 Costo Extras</th>
+            {% endif %}
           </tr>
         </thead>
         <tbody>
@@ -622,8 +626,10 @@
                 <td>{{ last_reg[1].inicio[11:16] if last_reg[1].inicio else '-' }}</td>
                 <td>{{ last_reg[1].salida[11:16] if last_reg[1].salida else '-' }}</td>
                 <td><span class="badge badge-success">{{ last_reg[1].horas_trabajadas }}h</span></td>
+                {% if admin %}
                 <td><span class="badge badge-warning">{{ last_reg[1].horas_extras }}h</span></td>
                 <td><span class="badge badge-cost">$ {{ "{:,.0f}".format(costo_horas_extras.get(usr, 0)) }}</span></td>
+                {% endif %}
               </tr>
               {% set row_count.count = row_count.count + 1 %}
             {% endif %}
