@@ -734,8 +734,8 @@
   };
 
   // Gráfico de horas
-    const chartLabels = JSON.parse('{{ fechas|default([])|tojson|escapejs }}');
-    const horasData = JSON.parse('{{ horas_fechas|default([])|tojson|escapejs }}');
+    const chartLabels = {{ fechas|default([])|tojson|safe }};
+    const horasData = {{ horas_fechas|default([])|tojson|safe }};
     const ctx1 = document.getElementById('graficoHoras');
     if (ctx1) {
       new Chart(ctx1, {
@@ -795,7 +795,7 @@
   // Gráfico de inicios por usuario
   const ctx2 = document.getElementById('graficoInicios');
   if (ctx2) {
-    const contadores = JSON.parse('{{ contador_inicios|default({})|tojson|escapejs }}');
+    const contadores = {{ contador_inicios|default({})|tojson|safe }};
     const usuarios = Object.keys(contadores);
     const inicios = Object.values(contadores);
     const totalInicios = inicios.reduce((a, b) => a + b, 0);
