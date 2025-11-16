@@ -2,48 +2,76 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Sistema Empleados{% endblock %}</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background-color: #f3f4f6; }
-    .navbar { background: linear-gradient(90deg, #1e3a8a, #3b82f6); }
-    .navbar-brand { font-weight: bold; color: #fff; }
-    .nav-link { color: #fff !important; }
-    .btn-sm { padding: 6px 12px; font-size: 14px; border-radius: 20px; }
-    footer { background: #1e293b; color: #fff; padding: 15px; text-align: center; margin-top: 30px; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .flash-messages {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      max-width: 400px;
+    }
+    
+    .alert {
+      padding: 15px 20px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      animation: slideIn 0.3s ease;
+      font-weight: 500;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    .alert-success {
+      background: linear-gradient(135deg, #11998e, #38ef7d);
+      color: white;
+      border-left: 5px solid #0d7a6f;
+    }
+    
+    .alert-danger {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+      color: white;
+      border-left: 5px solid #cc5555;
+    }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="{{ url_for('dashboard') }}">Sistema Empleados</a>
-      <form class="d-flex ms-auto" method="GET" action="{{ url_for('dashboard') }}">
-        <input class="form-control me-2" type="search" placeholder="Buscar..." name="q">
-        <button class="btn btn-outline-light btn-sm" type="submit">Buscar</button>
-      </form>
-      <ul class="navbar-nav ms-3">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('ajustes') }}">Ajustes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Salir</a></li>
-      </ul>
-    </div>
-  </nav>
-
-  <div class="container mt-4">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
+  <!-- Mensajes flash -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
         {% for category, message in messages %}
-          <div class="alert alert-{{ 'success' if category == 'message' else 'danger' }}">{{ message }}</div>
+          <div class="alert alert-{{ 'success' if category == 'message' else 'danger' }}">
+            <i class="fas fa-{{ 'check-circle' if category == 'message' else 'exclamation-circle' }}"></i>
+            {{ message }}
+          </div>
         {% endfor %}
-      {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </div>
-
-  <footer>
-    <p>&copy; {{ datetime.datetime.now().year }} Sistema de Empleados. Todos los derechos reservados.</p>
-  </footer>
+      </div>
+    {% endif %}
+  {% endwith %}
+  
+  {% block content %}{% endblock %}
 </body>
 </html>
