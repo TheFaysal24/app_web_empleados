@@ -221,20 +221,6 @@
     transform: scale(1.05);
   }
 
-  .admin-badge {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: linear-gradient(135deg, #f59e0b, #fbbf24);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 12px;
-    font-size: 0.7em;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
   .logout-section {
     text-align: center;
     margin-top: 40px;
@@ -294,8 +280,8 @@
 <div class="dashboard-container">
   <!-- Header Section -->
   <div class="header-section">
-    <h1>{% if admin %}👑 Panel Ejecutivo{% else %}🏠 Mi Panel Personal{% endif %}</h1>
-    <p>{% if admin %}Centro de control y gestión del sistema{% else %}Acceso rápido a tus funciones principales{% endif %}</p>
+    <h1>🏠 Mi Panel Personal</h1>
+    <p>Acceso rápido a tus funciones principales</p>
   </div>
 
   <!-- User Info Card -->
@@ -306,11 +292,10 @@
       </div>
       <div class="user-text">
         <h2>{{ nombre }}</h2>
-        <p>{{ session.get('cargo', 'Usuario del Sistema') }}{% if admin %} - Administrador{% endif %}</p>
+        <p>{{ session.get('cargo', 'Usuario del Sistema') }}</p>
       </div>
     </div>
 
-    {% if not admin %}
     <div class="attendance-status">
       <div class="status-indicator {{ 'status-active' if attendance_status == 'active' else 'status-inactive' }}">
         <i class="fas fa-{{ 'circle' if attendance_status == 'active' else 'circle' }}"></i>
@@ -323,20 +308,18 @@
         </button>
       </form>
     </div>
-    {% endif %}
   </div>
 
   <!-- Shortcuts Grid -->
   <div class="shortcuts-grid">
-    {% if not admin %}
     <!-- Regular User Shortcuts -->
     <a href="{{ url_for('dashboard') }}" class="shortcut-card">
       <div class="shortcut-icon">
         <i class="fas fa-chart-line"></i>
       </div>
-      <div class="shortcut-title">Dashboard</div>
+      <div class="shortcut-title">Mi Dashboard</div>
       <div class="shortcut-description">
-        Visualiza tus estadísticas de asistencia, horas trabajadas y rendimiento personal.
+        Visualiza tus estadísticas de asistencia y rendimiento personal.
       </div>
       <div class="shortcut-action">Ver Dashboard</div>
     </a>
@@ -373,80 +356,6 @@
       </div>
       <div class="shortcut-action">Ver Asignaciones</div>
     </a>
-    {% else %}
-    <!-- Admin Shortcuts -->
-    <a href="{{ url_for('admin_usuarios') }}" class="shortcut-card">
-      <div class="admin-badge">Admin</div>
-      <div class="shortcut-icon">
-        <i class="fas fa-users-cog"></i>
-      </div>
-      <div class="shortcut-title">Gestión de Usuarios</div>
-      <div class="shortcut-description">
-        Administra usuarios, roles, permisos y configuraciones del sistema.
-      </div>
-      <div class="shortcut-action">Administrar</div>
-    </a>
-
-    <a href="{{ url_for('admin_asignar_turnos') }}" class="shortcut-card">
-      <div class="admin-badge">Admin</div>
-      <div class="shortcut-icon">
-        <i class="fas fa-user-cog"></i>
-      </div>
-      <div class="shortcut-title">Asignación de Turnos</div>
-      <div class="shortcut-description">
-        Gestiona la asignación manual de turnos para todos los empleados.
-      </div>
-      <div class="shortcut-action">Asignar Turnos</div>
-    </a>
-
-    <a href="{{ url_for('dashboard') }}" class="shortcut-card">
-      <div class="admin-badge">Admin</div>
-      <div class="shortcut-icon">
-        <i class="fas fa-chart-bar"></i>
-      </div>
-      <div class="shortcut-title">Panel de Control</div>
-      <div class="shortcut-description">
-        Visualiza estadísticas globales, reportes y métricas del sistema.
-      </div>
-      <div class="shortcut-action">Ver Reportes</div>
-    </a>
-
-    <a href="{{ url_for('admin_backups') }}" class="shortcut-card">
-      <div class="admin-badge">Admin</div>
-      <div class="shortcut-icon">
-        <i class="fas fa-database"></i>
-      </div>
-      <div class="shortcut-title">Sistema de Backups</div>
-      <div class="shortcut-description">
-        Gestiona copias de seguridad y recuperación de datos del sistema.
-      </div>
-      <div class="shortcut-action">Administrar Backups</div>
-    </a>
-
-    <a href="{{ url_for('exportar_registros') }}" class="shortcut-card">
-      <div class="admin-badge">Admin</div>
-      <div class="shortcut-icon">
-        <i class="fas fa-file-download"></i>
-      </div>
-      <div class="shortcut-title">Exportar Datos</div>
-      <div class="shortcut-description">
-        Exporta reportes y datos del sistema en formato CSV.
-      </div>
-      <div class="shortcut-action">Exportar</div>
-    </a>
-
-    <a href="{{ url_for('modulo_turnos') }}" class="shortcut-card">
-      <div class="admin-badge">Admin</div>
-      <div class="shortcut-icon">
-        <i class="fas fa-calendar-week"></i>
-      </div>
-      <div class="shortcut-title">Módulo de Turnos</div>
-      <div class="shortcut-description">
-        Supervisa el calendario completo y el historial de asignaciones.
-      </div>
-      <div class="shortcut-action">Ver Turnos</div>
-    </a>
-    {% endif %}
   </div>
 
   <!-- Logout Section -->
