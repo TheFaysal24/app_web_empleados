@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 import json
 import datetime
 import os
@@ -6,7 +6,7 @@ import csv
 import io
 import shutil
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='Templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'clave_secreta_para_sesiones')
 
 # Función de backup manual (sin scheduler automático)
@@ -1126,7 +1126,7 @@ def admin_actualizar_usuario_completo():
 @app.route('/admin/actualizar_registro', methods=['POST'])
 def admin_actualizar_registro():
     if 'usuario' not in session or not session.get('admin'):
-        return {'success': False, 'error': 'Acceso denegado'}, 403
+        return jsonify({'success': False, 'error': 'Acceso denegado'}), 403
     
     data = cargar_datos()
     usuario = request.form.get('usuario')
@@ -1134,7 +1134,7 @@ def admin_actualizar_registro():
     inicio = request.form.get('inicio')
     salida = request.form.get('salida')
     
-    if usuario in data['registros'] and fecha in data['registros'][usuario]:
+    if usuario in data.get('registros', {}) and fecha in data['registros'][usuario]:
         try:
             data['registros'][usuario][fecha]['inicio'] = inicio
             data['registros'][usuario][fecha]['salida'] = salida
@@ -1144,18 +1144,18 @@ def admin_actualizar_registro():
                 inicio_dt = datetime.datetime.fromisoformat(inicio)
                 salida_dt = datetime.datetime.fromisoformat(salida)
                 horas_totales = (salida_dt - inicio_dt).total_seconds() / 3600
-                horas_netas = max(0, horas_totales - 1)  # Descontar almuerzo
+                horas_netas = max(0, horas_totales - 1)
                 horas_extras = max(0, horas_netas - 8)
                 
                 data['registros'][usuario][fecha]['horas_trabajadas'] = round(horas_netas, 2)
                 data['registros'][usuario][fecha]['horas_extras'] = round(horas_extras, 2)
             
             guardar_datos(data)
-            return {'success': True}
+            return jsonify({'success': True})
         except Exception as e:
-            return {'success': False, 'error': str(e)}, 400
+            return jsonify({'success': False, 'error': str(e)}), 400
     
-    return {'success': False, 'error': 'Registro no encontrado'}, 404
+    return jsonify({'success': False, 'error': 'Registro no encontrado'}), 404
 
 # ✅ Eliminar usuario (Admin)
 @app.route('/admin/eliminar_usuario/<usuario>')
