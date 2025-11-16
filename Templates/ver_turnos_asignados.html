@@ -357,7 +357,7 @@
       {% if admin %}Turnos de Todos los Gestores Operativos{% else %}Mis Turnos Programados{% endif %}
     </div>
 
-    {% if assigned_shifts and assigned_shifts|length > 0 %}
+    {% if assigned_shifts is not none and assigned_shifts|length > 0 %}
     <div style="overflow-x: auto;">
       <table class="turnos-table">
         <thead>
@@ -373,6 +373,7 @@
           </tr>
         </thead>
         <tbody>
+          {% if assigned_shifts %}
           {% for usuario, turnos_list in assigned_shifts.items() %}
             {% if turnos_list %}
             {% for turno in turnos_list %}
@@ -415,6 +416,7 @@
             {% endfor %}
             {% endif %}
           {% endfor %}
+          {% endif %}
         </tbody>
       </table>
     </div>

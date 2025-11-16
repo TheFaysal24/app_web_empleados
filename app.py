@@ -927,10 +927,16 @@ def ver_turnos_asignados():
                                 'cargo': user_data.get('cargo', 'Gestor Operativo')
                             })
 
+    # Asegurar que nunca pasemos None
+    if not assigned_shifts:
+        assigned_shifts = {}
+    if not data:
+        data = {'usuarios': {}, 'turnos': {'shifts': {}}}
+    
     return render_template('ver_turnos_asignados.html',
-                         assigned_shifts=assigned_shifts or {},
+                         assigned_shifts=assigned_shifts,
                          admin=admin,
-                         data=data or {},
+                         data=data,
                          session=session)
 
 # Función auxiliar para validar selección de turno

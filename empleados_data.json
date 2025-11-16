@@ -81,7 +81,7 @@
             "saturday": {
                 "06:30": null,
                 "08:00": null,
-                "08:30": null,
+                "08:30": "natalia.arevalo",
                 "09:00": null
             }
         },
@@ -91,6 +91,9 @@
                 "wednesday_06:30",
                 "thursday_06:30",
                 "friday_06:30"
+            ],
+            "natalia.arevalo": [
+                "saturday_08:30"
             ]
         },
         "current_month": "2025-11",
