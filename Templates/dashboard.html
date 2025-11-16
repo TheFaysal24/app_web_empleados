@@ -649,9 +649,43 @@
   {% endif %}
 </div>
 
+<!-- Resumen Semanal de Turnos -->
+<div class="table-card">
+  <h3 class="section-title">📆 Resumen Semanal - Turnos por Gestor</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
+    {% if data and data.get('turnos') and data.get('turnos').get('shifts') %}
+    {% set resumen_semanal = {} %}
+    {% for dia, horas in data['turnos']['shifts'].items() %}
+      {% for hora, usr in horas.items() %}
+        {% if usr %}
+          {% if usr not in resumen_semanal %}
+            {% set _ = resumen_semanal.update({usr: []}) %}
+          {% endif %}
+          {% set _ = resumen_semanal[usr].append({'dia': dia, 'hora': hora}) %}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+    
+    {% for usr, turnos in resumen_semanal.items() %}
+    <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-left: 5px solid #667eea; padding: 15px; border-radius: 10px;">
+      <div style="font-weight: 700; color: #667eea; margin-bottom: 8px; font-size: 1.1em;">
+        <i class="fas fa-user-circle"></i> {{ data['usuarios'].get(usr, {}).get('nombre', usr) }}
+      </div>
+      <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">
+        <i class="fas fa-id-card"></i> Cédula: {{ data['usuarios'].get(usr, {}).get('cedula', 'N/A') }}
+      </div>
+      <div style="font-size: 0.85em; color: #999;">
+        <i class="fas fa-calendar-check"></i> {{ turnos|length }} turno(s) esta semana
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
 <!-- Tabla de turnos asignados -->
 <div class="table-card">
-  <h3 class="section-title">📅 Turnos Asignados - {{ "Mes Actual" }}</h3>
+  <h3 class="section-title">📅 Turnos Detallados por Día</h3>
   {% set turnos_data = namespace(shifts={}) %}
   {% if data and data.get('turnos') and data.get('turnos').get('monthly_assignments') %}
   {% for usr, assignments in data['turnos']['monthly_assignments'].items() %}

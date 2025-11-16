@@ -370,6 +370,7 @@
             <th><i class="fas fa-calendar"></i> Día</th>
             <th><i class="fas fa-clock"></i> Hora</th>
             <th><i class="fas fa-check-circle"></i> Estado</th>
+            <th><i class="fas fa-cog"></i> Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -377,6 +378,7 @@
           {% for usuario, turnos_list in assigned_shifts.items() %}
             {% if turnos_list %}
             {% for turno in turnos_list %}
+              {% if turno %}
             <tr>
               {% if admin %}
               <td>
@@ -412,7 +414,17 @@
                   Asignado
                 </span>
               </td>
+              <td>
+                <form method="POST" action="{{ url_for('eliminar_turno') }}" style="display: inline;">
+                  <input type="hidden" name="dia" value="{{ turno.get('dia', '') }}">
+                  <input type="hidden" name="hora" value="{{ turno.get('hora', '') }}">
+                  <button type="submit" style="background: linear-gradient(135deg, #ef4444, #f87171); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 18px rgba(239, 68, 68, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)'">
+                    <i class="fas fa-trash-alt"></i> Eliminar
+                  </button>
+                </form>
+              </td>
             </tr>
+              {% endif %}
             {% endfor %}
             {% endif %}
           {% endfor %}

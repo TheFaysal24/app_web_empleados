@@ -886,12 +886,13 @@ def seleccionar_turno():
     for dia, horas in shifts.items():
         available_shifts[dia] = {}
         for hora, assigned_user in horas.items():
-            # Solo disponible si: está en sus turnos permitidos, no está ocupado, y no lo ha usado
+            # Verificar: 1) está en su patrón, 2) no ocupado por otro, 3) no lo usó esta semana
             esta_en_patron = hora in turnos_permitidos
             no_ocupado = assigned_user is None
-            no_usado = hora not in turnos_usados_usuario.get(dia, [])
+            no_usado_esta_semana = hora not in turnos_usados_usuario.get(dia, [])
             
-            available_shifts[dia][hora] = esta_en_patron and no_ocupado and no_usado
+            # Disponible solo si cumple las 3 condiciones
+            available_shifts[dia][hora] = esta_en_patron and no_ocupado and no_usado_esta_semana
 
     return render_template('seleccionar_turno.html',
                          shifts=shifts,
@@ -960,6 +961,46 @@ def ver_turnos_asignados():
                          admin=admin,
                          data=data,
                          session=session)
+
+# ✅ Eliminar turno
+@app.route('/eliminar_turno', methods=['POST'])
+def eliminar_turno():
+    if 'usuario' not in session:
+        flash('Debes iniciar sesión primero', 'error')
+        return redirect(url_for('login'))
+
+    data = cargar_datos()
+    usuario = session['usuario']
+    dia = request.form.get('dia')
+    hora = request.form.get('hora')
+
+    if not dia or not hora:
+        flash('Datos de turno inválidos', 'error')
+        return redirect(url_for('ver_turnos_asignados'))
+
+    # Verificar que el turno pertenece al usuario o es admin
+    turno_usuario = data.get('turnos', {}).get('shifts', {}).get(dia, {}).get(hora)
+    
+    if turno_usuario == usuario or session.get('admin'):
+        # Liberar el turno
+        if dia in data['turnos']['shifts'] and hora in data['turnos']['shifts'][dia]:
+            data['turnos']['shifts'][dia][hora] = None
+            
+            # Remover de asignaciones mensuales
+            turno_key = f"{dia}_{hora}"
+            if 'monthly_assignments' in data['turnos']:
+                # Remover del usuario que lo tenía asignado
+                usuario_a_limpiar = turno_usuario if session.get('admin') else usuario
+                if usuario_a_limpiar in data['turnos']['monthly_assignments']:
+                    if turno_key in data['turnos']['monthly_assignments'][usuario_a_limpiar]:
+                        data['turnos']['monthly_assignments'][usuario_a_limpiar].remove(turno_key)
+            
+            guardar_datos(data)
+            flash('✅ Turno eliminado correctamente y disponible para otros', 'message')
+    else:
+        flash('No puedes eliminar este turno', 'error')
+
+    return redirect(url_for('ver_turnos_asignados'))
 
 # Función auxiliar para validar selección de turno
 def validar_turno_usuario(data, usuario, user_role, dia, hora):
