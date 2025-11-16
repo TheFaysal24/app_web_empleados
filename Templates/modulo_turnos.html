@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+{% block title %}Módulo de Turnos{% endblock %}
+{% block content %}
+<style>
+  body {
+    background: #f5f7fa;
+    padding: 20px;
+  }
+
+  .turnos-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .turnos-header {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    color: white;
+    padding: 35px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .turnos-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 2.5em;
+    font-weight: 700;
+  }
+
+  .turnos-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1em;
+  }
+
+  .week-selector {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .week-info {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #667eea;
+  }
+
+  .week-nav {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-week {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-week:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.4);
+  }
+
+  .turnos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .day-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+  }
+
+  .day-card:hover {
+    border-color: #667eea;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(102, 126, 234, 0.2);
+  }
+
+  .day-card h4 {
+    color: #667eea;
+    margin: 0 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .day-date {
+    font-size: 0.85em;
+    color: #999;
+    font-weight: normal;
+  }
+
+  .shift-slot {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-left: 4px solid #667eea;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+
+  .shift-slot:hover {
+    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+    transform: translateX(5px);
+  }
+
+  .shift-slot.asignado {
+    background: linear-gradient(135deg, #e8f5e9, #f1f8f4);
+    border-left-color: #4caf50;
+  }
+
+  .shift-slot.libre {
+    background: linear-gradient(135deg, #fff3e0, #fef7ef);
+    border-left-color: #ff9800;
+  }
+
+  .shift-time {
+    font-weight: 700;
+    color: #333;
+    font-size: 1.1em;
+  }
+
+  .shift-user {
+    font-size: 0.9em;
+    color: #666;
+    background: white;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-weight: 600;
+  }
+
+  .shift-user.disponible {
+    color: #ff9800;
+    background: #fff3e0;
+  }
+
+  .historial-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .historial-section h3 {
+    color: #667eea;
+    margin: 0 0 20px 0;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .historial-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .historial-table thead {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+
+  .historial-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+  }
+
+  .historial-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .historial-table tbody tr:hover {
+    background: #f8f9ff;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 0.85em;
+    font-weight: 600;
+  }
+
+  .badge-success {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .badge-warning {
+    background: #fff3e0;
+    color: #e65100;
+  }
+
+  .badge-info {
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border-left: 5px solid;
+    transition: transform 0.3s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-3px);
+  }
+
+  .stat-card h5 {
+    margin: 0 0 10px 0;
+    font-size: 0.85em;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .stat-value {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: #667eea;
+  }
+
+  .stat-card.verde {
+    border-left-color: #11998e;
+  }
+
+  .stat-card.azul {
+    border-left-color: #667eea;
+  }
+
+  .stat-card.naranja {
+    border-left-color: #f59e0b;
+  }
+
+  .stat-card.morado {
+    border-left-color: #a855f7;
+  }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .btn-back:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    color: white;
+  }
+
+  @media (max-width: 768px) {
+    .turnos-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .week-selector {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<!-- Navegación -->
+<div style="background: white; padding: 18px 30px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin-left: auto; margin-right: auto;">
+  <a href="{{ url_for('dashboard') }}" class="btn-back">
+    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+  </a>
+  <a href="{{ url_for('logout') }}" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #ef4444, #f87171); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9em; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); transition: all 0.3s ease;">
+    <i class="fas fa-sign-out-alt"></i> Salir
+  </a>
+</div>
+
+<div class="turnos-container">
+  <!-- Header -->
+  <div class="turnos-header">
+    <h2>📅 Módulo de Gestión de Turnos</h2>
+    <p>Trazabilidad completa de turnos semanales - Sistema rotativo automático</p>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="stats-grid">
+    <div class="stat-card verde">
+      <h5>📊 Total Turnos Asignados</h5>
+      <div class="stat-value">{{ stats.total_turnos }}</div>
+    </div>
+    <div class="stat-card azul">
+      <h5>👥 Usuarios con Turnos</h5>
+      <div class="stat-value">{{ stats.usuarios_activos }}</div>
+    </div>
+    <div class="stat-card naranja">
+      <h5>🔄 Turnos Disponibles</h5>
+      <div class="stat-value">{{ stats.turnos_libres }}</div>
+    </div>
+    <div class="stat-card morado">
+      <h5>📆 Semana Actual</h5>
+      <div class="stat-value">{{ semana_actual }}</div>
+    </div>
+  </div>
+
+  <!-- Selector de Semana -->
+  <div class="week-selector">
+    <div class="week-info">
+      <i class="fas fa-calendar-week"></i> Semana {{ semana_actual }} - {{ fecha_inicio_semana }} al {{ fecha_fin_semana }}
+    </div>
+    <div class="week-nav">
+      <button class="btn-week" onclick="window.location.href='{{ url_for('modulo_turnos', semana=semana_actual-1) }}'">
+        <i class="fas fa-chevron-left"></i> Anterior
+      </button>
+      <button class="btn-week" onclick="window.location.href='{{ url_for('modulo_turnos', semana=semana_actual+1) }}'">
+        Siguiente <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Grid de Turnos por Día -->
+  <div class="turnos-grid">
+    {% for dia in ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] %}
+    <div class="day-card">
+      <h4>
+        {{ dia }}
+        <span class="day-date">{{ fechas_semana[loop.index0] }}</span>
+      </h4>
+      {% set dia_key = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][loop.index0] %}
+      {% if dia_key in turnos_semana %}
+        {% for hora, usuario in turnos_semana[dia_key].items() %}
+        <div class="shift-slot {% if usuario %}asignado{% else %}libre{% endif %}">
+          <span class="shift-time">🕐 {{ hora }}</span>
+          {% if usuario %}
+          <span class="shift-user">{{ usuario }}</span>
+          {% else %}
+          <span class="shift-user disponible">Disponible</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Historial Completo -->
+  <div class="historial-section">
+    <h3><i class="fas fa-history"></i> Historial de Turnos desde 3 de Noviembre 2025</h3>
+    <div style="overflow-x: auto;">
+      <table class="historial-table">
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Fecha Inicio</th>
+            <th>Usuario</th>
+            <th>Cédula</th>
+            <th>Cargo</th>
+            <th>Turnos Asignados</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for registro in historial_turnos %}
+          <tr>
+            <td><strong>Semana {{ registro.semana }}</strong></td>
+            <td>{{ registro.fecha_inicio }}</td>
+            <td>{{ registro.usuario }}</td>
+            <td>{{ registro.cedula }}</td>
+            <td><span class="badge badge-info">{{ registro.cargo }}</span></td>
+            <td>
+              {% for turno in registro.turnos %}
+              <span class="badge badge-success">{{ turno }}</span>
+              {% endfor %}
+            </td>
+            <td><span class="badge badge-{{ registro.estado_class }}">{{ registro.estado }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Asignación por Usuario -->
+  <div class="historial-section">
+    <h3><i class="fas fa-users"></i> Turnos por Usuario</h3>
+    <div style="overflow-x: auto;">
+      <table class="historial-table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Cédula</th>
+            <th>Cargo</th>
+            <th>Turnos Totales</th>
+            <th>Patrón de Rotación</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for usuario_info in usuarios_turnos %}
+          <tr>
+            <td><strong>{{ usuario_info.nombre }}</strong></td>
+            <td>{{ usuario_info.cedula }}</td>
+            <td><span class="badge badge-info">{{ usuario_info.cargo }}</span></td>
+            <td><span class="badge badge-success">{{ usuario_info.total_turnos }} turnos</span></td>
+            <td>
+              {% for hora in usuario_info.patron %}
+              <span class="badge badge-warning">{{ hora }}</span>
+              {% endfor %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  console.log('Módulo de Turnos cargado - Semana {{ semana_actual }}');
+</script>
+{% endblock %}

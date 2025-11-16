@@ -522,10 +522,19 @@
         <a href="{{ url_for('dashboard') }}" class="dropdown-item">
           <i class="fas fa-home"></i> Dashboard
         </a>
+        <a href="{{ url_for('modulo_turnos') }}" class="dropdown-item">
+          <i class="fas fa-calendar-week"></i> Módulo de Turnos
+        </a>
         <a href="{{ url_for('ajustes') }}" class="dropdown-item">
           <i class="fas fa-cog"></i> Ajustes
         </a>
-        
+        <a href="{{ url_for('seleccionar_turno') }}" class="dropdown-item">
+          <i class="fas fa-calendar-plus"></i> Seleccionar Turno
+        </a>
+        <a href="{{ url_for('ver_turnos_asignados') }}" class="dropdown-item">
+          <i class="fas fa-calendar-check"></i> Ver Mis Turnos
+        </a>
+
         {% if admin %}
         <div class="menu-section" style="margin-top: 10px;">Administración</div>
         <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">
@@ -558,7 +567,7 @@
 <!-- Tarjetas de estadísticas -->
 <div class="stat-cards-grid">
   <div class="stat-card verde">
-    <h5>👥 Total Empleados</h5>
+    <h5>{% if admin %}👥 Total Empleados{% else %}👤 Mi Perfil{% endif %}</h5>
     <div class="stat-value">{{ total_usuarios_nuevos }}</div>
   </div>
   <div class="stat-card rojo">
@@ -630,6 +639,54 @@
   {% endif %}
 </div>
 
+<!-- Tabla de turnos asignados -->
+<div class="table-card">
+  <h3 class="section-title">📅 Turnos Asignados - {{ "Mes Actual" }}</h3>
+  {% set turnos_data = namespace(shifts={}) %}
+  {% for usr, assignments in data['turnos']['monthly_assignments'].items() %}
+    {% if admin or usr == session['usuario'] %}
+      {% for turno_key in assignments %}
+        {% set dia, hora = turno_key.split('_') %}
+        {% if usr not in turnos_data.shifts %}
+          {% set turnos_data.shifts = turnos_data.shifts.update({usr: []}) %}
+        {% endif %}
+        {% set _ = turnos_data.shifts[usr].append({'dia': dia, 'hora': hora}) %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+  {% if turnos_data.shifts %}
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Día</th>
+            <th>Hora</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for usr, shifts_list in turnos_data.shifts.items() %}
+            {% for shift in shifts_list %}
+              <tr>
+                <td><strong>{{ usr }}</strong></td>
+                <td>{{ shift.dia.title() }}</td>
+                <td>{{ shift.hora }}</td>
+                <td><span class="badge badge-info">Asignado</span></td>
+              </tr>
+            {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="no-data">
+      <i class="fas fa-calendar-times" style="font-size: 3em; opacity: 0.3;"></i>
+      <p>No hay turnos asignados en el mes actual.</p>
+    </div>
+  {% endif %}
+</div>
+
 <!-- Gráficos debajo de la tabla -->
 <div class="grid-2">
   <div class="chart-card">
@@ -677,66 +734,68 @@
   };
 
   // Gráfico de horas
-  const ctx1 = document.getElementById('graficoHoras');
-  if (ctx1) {
-    new Chart(ctx1, {
-      type: 'bar',
-      data: {
-        labels: {{ fechas|tojson }},
-        datasets: [{
-          label: 'Horas trabajadas',
-          data: {{ horas_fechas|tojson }},
-          backgroundColor: [
-            '#667eea',
-            '#764ba2',
-            '#f093fb',
-            '#f5576c',
-            '#4facfe',
-            '#00f2fe',
-            '#fa709a'
-          ],
-          borderRadius: 6,
-          borderSkipped: false
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: {
-            display: false
-          }
+    const chartLabels = JSON.parse('{{ fechas|default([])|tojson|escapejs }}');
+    const horasData = JSON.parse('{{ horas_fechas|default([])|tojson|escapejs }}');
+    const ctx1 = document.getElementById('graficoHoras');
+    if (ctx1) {
+      new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: chartLabels,
+          datasets: [{
+            label: 'Horas trabajadas',
+            data: horasData,
+            backgroundColor: [
+              '#667eea',
+              '#764ba2',
+              '#f093fb',
+              '#f5576c',
+              '#4facfe',
+              '#00f2fe',
+              '#fa709a'
+            ],
+            borderRadius: 6,
+            borderSkipped: false
+          }]
         },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              color: '#667eea',
-              font: { weight: 'bold', size: 11 }
-            },
-            grid: {
-              color: 'rgba(102, 126, 234, 0.1)'
-            }
-          },
-          x: {
-            ticks: {
-              color: '#667eea',
-              font: { weight: 'bold', size: 11 }
-            },
-            grid: {
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
               display: false
             }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 }
+              },
+              grid: {
+                color: 'rgba(102, 126, 234, 0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 }
+              },
+              grid: {
+                display: false
+              }
+            }
           }
-        }
-      },
-      plugins: [chartDataLabels]
-    });
-  }
+        },
+        plugins: [chartDataLabels]
+      });
+    }
 
   // Gráfico de inicios por usuario
   const ctx2 = document.getElementById('graficoInicios');
   if (ctx2) {
-    const contadores = {{ contador_inicios|tojson }};
+    const contadores = JSON.parse('{{ contador_inicios|default({})|tojson|escapejs }}');
     const usuarios = Object.keys(contadores);
     const inicios = Object.values(contadores);
     const totalInicios = inicios.reduce((a, b) => a + b, 0);

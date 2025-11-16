@@ -111,6 +111,44 @@ def login():
 
     return render_template('login.html')
 
+# Función para asignar turnos automáticamente basado en cédula
+def asignar_turnos_automaticos(data, cedula, usuario):
+    shift_assignments = {
+        "1070963486": ["06:30", "08:30"],
+        "1067949514": ["08:00", "06:30"],
+        "1140870406": ["08:30", "09:00"],
+        "1068416077": ["09:00", "08:00"]
+    }
+
+    if cedula not in shift_assignments:
+        return  # No asignar si no está en la lista
+
+    shifts = shift_assignments[cedula]
+    current_month = data['turnos']['current_month']
+    monthly_assignments = data['turnos']['monthly_assignments']
+
+    # Marcar turnos usados la semana pasada (desde Nov 3, 2025)
+    fecha_inicio = datetime.datetime(2025, 11, 3)
+    hoy = datetime.datetime.now()
+    dias_semana = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+
+    # Asignar turnos empezando con 6:30 esta semana
+    assigned_count = 0
+    for dia in dias_semana:
+        if assigned_count >= 4:  # Máximo 4 turnos por mes
+            break
+        for hora in shifts:
+            if hora in data['turnos']['shifts'][dia] and data['turnos']['shifts'][dia][hora] is None:
+                # Verificar que no se repita en el mes
+                turno_key = f"{dia}_{hora}"
+                if turno_key not in monthly_assignments.get(usuario, []):
+                    data['turnos']['shifts'][dia][hora] = usuario
+                    if usuario not in monthly_assignments:
+                        monthly_assignments[usuario] = []
+                    monthly_assignments[usuario].append(turno_key)
+                    assigned_count += 1
+                    break
+
 # ✅ Registro
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -119,6 +157,7 @@ def register():
         cedula = request.form['cedula']
         cargo = request.form['cargo']
         correo = request.form['correo']
+        telefono = request.form.get('telefono', '')
         usuario = request.form['usuario']
         contrasena = request.form['contrasena']
 
@@ -129,11 +168,14 @@ def register():
                 'cedula': cedula,
                 'cargo': cargo,
                 'correo': correo,
+                'telefono': telefono,
                 'contrasena': contrasena,
                 'admin': False
             }
+            # Asignar turnos automáticamente si la cédula está en la lista
+            asignar_turnos_automaticos(data, cedula, usuario)
             guardar_datos(data)
-            flash('Usuario registrado con éxito.', 'message')
+            flash('Usuario registrado con éxito. Turnos asignados automáticamente si aplica.', 'message')
             return redirect(url_for('login'))
         else:
             flash('El usuario ya existe.', 'error')
@@ -244,7 +286,6 @@ def dashboard():
          admin=admin,
          nombre=session['nombre'],
          year=year,
-         empleados_horas=empleados_horas,
          fechas=fechas_ordenadas,
          horas_fechas=horas_fechas,
          usuarios_iniciados_hoy=usuarios_iniciados_hoy,
@@ -433,11 +474,13 @@ def actualizar_datos():
     nombre = request.form.get('nombre')
     cargo = request.form.get('cargo')
     correo = request.form.get('correo')
+    telefono = request.form.get('telefono')
 
     if usuario in data['usuarios']:
         if nombre: data['usuarios'][usuario]['nombre'] = nombre
         if cargo: data['usuarios'][usuario]['cargo'] = cargo
         if correo: data['usuarios'][usuario]['correo'] = correo
+        if telefono: data['usuarios'][usuario]['telefono'] = telefono
         guardar_datos(data)
         flash('Datos actualizados correctamente', 'message')
     else:
@@ -474,7 +517,7 @@ def recuperar_contrasena():
         correo = request.form.get('correo')
         data = cargar_datos()
         for usr, info in data['usuarios'].items():
-            if info['correo'] == correo:
+            if info.get('correo') == correo:
                 # Generar nueva contraseña aleatoria
                 import random
                 import string
@@ -485,16 +528,22 @@ def recuperar_contrasena():
                 # Enviar notificación por email (mailto)
                 import urllib.parse
                 asunto = urllib.parse.quote("Recuperación de Contraseña - Sistema Empleados")
-                cuerpo = urllib.parse.quote(f"Hola {info['nombre']},\n\nTu nueva contraseña es: {nueva_contrasena}\n\nPor favor, cámbiala después de iniciar sesión.\n\nSaludos,\nSistema de Empleados")
+                cuerpo = urllib.parse.quote(f"Hola {info.get('nombre', usr)},\n\nTu nueva contraseña es: {nueva_contrasena}\n\nPor favor, cámbiala después de iniciar sesión.\n\nSaludos,\nSistema de Empleados")
                 mailto_link = f"mailto:{correo}?subject={asunto}&body={cuerpo}"
 
-                # También generar enlace de WhatsApp si hay número (asumiendo que el correo incluye número o agregar campo)
+                # Generar enlace de WhatsApp si hay número
                 whatsapp_link = ""
-                if 'telefono' in info and info['telefono']:
-                    whatsapp_msg = urllib.parse.quote(f"Hola {info['nombre']}, tu nueva contraseña es: {nueva_contrasena}. Cámbiala después de iniciar sesión.")
-                    whatsapp_link = f"https://wa.me/{info['telefono']}?text={whatsapp_msg}"
+                telefono = info.get('telefono', info.get('whatsapp', ''))
+                if telefono:
+                    telefono = telefono.replace('+', '').replace('-', '').replace(' ', '')
+                    whatsapp_msg = urllib.parse.quote(f"🔐 *Recuperación de Contraseña*\n\nHola {info.get('nombre', usr)},\n\nTu nueva contraseña es: *{nueva_contrasena}*\n\nPor favor, cámbiala después de iniciar sesión.\n\n_Sistema de Empleados_")
+                    whatsapp_link = f"https://wa.me/{telefono}?text={whatsapp_msg}"
 
-                flash(f'Se generó nueva contraseña. <a href="{mailto_link}" target="_blank">Enviar por Email</a>' + (f' | <a href="{whatsapp_link}" target="_blank">Enviar por WhatsApp</a>' if whatsapp_link else ''), 'message')
+                mensaje = f'✅ Nueva contraseña generada: {nueva_contrasena}<br><a href="{mailto_link}" target="_blank" style="color:#fff;text-decoration:underline;">📧 Enviar por Email</a>'
+                if whatsapp_link:
+                    mensaje += f' | <a href="{whatsapp_link}" target="_blank" style="color:#fff;text-decoration:underline;">📱 Enviar por WhatsApp</a>'
+                
+                flash(mensaje, 'message')
                 return redirect(url_for('login'))
         flash('Correo no encontrado', 'error')
         return redirect(url_for('recuperar_contrasena'))
@@ -834,6 +883,11 @@ def validar_turno_usuario(data, usuario, user_role, dia, hora):
     if turnos_mes >= 4:
         return False
 
+    # Verificar que no se repita el turno en el mes
+    turno_key = f"{dia}_{hora}"
+    if turno_key in monthly_assignments:
+        return False
+
     # Managers pueden seleccionar cualquier turno disponible
     if user_role == 'manager':
         return True
@@ -845,6 +899,162 @@ def validar_turno_usuario(data, usuario, user_role, dia, hora):
             return False
 
     return True
+
+# ✅ Módulo de Turnos con Trazabilidad
+@app.route('/modulo_turnos')
+def modulo_turnos():
+    if 'usuario' not in session:
+        flash('Debes iniciar sesión primero', 'error')
+        return redirect(url_for('login'))
+    
+    data = cargar_datos()
+    semana_param = request.args.get('semana', type=int)
+    
+    # Fecha de inicio: 3 de noviembre de 2025
+    fecha_base = datetime.datetime(2025, 11, 3)
+    hoy = datetime.datetime.now()
+    
+    # Calcular semana actual desde Nov 3
+    dias_transcurridos = (hoy - fecha_base).days
+    semana_actual = (dias_transcurridos // 7) + 1
+    
+    # Si se especifica semana en parámetro, usarla
+    if semana_param:
+        semana_actual = semana_param
+    
+    # Calcular fechas de la semana
+    inicio_semana = fecha_base + datetime.timedelta(weeks=semana_actual-1)
+    fin_semana = inicio_semana + datetime.timedelta(days=5)
+    
+    fechas_semana = []
+    for i in range(6):  # Lunes a Sábado
+        fecha = inicio_semana + datetime.timedelta(days=i)
+        fechas_semana.append(fecha.strftime('%d/%m/%Y'))
+    
+    # Historial de turnos desde Nov 3, 2025
+    historial_turnos = generar_historial_turnos(data, fecha_base)
+    
+    # Estadísticas
+    total_turnos = sum(1 for dia in data['turnos']['shifts'].values() for usr in dia.values() if usr)
+    usuarios_activos = len(set(usr for dia in data['turnos']['shifts'].values() for usr in dia.values() if usr))
+    turnos_libres = sum(1 for dia in data['turnos']['shifts'].values() for usr in dia.values() if not usr)
+    
+    stats = {
+        'total_turnos': total_turnos,
+        'usuarios_activos': usuarios_activos,
+        'turnos_libres': turnos_libres
+    }
+    
+    # Información de usuarios con turnos
+    usuarios_turnos = obtener_usuarios_con_turnos(data)
+    
+    return render_template('modulo_turnos.html',
+                         semana_actual=semana_actual,
+                         fecha_inicio_semana=inicio_semana.strftime('%d/%m/%Y'),
+                         fecha_fin_semana=fin_semana.strftime('%d/%m/%Y'),
+                         fechas_semana=fechas_semana,
+                         turnos_semana=data['turnos']['shifts'],
+                         historial_turnos=historial_turnos,
+                         usuarios_turnos=usuarios_turnos,
+                         stats=stats,
+                         data=data)
+
+def generar_historial_turnos(data, fecha_base):
+    """Genera historial completo de turnos desde Nov 3, 2025"""
+    historial = []
+    
+    # Configuración de turnos por cédula
+    asignaciones_base = {
+        "1070963486": {
+            "usuario": None,
+            "turnos": ["06:30", "08:30"],
+            "cedula": "1070963486"
+        },
+        "1067949514": {
+            "usuario": None,
+            "turnos": ["08:00", "06:30"],
+            "cedula": "1067949514"
+        },
+        "1140870406": {
+            "usuario": None,
+            "turnos": ["08:30", "09:00"],
+            "cedula": "1140870406"
+        },
+        "1068416077": {
+            "usuario": None,
+            "turnos": ["09:00", "08:00", "06:30"],  # Empezando con 6:30 esta semana
+            "cedula": "1068416077"
+        }
+    }
+    
+    # Encontrar usuarios por cédula
+    for usuario, info in data['usuarios'].items():
+        cedula = info.get('cedula', '')
+        if cedula in asignaciones_base:
+            asignaciones_base[cedula]['usuario'] = usuario
+            asignaciones_base[cedula]['nombre'] = info.get('nombre', usuario)
+            asignaciones_base[cedula]['cargo'] = info.get('cargo', 'N/A')
+    
+    # Generar historial semanal desde Nov 3
+    hoy = datetime.datetime.now()
+    semanas_transcurridas = ((hoy - fecha_base).days // 7) + 1
+    
+    for semana in range(1, semanas_transcurridas + 1):
+        fecha_inicio = fecha_base + datetime.timedelta(weeks=semana-1)
+        
+        for cedula, info in asignaciones_base.items():
+            if info['usuario']:
+                # Determinar estado
+                if semana < semanas_transcurridas:
+                    estado = "Completado"
+                    estado_class = "success"
+                elif semana == semanas_transcurridas:
+                    estado = "En Curso"
+                    estado_class = "warning"
+                else:
+                    estado = "Pendiente"
+                    estado_class = "info"
+                
+                historial.append({
+                    'semana': semana,
+                    'fecha_inicio': fecha_inicio.strftime('%d/%m/%Y'),
+                    'usuario': info['nombre'],
+                    'cedula': cedula,
+                    'cargo': info['cargo'],
+                    'turnos': info['turnos'],
+                    'estado': estado,
+                    'estado_class': estado_class
+                })
+    
+    return sorted(historial, key=lambda x: x['semana'], reverse=True)
+
+def obtener_usuarios_con_turnos(data):
+    """Obtiene información de usuarios con sus patrones de turnos"""
+    usuarios_info = []
+    
+    patrones_cedula = {
+        "1070963486": ["06:30", "08:30"],
+        "1067949514": ["08:00", "06:30"],
+        "1140870406": ["08:30", "09:00"],
+        "1068416077": ["09:00", "08:00", "06:30"]
+    }
+    
+    for usuario, info in data['usuarios'].items():
+        cedula = info.get('cedula', '')
+        if cedula in patrones_cedula:
+            # Contar turnos del usuario
+            total_turnos = sum(1 for dia in data['turnos']['shifts'].values() 
+                             for usr in dia.values() if usr == usuario)
+            
+            usuarios_info.append({
+                'nombre': info.get('nombre', usuario),
+                'cedula': cedula,
+                'cargo': info.get('cargo', 'N/A'),
+                'total_turnos': total_turnos,
+                'patron': patrones_cedula[cedula]
+            })
+    
+    return usuarios_info
 
 # -------------------
 # Ejecutar aplicación

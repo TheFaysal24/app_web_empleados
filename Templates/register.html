@@ -413,14 +413,20 @@
           <label class="form-label" for="cargo">
             <i class="fas fa-briefcase"></i> Cargo
           </label>
-          <input 
-            type="text" 
+          <select 
             id="cargo" 
             name="cargo" 
             class="form-control" 
-            placeholder="Desarrollador"
             required
+            style="cursor: pointer;"
           >
+            <option value="">Selecciona tu cargo...</option>
+            <option value="GESTOR OPERATIVO">GESTOR OPERATIVO</option>
+            <option value="TECNICO MINTIC">TÉCNICO MINTIC</option>
+            <option value="LIDER DE PROCESO">LÍDER DE PROCESO</option>
+            <option value="SUPERVISOR DE CAMPO">SUPERVISOR DE CAMPO</option>
+            <option value="COORDINADOR">COORDINADOR</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -434,6 +440,21 @@
             class="form-control" 
             placeholder="juan@empresa.com"
             required
+          >
+        </div>
+      </div>
+      
+      <div class="form-grid full">
+        <div class="form-group">
+          <label class="form-label" for="telefono">
+            <i class="fas fa-phone"></i> Teléfono/WhatsApp (Opcional)
+          </label>
+          <input 
+            type="text" 
+            id="telefono" 
+            name="telefono" 
+            class="form-control" 
+            placeholder="+57 300 123 4567"
           >
         </div>
       </div>

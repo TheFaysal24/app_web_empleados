@@ -29,7 +29,7 @@
       border-radius: 10px;
       margin-bottom: 10px;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      animation: slideIn 0.3s ease, fadeOut 0.3s ease 0.7s forwards;
+      animation: slideIn 0.3s ease, fadeOut 0.3s ease 1s forwards;
       font-weight: 500;
     }
     
@@ -76,7 +76,7 @@
         {% for category, message in messages %}
           <div class="alert alert-{{ 'success' if category == 'message' else 'danger' }}">
             <i class="fas fa-{{ 'check-circle' if category == 'message' else 'exclamation-circle' }}"></i>
-            {{ message }}
+            {{ message|safe }}
           </div>
         {% endfor %}
       </div>
@@ -91,7 +91,7 @@
       alerts.forEach(alert => {
         alert.remove();
       });
-    }, 500);
+    }, 1300);
   </script>
 </body>
 </html>

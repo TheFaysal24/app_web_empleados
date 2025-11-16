@@ -27,11 +27,18 @@
             "desbloquear": false
         }
     },
-    "turnos": [
-        "admin",
-        "",
-        "Luis.Molina"
-    ],
+    "turnos": {
+        "shifts": {
+            "monday": {"06:30": null, "08:00": null, "08:30": null, "09:00": null},
+            "tuesday": {"06:30": null, "08:00": null, "08:30": null, "09:00": null},
+            "wednesday": {"06:30": null, "08:00": null, "08:30": null, "09:00": null},
+            "thursday": {"06:30": null, "08:00": null, "08:30": null, "09:00": null},
+            "friday": {"06:30": null, "08:00": null, "08:30": null, "09:00": null},
+            "saturday": {"08:00": null}
+        },
+        "monthly_assignments": {},
+        "current_month": "2025-11"
+    },
     "registros": {
         "admin": {
             "inicio": "2025-11-09T16:02:14.568415",
@@ -70,8 +77,8 @@
             },
             "2025-11-16": {
                 "inicio": "2025-11-16T00:02:58.781378",
-                "salida": "2025-11-16T00:03:00.298760",
-                "horas_trabajadas": 0.0,
+                "salida": "2025-11-16T02:38:22.630553",
+                "horas_trabajadas": 2.59,
                 "horas_extras": 0
             }
         }

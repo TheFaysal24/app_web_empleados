@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Seleccionar Turno{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Seleccionar Turno Semanal</h2>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        {% if user_role == 'manager' %}
+                            Como gerente, puedes seleccionar cualquier turno disponible.
+                        {% else %}
+                            Como colaborador, solo puedes seleccionar turnos de 08:00 en adelante de lunes a viernes.
+                        {% endif %}
+                    </p>
+
+                    <form method="POST" action="{{ url_for('seleccionar_turno') }}">
+                        <div class="mb-3">
+                            <label for="dia" class="form-label">Selecciona el día:</label>
+                            <select name="dia" id="dia" class="form-select" required>
+                                <option value="">-- Seleccionar día --</option>
+                                <option value="monday">Lunes</option>
+                                <option value="tuesday">Martes</option>
+                                <option value="wednesday">Miércoles</option>
+                                <option value="thursday">Jueves</option>
+                                <option value="friday">Viernes</option>
+                                <option value="saturday">Sábado</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="hora" class="form-label">Selecciona la hora:</label>
+                            <select name="hora" id="hora" class="form-select" required>
+                                <option value="">-- Seleccionar hora --</option>
+                                <option value="06:30">06:30</option>
+                                <option value="08:00">08:00</option>
+                                <option value="08:30">08:30</option>
+                                <option value="09:00">09:00</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Seleccionar Turno</button>
+                    </form>
+
+                    <hr>
+
+                    <h5>Turnos Disponibles:</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Día</th>
+                                    <th>06:30</th>
+                                    <th>08:00</th>
+                                    <th>08:30</th>
+                                    <th>09:00</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dia, horas in shifts.items() %}
+                                <tr>
+                                    <td>{{ dia.title() }}</td>
+                                    {% for hora, assigned in horas.items() %}
+                                    <td>
+                                        {% if assigned %}
+                                            <span class="badge bg-danger">Ocupado</span>
+                                        {% elif available_shifts[dia][hora] %}
+                                            <span class="badge bg-success">Disponible</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No disponible</span>
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3">
+                        <a href="{{ url_for('ver_turnos_asignados') }}" class="btn btn-outline-primary">Ver Mis Turnos</a>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Volver al Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
