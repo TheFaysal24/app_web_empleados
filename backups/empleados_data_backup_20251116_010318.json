@@ -1,0 +1,33 @@
+{
+    "usuarios": {
+        "admin": {
+            "contrasena": "1234",
+            "admin": true,
+            "nombre": "Admin",
+            "cedula": "N/A",
+            "cargo": "Empleado",
+            "correo": "admin@empresa.com"
+        },
+        "": {
+            "nombre": "",
+            "cedula": "",
+            "contrasena": "",
+            "admin": false,
+            "cargo": "Empleado",
+            "correo": "@empresa.com"
+        }
+    },
+    "turnos": [
+        "admin",
+        "",
+        "Luis.Molina"
+    ],
+    "registros": {
+        "admin": {
+            "inicio": "2025-11-09T16:02:14.568415",
+            "salida": "2025-11-09T14:50:18.267080",
+            "horas_trabajadas": 0.0,
+            "horas_extras": 0
+        }
+    }
+}
