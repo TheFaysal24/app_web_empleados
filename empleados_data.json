@@ -3,28 +3,47 @@
         "admin": {
             "contrasena": "1234",
             "admin": true,
-            "nombre": "Admin",
+            "nombre": "Administrador",
             "cedula": "N/A",
-            "cargo": "Empleado",
-            "correo": "admin@empresa.com"
+            "cargo": "COORDINADOR",
+            "correo": "admin@empresa.com",
+            "telefono": ""
         },
-        "": {
-            "nombre": "",
-            "cedula": "",
-            "contrasena": "",
-            "admin": false,
-            "cargo": "Empleado",
-            "correo": "@empresa.com"
+        "natalia.arevalo": {
+            "nombre": "Natalia Arevalo",
+            "cedula": "1070963486",
+            "cargo": "GESTOR OPERATIVO",
+            "correo": "natalia.arevalo@empresa.com",
+            "telefono": "",
+            "contrasena": "1234",
+            "admin": false
         },
-        "Luis.Molina": {
-            "nombre": "Luis Enrique Molina Gonzalez",
-            "cedula": "123456",
-            "cargo": "Coordinador Mintic",
-            "empresa": "INMEL",
-            "correo": "luis.molina@inmel.co",
-            "contrasena": "12345",
-            "admin": false,
-            "desbloquear": false
+        "lesly.guzman": {
+            "nombre": "Lesly Guzman",
+            "cedula": "1067949514",
+            "cargo": "TECNICO MINTIC",
+            "correo": "lesly.guzman@empresa.com",
+            "telefono": "",
+            "contrasena": "1234",
+            "admin": false
+        },
+        "paola.garcia": {
+            "nombre": "Paola Garcia",
+            "cedula": "1140870406",
+            "cargo": "LIDER DE PROCESO",
+            "correo": "paola.garcia@empresa.com",
+            "telefono": "",
+            "contrasena": "1234",
+            "admin": false
+        },
+        "dayana.gonzalez": {
+            "nombre": "Dayana Gonzalez",
+            "cedula": "1068416077",
+            "cargo": "SUPERVISOR DE CAMPO",
+            "correo": "dayana.gonzalez@empresa.com",
+            "telefono": "",
+            "contrasena": "1234",
+            "admin": false
         }
     },
     "turnos": {
@@ -34,53 +53,127 @@
             "wednesday": {"06:30": null, "08:00": null, "08:30": null, "09:00": null},
             "thursday": {"06:30": null, "08:00": null, "08:30": null, "09:00": null},
             "friday": {"06:30": null, "08:00": null, "08:30": null, "09:00": null},
-            "saturday": {"08:00": null}
+            "saturday": {"06:30": null, "08:00": null, "08:30": null, "09:00": null}
         },
         "monthly_assignments": {},
-        "current_month": "2025-11"
+        "current_month": "2025-11",
+        "historial_semanal": {
+            "semana_1": {
+                "fecha_inicio": "2025-11-03",
+                "fecha_fin": "2025-11-08",
+                "asignaciones": {
+                    "natalia.arevalo": [
+                        {"dia": "2025-11-03", "dia_semana": "lunes", "hora": "06:30", "entrada": "06:30", "salida": "15:30"},
+                        {"dia": "2025-11-04", "dia_semana": "martes", "hora": "06:30", "entrada": "06:30", "salida": "15:30"},
+                        {"dia": "2025-11-05", "dia_semana": "miercoles", "hora": "08:30", "entrada": "08:30", "salida": "13:30"},
+                        {"dia": "2025-11-06", "dia_semana": "jueves", "hora": "08:00", "entrada": "08:00", "salida": "17:00"}
+                    ],
+                    "lesly.guzman": [
+                        {"dia": "2025-11-03", "dia_semana": "lunes", "hora": "08:00", "entrada": "08:00", "salida": "17:00"},
+                        {"dia": "2025-11-04", "dia_semana": "martes", "hora": "08:00", "entrada": "08:00", "salida": "17:00"},
+                        {"dia": "2025-11-05", "dia_semana": "miercoles", "hora": "08:00", "entrada": "08:00", "salida": "17:00"},
+                        {"dia": "2025-11-06", "dia_semana": "jueves", "hora": "06:30", "entrada": "06:30", "salida": "15:30"}
+                    ],
+                    "paola.garcia": [
+                        {"dia": "2025-11-03", "dia_semana": "lunes", "hora": "08:30", "entrada": "08:30", "salida": "17:30"},
+                        {"dia": "2025-11-04", "dia_semana": "martes", "hora": "08:30", "entrada": "08:30", "salida": "17:30"},
+                        {"dia": "2025-11-05", "dia_semana": "miercoles", "hora": "08:30", "entrada": "08:30", "salida": "17:30"},
+                        {"dia": "2025-11-06", "dia_semana": "jueves", "hora": "09:00", "entrada": "09:00", "salida": "19:00"}
+                    ],
+                    "dayana.gonzalez": [
+                        {"dia": "2025-11-03", "dia_semana": "lunes", "hora": "09:00", "entrada": "09:00", "salida": "19:00"},
+                        {"dia": "2025-11-04", "dia_semana": "martes", "hora": "09:00", "entrada": "09:00", "salida": "19:00"},
+                        {"dia": "2025-11-05", "dia_semana": "miercoles", "hora": "09:00", "entrada": "09:00", "salida": "18:00"},
+                        {"dia": "2025-11-06", "dia_semana": "jueves", "hora": "08:00", "entrada": "08:00", "salida": "17:00"}
+                    ]
+                }
+            },
+            "semana_2": {
+                "fecha_inicio": "2025-11-10",
+                "fecha_fin": "2025-11-15",
+                "asignaciones": {
+                    "natalia.arevalo": [
+                        {"dia": "2025-11-10", "dia_semana": "lunes", "hora": "08:30", "entrada": "08:30", "salida": "17:30"},
+                        {"dia": "2025-11-11", "dia_semana": "martes", "hora": "08:30", "entrada": "08:30", "salida": "17:30"},
+                        {"dia": "2025-11-12", "dia_semana": "miercoles", "hora": "08:30", "entrada": "08:30", "salida": "17:30"},
+                        {"dia": "2025-11-13", "dia_semana": "jueves", "hora": "08:30", "entrada": "08:30", "salida": "17:30"},
+                        {"dia": "2025-11-14", "dia_semana": "viernes", "hora": "08:30", "entrada": "08:30", "salida": "17:30"},
+                        {"dia": "2025-11-15", "dia_semana": "sabado", "hora": "06:30", "entrada": "06:30", "salida": "15:30"}
+                    ],
+                    "lesly.guzman": [
+                        {"dia": "2025-11-10", "dia_semana": "lunes", "hora": "06:30", "entrada": "06:30", "salida": "15:30"},
+                        {"dia": "2025-11-11", "dia_semana": "martes", "hora": "06:30", "entrada": "06:30", "salida": "15:30"},
+                        {"dia": "2025-11-12", "dia_semana": "miercoles", "hora": "06:30", "entrada": "06:30", "salida": "15:30"},
+                        {"dia": "2025-11-13", "dia_semana": "jueves", "hora": "06:30", "entrada": "06:30", "salida": "15:30"},
+                        {"dia": "2025-11-14", "dia_semana": "viernes", "hora": "06:30", "entrada": "06:30", "salida": "15:30"},
+                        {"dia": "2025-11-15", "dia_semana": "sabado", "hora": "08:00", "entrada": "11:00", "salida": "16:00"}
+                    ],
+                    "paola.garcia": [
+                        {"dia": "2025-11-10", "dia_semana": "lunes", "hora": "09:00", "entrada": "09:00", "salida": "18:00"},
+                        {"dia": "2025-11-11", "dia_semana": "martes", "hora": "09:00", "entrada": "09:00", "salida": "18:00"},
+                        {"dia": "2025-11-12", "dia_semana": "miercoles", "hora": "09:00", "entrada": "09:00", "salida": "18:00"},
+                        {"dia": "2025-11-13", "dia_semana": "jueves", "hora": "09:00", "entrada": "09:00", "salida": "18:00"},
+                        {"dia": "2025-11-14", "dia_semana": "viernes", "hora": "09:00", "entrada": "09:00", "salida": "18:00"},
+                        {"dia": "2025-11-15", "dia_semana": "sabado", "hora": "09:00", "entrada": "10:00", "salida": "12:00"}
+                    ],
+                    "dayana.gonzalez": [
+                        {"dia": "2025-11-10", "dia_semana": "lunes", "hora": "08:00", "entrada": "08:00", "salida": "17:00"},
+                        {"dia": "2025-11-11", "dia_semana": "martes", "hora": "08:00", "entrada": "08:00", "salida": "17:00"},
+                        {"dia": "2025-11-12", "dia_semana": "miercoles", "hora": "08:00", "entrada": "08:00", "salida": "17:00"},
+                        {"dia": "2025-11-13", "dia_semana": "jueves", "hora": "08:00", "entrada": "08:00", "salida": "17:00"},
+                        {"dia": "2025-11-14", "dia_semana": "viernes", "hora": "08:00", "entrada": "08:00", "salida": "17:00"}
+                    ]
+                }
+            }
+        }
     },
     "registros": {
-        "admin": {
-            "inicio": "2025-11-09T16:02:14.568415",
-            "salida": "2025-11-09T14:50:18.267080",
-            "horas_trabajadas": 0.0,
-            "horas_extras": 0,
-            "2025-11-09": {
-                "inicio": "2025-11-09T23:01:15.708958",
-                "salida": "2025-11-09T23:01:17.013039",
-                "horas_trabajadas": 0.0,
-                "horas_extras": 0
-            },
-            "2025-11-12": {
-                "inicio": "2025-11-12T21:52:29.926767",
-                "salida": "2025-11-12T21:52:33.531149",
-                "horas_trabajadas": 0.0,
-                "horas_extras": 0
-            },
-            "2025-11-13": {
-                "inicio": "2025-11-13T11:02:26.460801",
-                "salida": "2025-11-13T11:23:50.960823",
-                "horas_trabajadas": 0.36,
-                "horas_extras": 0
-            }
+        "natalia.arevalo": {
+            "2025-11-03": {"inicio": "2025-11-03T06:30:00", "salida": "2025-11-03T15:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-04": {"inicio": "2025-11-04T06:30:00", "salida": "2025-11-04T15:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-05": {"inicio": "2025-11-05T08:30:00", "salida": "2025-11-05T13:30:00", "horas_trabajadas": 5.0, "horas_extras": 0},
+            "2025-11-06": {"inicio": "2025-11-06T08:00:00", "salida": "2025-11-06T17:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-10": {"inicio": "2025-11-10T08:30:00", "salida": "2025-11-10T17:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-11": {"inicio": "2025-11-11T08:30:00", "salida": "2025-11-11T17:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-12": {"inicio": "2025-11-12T08:30:00", "salida": "2025-11-12T17:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-13": {"inicio": "2025-11-13T08:30:00", "salida": "2025-11-13T17:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-14": {"inicio": "2025-11-14T08:30:00", "salida": "2025-11-14T17:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-15": {"inicio": "2025-11-15T06:30:00", "salida": "2025-11-15T15:30:00", "horas_trabajadas": 9.0, "horas_extras": 5.0}
         },
-        "Luis.Molina": {
-            "inicio": "2025-11-09T18:19:15.296233",
-            "salida": "2025-11-09T18:20:15.616899",
-            "horas_trabajadas": 0.02,
-            "horas_extras": 0,
-            "2025-11-15": {
-                "inicio": "2025-11-15T23:58:06.749063",
-                "salida": null,
-                "horas_trabajadas": 0,
-                "horas_extras": 0
-            },
-            "2025-11-16": {
-                "inicio": "2025-11-16T00:02:58.781378",
-                "salida": "2025-11-16T02:38:22.630553",
-                "horas_trabajadas": 2.59,
-                "horas_extras": 0
-            }
+        "lesly.guzman": {
+            "2025-11-03": {"inicio": "2025-11-03T08:00:00", "salida": "2025-11-03T17:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-04": {"inicio": "2025-11-04T08:00:00", "salida": "2025-11-04T17:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-05": {"inicio": "2025-11-05T08:00:00", "salida": "2025-11-05T17:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-06": {"inicio": "2025-11-06T06:30:00", "salida": "2025-11-06T15:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-10": {"inicio": "2025-11-10T06:30:00", "salida": "2025-11-10T15:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-11": {"inicio": "2025-11-11T06:30:00", "salida": "2025-11-11T15:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-12": {"inicio": "2025-11-12T06:30:00", "salida": "2025-11-12T15:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-13": {"inicio": "2025-11-13T06:30:00", "salida": "2025-11-13T15:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-14": {"inicio": "2025-11-14T06:30:00", "salida": "2025-11-14T15:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-15": {"inicio": "2025-11-15T11:00:00", "salida": "2025-11-15T16:00:00", "horas_trabajadas": 5.0, "horas_extras": 1.0}
+        },
+        "paola.garcia": {
+            "2025-11-03": {"inicio": "2025-11-03T08:30:00", "salida": "2025-11-03T17:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-04": {"inicio": "2025-11-04T08:30:00", "salida": "2025-11-04T17:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-05": {"inicio": "2025-11-05T08:30:00", "salida": "2025-11-05T17:30:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-06": {"inicio": "2025-11-06T09:00:00", "salida": "2025-11-06T19:00:00", "horas_trabajadas": 10.0, "horas_extras": 2.0},
+            "2025-11-10": {"inicio": "2025-11-10T09:00:00", "salida": "2025-11-10T18:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-11": {"inicio": "2025-11-11T09:00:00", "salida": "2025-11-11T18:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-12": {"inicio": "2025-11-12T09:00:00", "salida": "2025-11-12T18:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-13": {"inicio": "2025-11-13T09:00:00", "salida": "2025-11-13T18:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-14": {"inicio": "2025-11-14T09:00:00", "salida": "2025-11-14T18:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-15": {"inicio": "2025-11-15T10:00:00", "salida": "2025-11-15T12:00:00", "horas_trabajadas": 2.0, "horas_extras": 0}
+        },
+        "dayana.gonzalez": {
+            "2025-11-03": {"inicio": "2025-11-03T09:00:00", "salida": "2025-11-03T19:00:00", "horas_trabajadas": 10.0, "horas_extras": 2.0},
+            "2025-11-04": {"inicio": "2025-11-04T09:00:00", "salida": "2025-11-04T19:00:00", "horas_trabajadas": 10.0, "horas_extras": 2.0},
+            "2025-11-05": {"inicio": "2025-11-05T09:00:00", "salida": "2025-11-05T18:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-06": {"inicio": "2025-11-06T08:00:00", "salida": "2025-11-06T17:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-10": {"inicio": "2025-11-10T08:00:00", "salida": "2025-11-10T17:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-11": {"inicio": "2025-11-11T08:00:00", "salida": "2025-11-11T17:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-12": {"inicio": "2025-11-12T08:00:00", "salida": "2025-11-12T17:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-13": {"inicio": "2025-11-13T08:00:00", "salida": "2025-11-13T17:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0},
+            "2025-11-14": {"inicio": "2025-11-14T08:00:00", "salida": "2025-11-14T17:00:00", "horas_trabajadas": 9.0, "horas_extras": 1.0}
         }
     }
 }

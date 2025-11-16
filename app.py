@@ -111,43 +111,60 @@ def login():
 
     return render_template('login.html')
 
-# Función para asignar turnos automáticamente basado en cédula
+# Función para asignar turnos automáticamente basado en cédula y rotación
 def asignar_turnos_automaticos(data, cedula, usuario):
+    """
+    Asigna turnos rotativos según el patrón de cada empleado.
+    Basado en historial desde Nov 3, 2025.
+    
+    Patrones de rotación:
+    - Natalia (1070963486): 6:30, 8:30 (rotación cada semana)
+    - Lesly (1067949514): 8:00, 6:30 (rotación cada semana)
+    - Paola (1140870406): 8:30, 9:00 (rotación cada semana)
+    - Dayana (1068416077): 9:00, 8:00, 6:30 (rotación cada 3 semanas)
+    """
     shift_assignments = {
         "1070963486": ["06:30", "08:30"],
         "1067949514": ["08:00", "06:30"],
         "1140870406": ["08:30", "09:00"],
-        "1068416077": ["09:00", "08:00"]
+        "1068416077": ["09:00", "08:00", "06:30"]
     }
 
     if cedula not in shift_assignments:
-        return  # No asignar si no está en la lista
+        return
 
-    shifts = shift_assignments[cedula]
-    current_month = data['turnos']['current_month']
-    monthly_assignments = data['turnos']['monthly_assignments']
-
-    # Marcar turnos usados la semana pasada (desde Nov 3, 2025)
-    fecha_inicio = datetime.datetime(2025, 11, 3)
+    # Calcular qué semana estamos desde Nov 3
+    fecha_base = datetime.datetime(2025, 11, 3)
     hoy = datetime.datetime.now()
+    semanas_transcurridas = ((hoy - fecha_base).days // 7) + 1
+    
+    # Obtener patrón de turnos para esta cédula
+    patron = shift_assignments[cedula]
+    
+    # Determinar qué turno le toca esta semana según rotación
+    # Semana 1 (Nov 3-8): primer turno del patrón
+    # Semana 2 (Nov 10-15): segundo turno del patrón
+    # Para Dayana con 3 turnos, rota cada 3 semanas
+    indice_turno = (semanas_transcurridas - 1) % len(patron)
+    turno_asignado = patron[indice_turno]
+    
+    # Asignar el turno de esta semana (de lunes a sábado)
     dias_semana = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-
-    # Asignar turnos empezando con 6:30 esta semana
-    assigned_count = 0
+    
     for dia in dias_semana:
-        if assigned_count >= 4:  # Máximo 4 turnos por mes
-            break
-        for hora in shifts:
-            if hora in data['turnos']['shifts'][dia] and data['turnos']['shifts'][dia][hora] is None:
-                # Verificar que no se repita en el mes
-                turno_key = f"{dia}_{hora}"
-                if turno_key not in monthly_assignments.get(usuario, []):
-                    data['turnos']['shifts'][dia][hora] = usuario
-                    if usuario not in monthly_assignments:
-                        monthly_assignments[usuario] = []
-                    monthly_assignments[usuario].append(turno_key)
-                    assigned_count += 1
-                    break
+        if turno_asignado in data['turnos']['shifts'][dia]:
+            if data['turnos']['shifts'][dia][turno_asignado] is None:
+                data['turnos']['shifts'][dia][turno_asignado] = usuario
+                
+                # Registrar en asignaciones mensuales
+                if 'monthly_assignments' not in data['turnos']:
+                    data['turnos']['monthly_assignments'] = {}
+                if usuario not in data['turnos']['monthly_assignments']:
+                    data['turnos']['monthly_assignments'][usuario] = []
+                
+                turno_key = f"{dia}_{turno_asignado}"
+                if turno_key not in data['turnos']['monthly_assignments'][usuario]:
+                    data['turnos']['monthly_assignments'][usuario].append(turno_key)
 
 # ✅ Registro
 @app.route('/register', methods=['GET', 'POST'])
