@@ -61,19 +61,19 @@
                 "09:00": null
             },
             "wednesday": {
-                "06:30": null,
+                "06:30": "dayana.gonzalez",
                 "08:00": null,
                 "08:30": null,
                 "09:00": null
             },
             "thursday": {
-                "06:30": null,
+                "06:30": "dayana.gonzalez",
                 "08:00": null,
                 "08:30": null,
                 "09:00": null
             },
             "friday": {
-                "06:30": null,
+                "06:30": "dayana.gonzalez",
                 "08:00": null,
                 "08:30": null,
                 "09:00": null
@@ -87,7 +87,10 @@
         },
         "monthly_assignments": {
             "dayana.gonzalez": [
-                "tuesday_06:30"
+                "tuesday_06:30",
+                "wednesday_06:30",
+                "thursday_06:30",
+                "friday_06:30"
             ]
         },
         "current_month": "2025-11",

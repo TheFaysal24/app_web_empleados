@@ -314,14 +314,14 @@
       {% endif %}
     </p>
 
-    {% if not admin %}
+    {% if not admin and session and session.get('usuario') %}
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-label">
           <i class="fas fa-calendar-week"></i> Turnos Esta Semana
         </div>
         <div class="stat-value">
-          {{ assigned_shifts.get(session['usuario'], [])|length }}
+          {{ assigned_shifts.get(session.get('usuario'), [])|length }}
         </div>
       </div>
 
@@ -330,7 +330,7 @@
           <i class="fas fa-clock"></i> Total Horas
         </div>
         <div class="stat-value">
-          {{ (assigned_shifts.get(session['usuario'], [])|length * 8) }}h
+          {{ (assigned_shifts.get(session.get('usuario'), [])|length * 8) }}h
         </div>
       </div>
 
@@ -339,7 +339,7 @@
           <i class="fas fa-user-circle"></i> Mi Estado
         </div>
         <div class="stat-value" style="font-size: 1.5em;">
-          {% if assigned_shifts.get(session['usuario'], [])|length > 0 %}
+          {% if assigned_shifts.get(session.get('usuario'), [])|length > 0 %}
           ✅ Activo
           {% else %}
           ⏳ Pendiente
@@ -374,22 +374,23 @@
         </thead>
         <tbody>
           {% for usuario, turnos_list in assigned_shifts.items() %}
+            {% if turnos_list %}
             {% for turno in turnos_list %}
             <tr>
               {% if admin %}
               <td>
                 <span class="badge badge-usuario">
                   <i class="fas fa-user-tie"></i>
-                  {{ turno.nombre }}
+                  {{ turno.get('nombre', usuario) }}
                 </span>
               </td>
               <td>
                 <span class="badge badge-cedula">
                   <i class="fas fa-id-card"></i>
-                  {{ turno.cedula }}
+                  {{ turno.get('cedula', 'N/A') }}
                 </span>
               </td>
-              <td>{{ turno.cargo }}</td>
+              <td>{{ turno.get('cargo', 'Gestor Operativo') }}</td>
               {% endif %}
               <td>
                 <span class="badge badge-dia">
@@ -412,6 +413,7 @@
               </td>
             </tr>
             {% endfor %}
+            {% endif %}
           {% endfor %}
         </tbody>
       </table>
