@@ -1,99 +1,217 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistema de Empleados</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%), 
-                        url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80') 
-                        no-repeat center center fixed;
-            background-size: cover;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-        }
-        h2 {
-            color: #1e3a8a;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .btn-primary {
-            background-color: #10b981;
-            color: white;
-            border-radius: 25px;
-        }
-        .btn-primary:hover {
-            background-color: #059669;
-        }
-        .btn-secondary {
-            background-color: #6b7280;
-            color: white;
-            border-radius: 25px;
-        }
-        .btn-secondary:hover {
-            background-color: #4b5563;
-        }
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        input:focus {
-            border-color: #10b981;
-            outline: none;
-            box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
-        }
-        .alert {
-            margin-top: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Iniciar Sesión</h2>
-        <p class="text-center text-muted">Ingresa tus credenciales para acceder a tu dashboard.</p>
+{% extends "base.html" %}
+{% block title %}Inicio - Sistema de Empleados{% endblock %}
+{% block content %}
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+  }
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ 'success' if category == 'message' else 'danger' }}">
-                {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+  body {
+    background: linear-gradient(-45deg, #1e3c72, #2a5298, #7e22ce, #581c87);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
 
-        <form method="POST" action="{{ url_for('login') }}">
-            <label for="usuario">Usuario:</label>
-            <input type="text" id="usuario" name="usuario" placeholder="Ingresa tu usuario" required>
-            <label for="contrasena">Contraseña:</label>
-            <input type="password" id="contrasena" name="contrasena" placeholder="Ingresa tu contraseña" required>
-            <button type="submit" class="btn btn-primary w-100 mt-3">
-                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-            </button>
-        </form>
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
 
-        <div class="text-center mt-3">
-            <a href="{{ url_for('register') }}" class="btn btn-secondary">
-                <i class="fas fa-user-plus"></i> Registrarse
-            </a>
-        </div>
+  .home-container {
+    text-align: center;
+    color: white;
+    max-width: 800px;
+    padding: 40px;
+    animation: fadeIn 1s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .logo {
+    font-size: 120px;
+    margin-bottom: 30px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  h1 {
+    font-size: 3.5em;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+  }
+
+  .subtitle {
+    font-size: 1.5em;
+    margin-bottom: 50px;
+    opacity: 0.95;
+    line-height: 1.6;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 18px 40px;
+    font-size: 1.2em;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-primary {
+    background: white;
+    color: #1e3c72;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(255, 255, 255, 0.4);
+  }
+
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid white;
+  }
+
+  .btn-secondary:hover {
+    background: white;
+    color: #1e3c72;
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(255, 255, 255, 0.4);
+  }
+
+  .features {
+    margin-top: 60px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+  }
+
+  .feature {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+
+  .feature:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+  }
+
+  .feature-icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+  }
+
+  .feature h3 {
+    font-size: 1.3em;
+    margin-bottom: 10px;
+  }
+
+  .feature p {
+    opacity: 0.9;
+    font-size: 1em;
+  }
+
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 2.5em;
+    }
+
+    .subtitle {
+      font-size: 1.2em;
+    }
+
+    .buttons {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+    }
+
+    .features {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="home-container">
+  <div class="logo">📊</div>
+  <h1>Sistema de Gestión de Empleados</h1>
+  <p class="subtitle">
+    Control profesional de asistencia, registro de horas y gestión de personal.<br>
+    Simple, seguro y eficiente.
+  </p>
+
+  <div class="buttons">
+    <a href="{{ url_for('login') }}" class="btn btn-primary">
+      <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+    </a>
+    <a href="{{ url_for('register') }}" class="btn btn-secondary">
+      <i class="fas fa-user-plus"></i> Crear Cuenta
+    </a>
+  </div>
+
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">⏰</div>
+      <h3>Control de Tiempo</h3>
+      <p>Marca entrada y salida fácilmente</p>
     </div>
-</body>
-</html>
+    <div class="feature">
+      <div class="feature-icon">📈</div>
+      <h3>Estadísticas</h3>
+      <p>Visualiza horas trabajadas y extras</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔒</div>
+      <h3>Seguro</h3>
+      <p>HTTPS y protección de datos</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📱</div>
+      <h3>Multiplataforma</h3>
+      <p>Accede desde cualquier dispositivo</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
