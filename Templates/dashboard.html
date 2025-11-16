@@ -51,33 +51,70 @@
   }
 
   .dropdown-toggle {
-    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 10px;
+    padding: 12px;
+    border-radius: 50%;
     cursor: pointer;
     font-weight: 600;
-    font-size: 0.9em;
+    font-size: 1.2em;
     display: flex;
     align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    justify-content: center;
+    gap: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    width: 48px;
+    height: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dropdown-toggle::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    transform: scale(0);
+    transition: transform 0.5s ease;
+  }
+
+  .dropdown-toggle:hover::before {
+    transform: scale(1);
   }
 
   .dropdown-toggle:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(107, 114, 128, 0.4);
+    transform: translateY(-3px) rotate(90deg);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
   }
 
-  .dropdown-toggle i:last-child {
-    font-size: 0.75em;
-    transition: transform 0.3s ease;
+  .dropdown-toggle .hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: all 0.3s ease;
   }
 
-  .dropdown:hover .dropdown-toggle i:last-child {
-    transform: rotate(180deg);
+  .dropdown-toggle .hamburger span {
+    width: 20px;
+    height: 3px;
+    background: white;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+
+  .dropdown:hover .dropdown-toggle .hamburger span:nth-child(1) {
+    transform: translateY(2px) rotate(45deg);
+  }
+
+  .dropdown:hover .dropdown-toggle .hamburger span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .dropdown:hover .dropdown-toggle .hamburger span:nth-child(3) {
+    transform: translateY(-9px) rotate(-45deg);
   }
 
   .dropdown-menu {
@@ -512,10 +549,18 @@
       </button>
     </form>
     
-    <!-- Menú Desplegable -->
+    <a href="{{ url_for('logout') }}" class="btn-action btn-logout">
+      <i class="fas fa-sign-out-alt"></i> Salir
+    </a>
+    
+    <!-- Menú Desplegable Elegante -->
     <div class="dropdown">
       <button class="dropdown-toggle">
-        <i class="fas fa-bars"></i> Menú <i class="fas fa-chevron-down"></i>
+        <div class="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
       </button>
       <div class="dropdown-menu">
         <div class="menu-section">Principal</div>
@@ -552,10 +597,6 @@
         {% endif %}
       </div>
     </div>
-    
-    <a href="{{ url_for('logout') }}" class="btn-action btn-logout">
-      <i class="fas fa-sign-out-alt"></i> Salir
-    </a>
   </div>
 </div>
 
@@ -677,6 +718,9 @@
           <th style="padding: 12px; text-align: center;">Jueves</th>
           <th style="padding: 12px; text-align: center;">Viernes</th>
           <th style="padding: 12px; text-align: center;">Sábado</th>
+          {% if admin %}
+          <th style="padding: 12px; text-align: center;">Acciones</th>
+          {% endif %}
         </tr>
       </thead>
       <tbody>
@@ -709,6 +753,14 @@
                 {% endif %}
               </td>
             {% endfor %}
+            
+            {% if admin %}
+            <td style="padding: 12px; text-align: center;">
+              <a href="{{ url_for('admin_asignar_turnos') }}" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.85em; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fas fa-edit"></i> Editar
+              </a>
+            </td>
+            {% endif %}
           </tr>
           {% endif %}
         {% endfor %}
@@ -723,63 +775,28 @@
   {% endif %}
 </div>
 
-<!-- Tabla de turnos asignados -->
+<!-- Acciones Rápidas Admin -->
+{% if admin %}
 <div class="table-card">
-  <h3 class="section-title">📅 Turnos Detallados por Día</h3>
-  {% set turnos_data = namespace(shifts={}) %}
-  {% if data and data.get('turnos') and data.get('turnos').get('monthly_assignments') %}
-  {% for usr, assignments in data['turnos']['monthly_assignments'].items() %}
-    {% if assignments and (admin or usr == session.get('usuario')) %}
-      {% for turno_key in assignments %}
-        {% if turno_key and '_' in turno_key %}
-        {% set dia, hora = turno_key.split('_') %}
-        {% if usr not in turnos_data.shifts %}
-          {% set _ = turnos_data.shifts.update({usr: []}) %}
-        {% endif %}
-        {% set _ = turnos_data.shifts[usr].append({'dia': dia, 'hora': hora}) %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-  {% endfor %}
-  {% endif %}
-  {% if turnos_data.shifts %}
-    <div style="overflow-x: auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Usuario</th>
-            <th>Día</th>
-            <th>Hora</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% if turnos_data.shifts %}
-          {% for usr, shifts_list in turnos_data.shifts.items() %}
-            {% if shifts_list %}
-            {% for shift in shifts_list %}
-              {% if shift %}
-              <tr>
-                <td><strong>{{ usr }}</strong></td>
-                <td>{{ shift.get('dia', '').title() if shift.get('dia') else 'N/A' }}</td>
-                <td>{{ shift.get('hora', 'N/A') }}</td>
-                <td><span class="badge badge-info">Asignado</span></td>
-              </tr>
-              {% endif %}
-            {% endfor %}
-            {% endif %}
-          {% endfor %}
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
-  {% else %}
-    <div class="no-data">
-      <i class="fas fa-calendar-times" style="font-size: 3em; opacity: 0.3;"></i>
-      <p>No hay turnos asignados en el mes actual.</p>
-    </div>
-  {% endif %}
+  <h3 class="section-title">
+    <i class="fas fa-bolt"></i> Acciones Rápidas de Administrador
+  </h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+    <a href="{{ url_for('admin_asignar_turnos') }}" style="background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 15px 20px; border-radius: 12px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(16, 185, 129, 0.3)'">
+      <i class="fas fa-user-cog"></i><br>Asignar Turnos
+    </a>
+    <a href="{{ url_for('admin_usuarios') }}" style="background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; padding: 15px 20px; border-radius: 12px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(59, 130, 246, 0.3)'">
+      <i class="fas fa-users"></i><br>Gestionar Usuarios
+    </a>
+    <a href="{{ url_for('admin_backups') }}" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; padding: 15px 20px; border-radius: 12px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(245, 158, 11, 0.3)'">
+      <i class="fas fa-database"></i><br>Backups
+    </a>
+    <a href="{{ url_for('exportar_registros') }}" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; padding: 15px 20px; border-radius: 12px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(139, 92, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(139, 92, 246, 0.3)'">
+      <i class="fas fa-file-download"></i><br>Exportar CSV
+    </a>
+  </div>
 </div>
+{% endif %}
 
 <!-- Gráficos debajo de la tabla -->
 <div class="grid-2">
