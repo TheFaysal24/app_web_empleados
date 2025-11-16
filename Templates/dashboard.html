@@ -806,10 +806,701 @@
   </div>
 
   <div class="chart-card">
-    <h4>👤 Inicios por Usuario (% y Cantidad)</h4>
+    <h4>👤 Inicios por Usuario</h4>
     <canvas id="graficoInicios" style="max-height: 300px;"></canvas>
   </div>
 </div>
+
+<!-- Segundo fila de gráficos -->
+<div class="grid-2">
+  <div class="chart-card">
+    <h4>💰 Costo Horas Extras por Usuario</h4>
+    <canvas id="graficoCostos" style="max-height: 300px;"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h4>📊 Distribución de Cargos</h4>
+    <canvas id="graficoCargos" style="max-height: 300px;"></canvas>
+  </div>
+</div>
+
+<!-- Variables de datos del servidor -->
+<script type="text/javascript">
+  var serverData = {
+    fechas: {{ fechas|default([])|tojson|safe }},
+    horas: {{ horas_fechas|default([])|tojson|safe }},
+    contadores: {{ contador_inicios|default({})|tojson|safe }},
+    costos: {{ costo_horas_extras|default({})|tojson|safe }},
+    usuarios: {{ data.get('usuarios', {})|tojson|safe }}
+  };
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    const chartDataLabels = {
+      id: 'chartDataLabels',
+      afterDatasetsDraw(chart) {
+        chart.data.datasets.forEach((datasetMeta, i) => {
+          const meta = chart.getDatasetMeta(i);
+          meta.data.forEach((bar, index) => {
+            const barData = bar.$context.parsed.y;
+            if (barData > 0) {
+              const ctx = chart.ctx;
+              ctx.fillStyle = 'rgba(0,0,0,0.7)';
+              ctx.font = 'bold 11px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillText(barData.toFixed(1), bar.x, bar.y - 5);
+            }
+          });
+        });
+      }
+    };
+
+    const ctx1 = document.getElementById('graficoHoras');
+    if (ctx1 && serverData.fechas && serverData.horas) {
+      new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: serverData.fechas,
+          datasets: [{
+            label: 'Horas trabajadas',
+            data: serverData.horas,
+            backgroundColor: [
+              '#667eea',
+              '#764ba2',
+              '#f093fb',
+              '#f5576c',
+              '#4facfe',
+              '#00f2fe',
+              '#fa709a'
+            ],
+            borderRadius: 6,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 }
+              },
+              grid: {
+                color: 'rgba(102, 126, 234, 0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 }
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        },
+        plugins: [chartDataLabels]
+      });
+    }
+
+    const ctx2 = document.getElementById('graficoInicios');
+    if (ctx2 && serverData.contadores && Object.keys(serverData.contadores).length > 0) {
+      const usuarios = Object.keys(serverData.contadores);
+      const inicios = Object.values(serverData.contadores);
+      const totalInicios = inicios.reduce((a, b) => a + b, 0);
+      const porcentajes = inicios.map(x => ((x / totalInicios) * 100).toFixed(1));
+
+      // Crear datos combinados para mostrar en el gráfico
+      const combinedData = usuarios.map((u, i) => ({
+        usuario: u,
+        inicios: inicios[i],
+        porcentaje: porcentajes[i]
+      }));
+
+      // Ordenar por cantidad de inicios descendente
+      combinedData.sort((a, b) => b.inicios - a.inicios);
+
+      // Tomar solo los top 5 para mejor visualización
+      const topData = combinedData.slice(0, 5);
+      const topUsuarios = topData.map(d => d.usuario);
+      const topInicios = topData.map(d => d.inicios);
+      const topPorcentajes = topData.map(d => d.porcentaje);
+
+      new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: topUsuarios.map((u, i) => u + '\n' + topInicios[i] + ' (' + topPorcentajes[i] + '%)'),
+          datasets: [{
+            label: 'Inicios por Usuario',
+            data: topInicios,
+            backgroundColor: [
+              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+              'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
+              'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+            ].slice(0, topUsuarios.length),
+            borderRadius: 8,
+            borderSkipped: false,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value = context.parsed.y;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((value / total) * 100).toFixed(1);
+                  return value + ' inicios (' + percentage + '%)';
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 },
+                stepSize: 1
+              },
+              grid: {
+                color: 'rgba(102, 126, 234, 0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 10 },
+                maxRotation: 0,
+                minRotation: 0
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        },
+        plugins: [chartDataLabels]
+      });
+    }
+
+    // Gráfico de costos de horas extras
+    const ctx3 = document.getElementById('graficoCostos');
+    if (ctx3 && serverData.costos && Object.keys(serverData.costos).length > 0) {
+      const usuariosCostos = Object.keys(serverData.costos);
+      const valoresCostos = Object.values(serverData.costos);
+
+      // Filtrar solo valores mayores a 0
+      const datosFiltrados = usuariosCostos.map((u, i) => ({
+        usuario: u,
+        costo: valoresCostos[i]
+      })).filter(d => d.costo > 0);
+
+      // Ordenar por costo descendente
+      datosFiltrados.sort((a, b) => b.costo - a.costo);
+
+      // Tomar top 5
+      const topCostos = datosFiltrados.slice(0, 5);
+
+      new Chart(ctx3, {
+        type: 'bar',
+        data: {
+          labels: topCostos.map(d => d.usuario),
+          datasets: [{
+            label: 'Costo Horas Extras ($)',
+            data: topCostos.map(d => d.costo),
+            backgroundColor: [
+              'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
+              'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+              'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
+              'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+            ].slice(0, topCostos.length),
+            borderRadius: 8,
+            borderSkipped: false,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return '$' + context.parsed.y.toLocaleString();
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 },
+                callback: function(value) {
+                  return '$' + value.toLocaleString();
+                }
+              },
+              grid: {
+                color: 'rgba(102, 126, 234, 0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 10 },
+                maxRotation: 0,
+                minRotation: 0
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        },
+        plugins: [chartDataLabels]
+      });
+    }
+
+    // Gráfico de distribución de cargos
+    const ctx4 = document.getElementById('graficoCargos');
+    if (ctx4 && serverData.usuarios && Object.keys(serverData.usuarios).length > 0) {
+      const cargosCount = {};
+      
+      Object.values(serverData.usuarios).forEach(user => {
+        const cargo = user.cargo || 'Sin definir';
+        cargosCount[cargo] = (cargosCount[cargo] || 0) + 1;
+      });
+
+      const cargos = Object.keys(cargosCount);
+      const cantidades = Object.values(cargosCount);
+
+      new Chart(ctx4, {
+        type: 'pie',
+        data: {
+          labels: cargos.map((c, i) => c + ' (' + cantidades[i] + ')'),
+          datasets: [{
+            data: cantidades,
+            backgroundColor: [
+              '#667eea',
+              '#764ba2',
+              '#f093fb',
+              '#f5576c',
+              '#4facfe',
+              '#00f2fe',
+              '#fa709a',
+              '#11998e',
+              '#38ef7d'
+            ],
+            borderColor: '#fff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { size: 10, weight: 'bold' },
+                color: '#667eea',
+                padding: 8
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value = context.parsed;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((value / total) * 100).toFixed(1);
+                  return value + ' empleados (' + percentage + '%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    
+  });
+</script>
+{% endblock %}
+=======
+  <div class="chart-card">
+    <h4>📈 Horas Trabajadas (Últimos 7 días)</h4>
+    <canvas id="graficoHoras" style="max-height: 300px;"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h4>👤 Inicios por Usuario</h4>
+    <canvas id="graficoInicios" style="max-height: 300px;"></canvas>
+  </div>
+</div>
+
+<!-- Segundo fila de gráficos -->
+<div class="grid-2">
+  <div class="chart-card">
+    <h4>💰 Costo Horas Extras por Usuario</h4>
+    <canvas id="graficoCostos" style="max-height: 300px;"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h4>📊 Distribución de Cargos</h4>
+    <canvas id="graficoCargos" style="max-height: 300px;"></canvas>
+  </div>
+</div>
+
+<!-- Variables de datos del servidor -->
+<script type="text/javascript">
+  var serverData = {
+    fechas: {{ fechas|default([])|tojson|safe }},
+    horas: {{ horas_fechas|default([])|tojson|safe }},
+    contadores: {{ contador_inicios|default({})|tojson|safe }},
+    costos: {{ costo_horas_extras|default({})|tojson|safe }},
+    usuarios: {{ data.get('usuarios', {})|tojson|safe }}
+  };
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+
+    const chartDataLabels = {
+      id: 'chartDataLabels',
+      afterDatasetsDraw(chart) {
+        chart.data.datasets.forEach((datasetMeta, i) => {
+          const meta = chart.getDatasetMeta(i);
+          meta.data.forEach((bar, index) => {
+            const barData = bar.$context.parsed.y;
+            if (barData > 0) {
+              const ctx = chart.ctx;
+              ctx.fillStyle = 'rgba(0,0,0,0.7)';
+              ctx.font = 'bold 11px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillText(barData.toFixed(1), bar.x, bar.y - 5);
+            }
+          });
+        });
+      }
+    };
+
+    const ctx1 = document.getElementById('graficoHoras');
+    if (ctx1 && serverData.fechas && serverData.horas) {
+      new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: serverData.fechas,
+          datasets: [{
+            label: 'Horas trabajadas',
+            data: serverData.horas,
+            backgroundColor: [
+              '#667eea',
+              '#764ba2',
+              '#f093fb',
+              '#f5576c',
+              '#4facfe',
+              '#00f2fe',
+              '#fa709a'
+            ],
+            borderRadius: 6,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 }
+              },
+              grid: {
+                color: 'rgba(102, 126, 234, 0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 }
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        },
+        plugins: [chartDataLabels]
+      });
+    }
+
+    const ctx2 = document.getElementById('graficoInicios');
+    if (ctx2 && serverData.contadores && Object.keys(serverData.contadores).length > 0) {
+      const usuarios = Object.keys(serverData.contadores);
+      const inicios = Object.values(serverData.contadores);
+      const totalInicios = inicios.reduce((a, b) => a + b, 0);
+      const porcentajes = inicios.map(x => ((x / totalInicios) * 100).toFixed(1));
+
+      // Crear datos combinados para mostrar en el gráfico
+      const combinedData = usuarios.map((u, i) => ({
+        usuario: u,
+        inicios: inicios[i],
+        porcentaje: porcentajes[i]
+      }));
+
+      // Ordenar por cantidad de inicios descendente
+      combinedData.sort((a, b) => b.inicios - a.inicios);
+
+      // Tomar solo los top 5 para mejor visualización
+      const topData = combinedData.slice(0, 5);
+      const topUsuarios = topData.map(d => d.usuario);
+      const topInicios = topData.map(d => d.inicios);
+      const topPorcentajes = topData.map(d => d.porcentaje);
+
+      new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: topUsuarios.map((u, i) => u + '\n' + topInicios[i] + ' (' + topPorcentajes[i] + '%)'),
+          datasets: [{
+            label: 'Inicios por Usuario',
+            data: topInicios,
+            backgroundColor: [
+              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+              'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
+              'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+            ].slice(0, topUsuarios.length),
+            borderRadius: 8,
+            borderSkipped: false,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value = context.parsed.y;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((value / total) * 100).toFixed(1);
+                  return value + ' inicios (' + percentage + '%)';
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 },
+                stepSize: 1
+              },
+              grid: {
+                color: 'rgba(102, 126, 234, 0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 10 },
+                maxRotation: 0,
+                minRotation: 0
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        },
+        plugins: [chartDataLabels]
+      });
+    }
+
+    // Gráfico de costos de horas extras
+    const ctx3 = document.getElementById('graficoCostos');
+    if (ctx3 && serverData.costos && Object.keys(serverData.costos).length > 0) {
+      const usuariosCostos = Object.keys(serverData.costos);
+      const valoresCostos = Object.values(serverData.costos);
+
+      // Filtrar solo valores mayores a 0
+      const datosFiltrados = usuariosCostos.map((u, i) => ({
+        usuario: u,
+        costo: valoresCostos[i]
+      })).filter(d => d.costo > 0);
+
+      // Ordenar por costo descendente
+      datosFiltrados.sort((a, b) => b.costo - a.costo);
+
+      // Tomar top 5
+      const topCostos = datosFiltrados.slice(0, 5);
+
+      new Chart(ctx3, {
+        type: 'bar',
+        data: {
+          labels: topCostos.map(d => d.usuario),
+          datasets: [{
+            label: 'Costo Horas Extras ($)',
+            data: topCostos.map(d => d.costo),
+            backgroundColor: [
+              'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
+              'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+              'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
+              'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+            ].slice(0, topCostos.length),
+            borderRadius: 8,
+            borderSkipped: false,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return '$' + context.parsed.y.toLocaleString();
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 },
+                callback: function(value) {
+                  return '$' + value.toLocaleString();
+                }
+              },
+              grid: {
+                color: 'rgba(102, 126, 234, 0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 10 },
+                maxRotation: 0,
+                minRotation: 0
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        },
+        plugins: [chartDataLabels]
+      });
+    }
+
+    // Gráfico de distribución de cargos
+    const ctx4 = document.getElementById('graficoCargos');
+    if (ctx4 && serverData.usuarios && Object.keys(serverData.usuarios).length > 0) {
+      const cargosCount = {};
+
+      Object.values(serverData.usuarios).forEach(user => {
+        const cargo = user.cargo || 'Sin definir';
+        cargosCount[cargo] = (cargosCount[cargo] || 0) + 1;
+      });
+
+      const cargos = Object.keys(cargosCount);
+      const cantidades = Object.values(cargosCount);
+
+      new Chart(ctx4, {
+        type: 'pie',
+        data: {
+          labels: cargos.map((c, i) => c + ' (' + cantidades[i] + ')'),
+          datasets: [{
+            data: cantidades,
+            backgroundColor: [
+              '#667eea',
+              '#764ba2',
+              '#f093fb',
+              '#f5576c',
+              '#4facfe',
+              '#00f2fe',
+              '#fa709a',
+              '#11998e',
+              '#38ef7d'
+            ],
+            borderColor: '#fff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { size: 10, weight: 'bold' },
+                color: '#667eea',
+                padding: 8
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value = context.parsed;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((value / total) * 100).toFixed(1);
+                  return value + ' empleados (' + percentage + '%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+  });
+</script>
+{% endblock %}
 
 <!-- Botones de exportación -->
 <div class="export-buttons">
@@ -917,51 +1608,85 @@
       const totalInicios = inicios.reduce((a, b) => a + b, 0);
       const porcentajes = inicios.map(x => ((x / totalInicios) * 100).toFixed(1));
 
+      // Crear datos combinados para mostrar en el gráfico
+      const combinedData = usuarios.map((u, i) => ({
+        usuario: u,
+        inicios: inicios[i],
+        porcentaje: porcentajes[i]
+      }));
+
+      // Ordenar por cantidad de inicios descendente
+      combinedData.sort((a, b) => b.inicios - a.inicios);
+
+      // Tomar solo los top 5 para mejor visualización
+      const topData = combinedData.slice(0, 5);
+      const topUsuarios = topData.map(d => d.usuario);
+      const topInicios = topData.map(d => d.inicios);
+      const topPorcentajes = topData.map(d => d.porcentaje);
+
       new Chart(ctx2, {
-        type: 'doughnut',
+        type: 'bar',
         data: {
-          labels: usuarios.map((u, i) => u + ' (' + inicios[i] + ' veces, ' + porcentajes[i] + '%)'),
+          labels: topUsuarios.map((u, i) => u + '\n' + topInicios[i] + ' (' + topPorcentajes[i] + '%)'),
           datasets: [{
-            data: inicios,
-          backgroundColor: [
-            '#667eea',
-            '#764ba2',
-            '#f093fb',
-            '#f5576c',
-            '#4facfe',
-            '#00f2fe',
-            '#fa709a',
-            '#11998e',
-            '#38ef7d'
-          ],
-          borderColor: '#fff',
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              font: { size: 10, weight: 'bold' },
-              color: '#667eea',
-              padding: 8
+            label: 'Inicios por Usuario',
+            data: topInicios,
+            backgroundColor: [
+              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+              'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
+              'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+            ].slice(0, topUsuarios.length),
+            borderRadius: 8,
+            borderSkipped: false,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value = context.parsed.y;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((value / total) * 100).toFixed(1);
+                  return value + ' inicios (' + percentage + '%)';
+                }
+              }
             }
           },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const value = context.parsed;
-                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                const percentage = ((value / total) * 100).toFixed(1);
-                return value + ' inicios (' + percentage + '%)';
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 11 },
+                stepSize: 1
+              },
+              grid: {
+                color: 'rgba(102, 126, 234, 0.1)'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#667eea',
+                font: { weight: 'bold', size: 10 },
+                maxRotation: 0,
+                minRotation: 0
+              },
+              grid: {
+                display: false
               }
             }
           }
-          }
-        }
+        },
+        plugins: [chartDataLabels]
       });
     }
     

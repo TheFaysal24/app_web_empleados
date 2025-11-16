@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import json
 import datetime
 import os
@@ -9,6 +10,26 @@ import shutil
 app = Flask(__name__, template_folder='Templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'clave_secreta_para_sesiones')
 
+# Configuración de Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Debes iniciar sesión para acceder a esta página.'
+login_manager.login_message_category = 'error'
+
+# Clase User para Flask-Login
+class User(UserMixin):
+    def __init__(self, username, user_data):
+        self.id = username
+        self.username = username
+        self.user_data = user_data
+
+    def is_admin(self):
+        return self.user_data.get('admin', False)
+
+    def get_role(self):
+        return self.user_data.get('role', 'user')
+
 # Función de backup manual (sin scheduler automático)
 def backup_automatico():
     """Crea backup manual del archivo de datos"""
@@ -16,12 +37,12 @@ def backup_automatico():
         fecha = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         if not os.path.exists('backups'):
             os.makedirs('backups')
-        
+
         if os.path.exists(DATA_FILE):
             backup_file = f'backups/empleados_data_backup_{fecha}.json'
             shutil.copy2(DATA_FILE, backup_file)
             print(f"✅ Backup creado: {backup_file}")
-            
+
             # Limpiar backups antiguos (mantener solo los últimos 10)
             archivos = sorted([f for f in os.listdir('backups') if f.endswith('.json')])
             if len(archivos) > 10:
@@ -33,6 +54,16 @@ def backup_automatico():
         return False
 
 DATA_FILE = 'empleados_data.json'
+
+# -------------------
+# Flask-Login user loader
+# -------------------
+@login_manager.user_loader
+def load_user(user_id):
+    data = cargar_datos()
+    if user_id in data['usuarios']:
+        return User(user_id, data['usuarios'][user_id])
+    return None
 
 # -------------------
 # Funciones de carga y guardado
@@ -86,7 +117,7 @@ def inject_datetime():
 def home():
     return render_template('home.html')
 
-# ✅ LOGIN unificado
+# ✅ LOGIN con Flask-Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -95,16 +126,20 @@ def login():
         data = cargar_datos()
 
         if usuario in data['usuarios']:
-            if data['usuarios'][usuario].get('bloqueado', False):
+            user_data = data['usuarios'][usuario]
+            if user_data.get('bloqueado', False):
                 flash('Tu cuenta está bloqueada. Contacta al administrador.', 'error')
                 return redirect(url_for('login'))
-            
-            if data['usuarios'][usuario]['contrasena'] == contrasena:
+
+            if user_data['contrasena'] == contrasena:
+                user = User(usuario, user_data)
+                login_user(user)
                 session['usuario'] = usuario
-                session['nombre'] = data['usuarios'][usuario]['nombre']
-                session['admin'] = data['usuarios'][usuario].get('admin', False)
+                session['nombre'] = user_data['nombre']
+                session['admin'] = user_data.get('admin', False)
                 flash(f'Bienvenido {session["nombre"]}', 'message')
-                return redirect(url_for('dashboard'))
+                next_page = request.args.get('next')
+                return redirect(next_page) if next_page else redirect(url_for('dashboard'))
         else:
             flash('Usuario o contraseña incorrectos', 'error')
             return redirect(url_for('login'))
@@ -219,15 +254,18 @@ def register():
             return redirect(url_for('register'))
     return render_template('register.html')
 
-# ✅ Logout
+# ✅ Logout con Flask-Login
 @app.route('/logout')
+@login_required
 def logout():
+    logout_user()
     session.clear()
     flash('Sesión cerrada', 'message')
     return redirect(url_for('home'))
 
 # ✅ Dashboard - Usuarios normales ven solo su info, admins ven todo
 @app.route('/dashboard')
+@login_required
 def dashboard():
      if 'usuario' not in session:
          flash('Debes iniciar sesión primero', 'error')
@@ -338,6 +376,7 @@ def dashboard():
 
 # ✅ Marcar inicio
 @app.route('/marcar_inicio', methods=['POST'])
+@login_required
 def marcar_inicio():
     if 'usuario' not in session:
         return redirect(url_for('login'))
@@ -367,6 +406,7 @@ def marcar_inicio():
 
 # ✅ Marcar salida
 @app.route('/marcar_salida', methods=['POST'])
+@login_required
 def marcar_salida():
     if 'usuario' not in session:
         return redirect(url_for('login'))

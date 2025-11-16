@@ -7,7 +7,8 @@
             "cedula": "N/A",
             "cargo": "COORDINADOR",
             "correo": "admin@empresa.com",
-            "telefono": ""
+            "telefono": "",
+            "role": "admin"
         },
         "natalia.arevalo": {
             "nombre": "Natalia Arevalo",
@@ -81,7 +82,7 @@
             "saturday": {
                 "06:30": null,
                 "08:00": null,
-                "08:30": "natalia.arevalo",
+                "08:30": null,
                 "09:00": null
             }
         },
@@ -92,9 +93,7 @@
                 "thursday_06:30",
                 "friday_06:30"
             ],
-            "natalia.arevalo": [
-                "saturday_08:30"
-            ]
+            "natalia.arevalo": []
         },
         "current_month": "2025-11",
         "historial_semanal": {
