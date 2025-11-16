@@ -293,7 +293,8 @@ def dashboard():
          total_usuarios_nuevos=total_usuarios_nuevos,
          costo_horas_extras=costo_horas_extras,
          costo_total_empresa=costo_total_empresa,
-         valor_hora_ordinaria=round(valor_hora_ordinaria, 2)
+         valor_hora_ordinaria=round(valor_hora_ordinaria, 2),
+         data=data
      )
 
 # ✅ Marcar inicio
