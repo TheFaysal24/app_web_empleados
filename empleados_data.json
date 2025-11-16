@@ -15,6 +15,16 @@
             "admin": false,
             "cargo": "Empleado",
             "correo": "@empresa.com"
+        },
+        "Luis.Molina": {
+            "nombre": "Luis Enrique Molina Gonzalez",
+            "cedula": "123456",
+            "cargo": "Coordinador Mintic",
+            "empresa": "INMEL",
+            "correo": "luis.molina@inmel.co",
+            "contrasena": "12345",
+            "admin": false,
+            "desbloquear": false
         }
     },
     "turnos": [
@@ -27,7 +37,43 @@
             "inicio": "2025-11-09T16:02:14.568415",
             "salida": "2025-11-09T14:50:18.267080",
             "horas_trabajadas": 0.0,
-            "horas_extras": 0
+            "horas_extras": 0,
+            "2025-11-09": {
+                "inicio": "2025-11-09T23:01:15.708958",
+                "salida": "2025-11-09T23:01:17.013039",
+                "horas_trabajadas": 0.0,
+                "horas_extras": 0
+            },
+            "2025-11-12": {
+                "inicio": "2025-11-12T21:52:29.926767",
+                "salida": "2025-11-12T21:52:33.531149",
+                "horas_trabajadas": 0.0,
+                "horas_extras": 0
+            },
+            "2025-11-13": {
+                "inicio": "2025-11-13T11:02:26.460801",
+                "salida": "2025-11-13T11:23:50.960823",
+                "horas_trabajadas": 0.36,
+                "horas_extras": 0
+            }
+        },
+        "Luis.Molina": {
+            "inicio": "2025-11-09T18:19:15.296233",
+            "salida": "2025-11-09T18:20:15.616899",
+            "horas_trabajadas": 0.02,
+            "horas_extras": 0,
+            "2025-11-15": {
+                "inicio": "2025-11-15T23:58:06.749063",
+                "salida": null,
+                "horas_trabajadas": 0,
+                "horas_extras": 0
+            },
+            "2025-11-16": {
+                "inicio": "2025-11-16T00:02:58.781378",
+                "salida": "2025-11-16T00:03:00.298760",
+                "horas_trabajadas": 0.0,
+                "horas_extras": 0
+            }
         }
     }
 }
