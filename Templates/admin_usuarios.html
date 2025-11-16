@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Usuarios - Admin{% endblock %}
+{% block content %}
+<style>
+  .admin-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+  }
+
+  .admin-header h2 {
+    margin: 0;
+    font-size: 2em;
+  }
+
+  .users-grid {
+    display: grid;
+    gap: 20px;
+  }
+
+  .user-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #667eea;
+    transition: all 0.3s ease;
+  }
+
+  .user-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  .user-info h3 {
+    margin: 0;
+    color: #667eea;
+    font-size: 1.5em;
+  }
+
+  .user-info p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 0.95em;
+  }
+
+  .user-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    margin-left: 10px;
+  }
+
+  .badge-admin {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+  }
+
+  .badge-user {
+    background: #e0e0e0;
+    color: #666;
+  }
+
+  .badge-blocked {
+    background: #ff6b6b;
+    color: white;
+  }
+
+  .user-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: white;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-warning {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+  }
+
+  .btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  }
+
+  .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
+  }
+
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(56, 239, 125, 0.4);
+  }
+
+  .user-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+  }
+
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #555;
+  }
+
+  .detail-item i {
+    color: #667eea;
+    font-size: 1.1em;
+  }
+
+  .registros-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+  }
+
+  .registros-section h4 {
+    color: #667eea;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .registro-item {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .registro-info {
+    flex: 1;
+  }
+
+  .registro-info p {
+    margin: 3px 0;
+    font-size: 0.9em;
+    color: #666;
+  }
+
+  .registro-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85em;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .back-link:hover {
+    color: #764ba2;
+    transform: translateX(-5px);
+  }
+</style>
+
+<a href="{{ url_for('dashboard') }}" class="back-link">
+  <i class="fas fa-arrow-left"></i> Volver al Dashboard
+</a>
+
+<div class="admin-header">
+  <h2><i class="fas fa-users-cog"></i> Gestión de Usuarios</h2>
+  <p style="margin: 10px 0 0 0; opacity: 0.95;">Administra usuarios, contraseñas y registros</p>
+</div>
+
+<div class="users-grid">
+  {% for usuario, datos in usuarios.items() %}
+  <div class="user-card">
+    <div class="user-header">
+      <div class="user-info">
+        <h3>
+          <i class="fas fa-user-circle"></i> {{ datos.nombre }}
+          {% if datos.get('admin') %}
+            <span class="user-badge badge-admin"><i class="fas fa-crown"></i> Admin</span>
+          {% else %}
+            <span class="user-badge badge-user"><i class="fas fa-user"></i> Usuario</span>
+          {% endif %}
+          {% if datos.get('bloqueado') %}
+            <span class="user-badge badge-blocked"><i class="fas fa-lock"></i> Bloqueado</span>
+          {% endif %}
+        </h3>
+        <p><strong>Usuario:</strong> {{ usuario }}</p>
+      </div>
+    </div>
+
+    <div class="user-details">
+      <div class="detail-item">
+        <i class="fas fa-id-card"></i>
+        <span><strong>Cédula:</strong> {{ datos.cedula or 'N/A' }}</span>
+      </div>
+      <div class="detail-item">
+        <i class="fas fa-briefcase"></i>
+        <span><strong>Cargo:</strong> {{ datos.cargo }}</span>
+      </div>
+      <div class="detail-item">
+        <i class="fas fa-envelope"></i>
+        <span><strong>Correo:</strong> {{ datos.correo }}</span>
+      </div>
+    </div>
+
+    <div class="user-actions">
+      <a href="{{ url_for('admin_cambiar_clave', usuario=usuario) }}" class="btn btn-primary">
+        <i class="fas fa-key"></i> Cambiar Contraseña
+      </a>
+      
+      {% if datos.get('bloqueado') %}
+        <form method="POST" action="{{ url_for('admin_desbloquear', usuario=usuario) }}" style="display: inline;">
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-unlock"></i> Desbloquear
+          </button>
+        </form>
+      {% else %}
+        <form method="POST" action="{{ url_for('admin_bloquear', usuario=usuario) }}" style="display: inline;">
+          <button type="submit" class="btn btn-warning">
+            <i class="fas fa-ban"></i> Bloquear
+          </button>
+        </form>
+      {% endif %}
+      
+      {% if not datos.get('admin') %}
+        <form method="POST" action="{{ url_for('admin_eliminar_usuario', usuario=usuario) }}" 
+              onsubmit="return confirm('¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.')" 
+              style="display: inline;">
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Eliminar Usuario
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    {% if usuario in registros and registros[usuario] %}
+    <div class="registros-section">
+      <h4><i class="fas fa-clock"></i> Registros Recientes (últimos 5)</h4>
+      {% set sorted_dates = registros[usuario].items() | sort(reverse=True) %}
+      {% for fecha, reg in sorted_dates[:5] %}
+        {% if reg.inicio is defined %}
+        <div class="registro-item">
+          <div class="registro-info">
+            <p><strong><i class="fas fa-calendar"></i> {{ fecha }}</strong></p>
+            <p>
+              <i class="fas fa-sign-in-alt" style="color: green;"></i> Inicio: {{ reg.inicio[:19] if reg.inicio else 'N/A' }}
+              &nbsp;&nbsp;|&nbsp;&nbsp;
+              <i class="fas fa-sign-out-alt" style="color: red;"></i> Salida: {{ reg.salida[:19] if reg.salida else 'No registrada' }}
+            </p>
+            <p>
+              <i class="fas fa-hourglass-half"></i> Horas: {{ reg.horas_trabajadas }}h
+              &nbsp;&nbsp;|&nbsp;&nbsp;
+              <i class="fas fa-plus-circle"></i> Extras: {{ reg.horas_extras }}h
+            </p>
+          </div>
+          <div class="registro-actions">
+            <a href="{{ url_for('admin_editar_registro', usuario=usuario, fecha=fecha) }}" class="btn btn-primary btn-sm">
+              <i class="fas fa-edit"></i> Editar
+            </a>
+            <form method="POST" action="{{ url_for('admin_eliminar_registro', usuario=usuario, fecha=fecha) }}" 
+                  onsubmit="return confirm('¿Eliminar este registro?')" style="display: inline;">
+              <button type="submit" class="btn btn-danger btn-sm">
+                <i class="fas fa-trash"></i> Borrar
+              </button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

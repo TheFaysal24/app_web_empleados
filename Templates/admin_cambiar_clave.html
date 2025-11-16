@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Cambiar Contraseña - Admin{% endblock %}
+{% block content %}
+<style>
+  .admin-container {
+    max-width: 600px;
+    margin: 50px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .admin-container h2 {
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 2em;
+  }
+
+  .user-info {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    border-left: 5px solid #667eea;
+  }
+
+  .user-info p {
+    margin: 8px 0;
+    color: #333;
+  }
+
+  .user-info strong {
+    color: #667eea;
+  }
+
+  .form-group {
+    margin-bottom: 25px;
+  }
+
+  .form-label {
+    display: block;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 1em;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1em;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-secondary {
+    background: #6c757d;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+  }
+</style>
+
+<div class="admin-container">
+  <h2><i class="fas fa-key"></i> Cambiar Contraseña</h2>
+  <p style="color: #666; margin-bottom: 30px;">Actualiza la contraseña del usuario</p>
+
+  <div class="user-info">
+    <p><strong><i class="fas fa-user"></i> Usuario:</strong> {{ usuario }}</p>
+    <p><strong><i class="fas fa-id-badge"></i> Nombre:</strong> {{ datos.nombre }}</p>
+    <p><strong><i class="fas fa-briefcase"></i> Cargo:</strong> {{ datos.cargo }}</p>
+  </div>
+
+  <form method="POST" action="{{ url_for('admin_cambiar_clave', usuario=usuario) }}">
+    <div class="form-group">
+      <label class="form-label" for="nueva_clave">
+        <i class="fas fa-lock"></i> Nueva Contraseña
+      </label>
+      <input 
+        type="password" 
+        id="nueva_clave" 
+        name="nueva_clave" 
+        class="form-control" 
+        placeholder="Ingresa la nueva contraseña"
+        required
+        minlength="4"
+      >
+    </div>
+
+    <div class="btn-group">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-check"></i> Actualizar Contraseña
+      </button>
+      <a href="{{ url_for('admin_usuarios') }}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

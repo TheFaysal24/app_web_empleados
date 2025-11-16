@@ -10,10 +10,10 @@
 <div class="container mt-5">
     <h2>Marcar Turno</h2>
     <div class="d-flex gap-2">
-        <form method="POST" action="{{ url_for('marcar_inicio') }}">
+        <form method="POST" action="{{ url_for('iniciar') }}">
             <button type="submit" class="btn btn-success">Iniciar Turno</button>
         </form>
-        <form method="POST" action="{{ url_for('marcar_salida') }}">
+        <form method="POST" action="{{ url_for('Finalizar') }}">
             <button type="submit" class="btn btn-danger">Finalizar Turno</button>
         </form>
     </div>
