@@ -148,7 +148,9 @@
     padding: 10px 20px;
     color: #374151;
     text-decoration: none;
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     transition: all 0.2s ease;
     border: none;
     background: none;
@@ -160,8 +162,19 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
+  .dropdown-item i {
+    width: 20px;
+    text-align: center;
+    color: #667eea;
+    font-size: 0.95em;
+  }
+
   .dropdown-item:hover {
     background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  .dropdown-item:hover i {
     color: #0369a1;
   }
 
@@ -242,13 +255,18 @@
   }
 
   .btn-logout {
-    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    background: #6b7280;
   }
 
   .btn-logout:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(107, 114, 128, 0.4);
+    background: #4b5563;
     color: white;
+  }
+
+  .btn-logout i {
+    margin-right: 6px;
   }
 
   .dashboard-header {
@@ -537,7 +555,7 @@
     {% endif %}
     
     <a href="{{ url_for('logout') }}" class="btn-action btn-logout">
-      <i class="fas fa-sign-out-alt"></i> Salir
+      <i class="fas fa-right-from-bracket"></i> Salir
     </a>
     
     <!-- Menú Desplegable Elegante -->
@@ -551,18 +569,36 @@
       </button>
       <div class="dropdown-menu">
         <div class="menu-section">PRINCIPAL</div>
-        <a href="{{ url_for('dashboard') }}" class="dropdown-item">Dashboard</a>
-        <a href="{{ url_for('modulo_turnos') }}" class="dropdown-item">Módulo de Turnos</a>
-        <a href="{{ url_for('ajustes') }}" class="dropdown-item">Ajustes</a>
-        <a href="{{ url_for('seleccionar_turno') }}" class="dropdown-item">Seleccionar Turno</a>
-        <a href="{{ url_for('ver_turnos_asignados') }}" class="dropdown-item">Ver Mis Turnos</a>
+        <a href="{{ url_for('dashboard') }}" class="dropdown-item">
+          <i class="fas fa-home"></i> Dashboard
+        </a>
+        <a href="{{ url_for('modulo_turnos') }}" class="dropdown-item">
+          <i class="fas fa-people-group"></i> Gestión de Turnos
+        </a>
+        <a href="{{ url_for('ajustes') }}" class="dropdown-item">
+          <i class="fas fa-cog"></i> Ajustes
+        </a>
+        <a href="{{ url_for('seleccionar_turno') }}" class="dropdown-item">
+          <i class="fas fa-calendar-clock"></i> Seleccionar Turno
+        </a>
+        <a href="{{ url_for('ver_turnos_asignados') }}" class="dropdown-item">
+          <i class="fas fa-calendar-check"></i> Ver Mis Turnos
+        </a>
 
         {% if admin %}
         <div class="menu-section" style="margin-top: 8px;">ADMINISTRACIÓN</div>
-        <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item">Asignar Turnos</a>
-        <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">Gestión de Usuarios</a>
-        <a href="{{ url_for('admin_backups') }}" class="dropdown-item">Backups</a>
-        <a href="{{ url_for('exportar_registros') }}" class="dropdown-item">Exportar a CSV</a>
+        <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item">
+          <i class="fas fa-user-cog"></i> Asignar Turnos
+        </a>
+        <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">
+          <i class="fas fa-users-cog"></i> Gestión de Usuarios
+        </a>
+        <a href="{{ url_for('admin_backups') }}" class="dropdown-item">
+          <i class="fas fa-database"></i> Backups
+        </a>
+        <a href="{{ url_for('exportar_registros') }}" class="dropdown-item">
+          <i class="fas fa-file-download"></i> Exportar a CSV
+        </a>
         {% endif %}
       </div>
     </div>
@@ -583,11 +619,11 @@
   <h3 class="section-title"><i class="fas fa-th-large"></i> Acceso Rápido a Módulos</h3>
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
     <a href="{{ url_for('modulo_turnos') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
-      <i class="fas fa-calendar-week" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
-      <div style="font-size: 0.9em;">Módulo de Turnos</div>
+      <i class="fas fa-people-group" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
+      <div style="font-size: 0.9em;">Gestión de Turnos</div>
     </a>
     <a href="{{ url_for('seleccionar_turno') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
-      <i class="fas fa-calendar-plus" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
+      <i class="fas fa-calendar-clock" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
       <div style="font-size: 0.9em;">Seleccionar Turno</div>
     </a>
     <a href="{{ url_for('ver_turnos_asignados') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
@@ -595,7 +631,7 @@
       <div style="font-size: 0.9em;">Mis Turnos</div>
     </a>
     <a href="{{ url_for('ajustes') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
-      <i class="fas fa-user-cog" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
+      <i class="fas fa-gear" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
       <div style="font-size: 0.9em;">Mi Perfil</div>
     </a>
   </div>
@@ -674,7 +710,7 @@
             <th>Hora Salida</th>
             <th>Horas Trabajadas</th>
             <th>Horas Extras</th>
-            <th>💰 Costo Extras</th>
+            {% if admin %}<th>💰 Costo Extras</th>{% endif %}
           </tr>
         </thead>
         <tbody>
@@ -690,9 +726,9 @@
                 <td>{{ last_reg[0] }}</td>
                 <td>{{ last_reg[1].get('inicio', '')[:16][11:] if last_reg[1].get('inicio') else '-' }}</td>
                 <td>{{ last_reg[1].get('salida', '')[:16][11:] if last_reg[1].get('salida') else '-' }}</td>
-                <td><span class="badge badge-success">{{ last_reg[1].get('horas_trabajadas', 0) }}h</span></td>
-                <td><span class="badge badge-warning">{{ last_reg[1].get('horas_extras', 0) }}h</span></td>
-                <td><span class="badge badge-cost">$ {{ "{:,.0f}".format(costo_horas_extras.get(usr, 0) if costo_horas_extras else 0) }}</span></td>
+                <td><span class="badge badge-success" style="background: #e8f5ff; color: #0ea5e9; font-weight: 700;">{{ last_reg[1].get('horas_trabajadas', 0) }}h</span></td>
+                <td><span class="badge badge-warning" style="background: #fff7ed; color: #f97316; font-weight: 700;">{{ last_reg[1].get('horas_extras', 0) }}h</span></td>
+                {% if admin %}<td><span class="badge badge-cost">$ {{ "{:,.0f}".format(costo_horas_extras.get(usr, 0) if costo_horas_extras else 0) }}</span></td>{% endif %}
               </tr>
               {% set row_count.count = row_count.count + 1 %}
             {% endif %}

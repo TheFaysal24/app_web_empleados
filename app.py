@@ -12,6 +12,7 @@ import io
 import shutil
 import logging
 from functools import wraps
+import uuid
 
 # Cargar variables de entorno
 load_dotenv()
@@ -44,6 +45,18 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Debes iniciar sesión para acceder a esta página.'
 login_manager.login_message_category = 'error'
+
+# Protección centralizada de rutas administrativas
+@app.before_request
+def _proteger_rutas_admin():
+    try:
+        endpoint = request.endpoint or ''
+        if endpoint and endpoint.startswith('admin_'):
+            if not current_user.is_authenticated or not getattr(current_user, 'user_data', {}).get('admin', False):
+                flash('Acceso denegado', 'error')
+                return redirect(url_for('home'))
+    except Exception:
+        pass
 
 # Clase User para Flask-Login
 class User(UserMixin):
@@ -110,6 +123,9 @@ def cargar_datos():
                 data['registros'] = {}
             if 'historial_turnos_mensual' not in data:
                 data['historial_turnos_mensual'] = {}
+            # Reset tokens storage
+            if 'reset_tokens' not in data:
+                data['reset_tokens'] = {}
             
             # Asegurar estructura de turnos
             if 'shifts' not in data['turnos']:
@@ -506,6 +522,11 @@ def dashboard():
      data = cargar_datos()
      admin = session.get('admin', False)
      
+     # Inicializar acumulados de horas extras para vistas de usuario
+     horas_extras_hoy = 0.0
+     horas_extras_semana = 0.0
+     horas_extras_mes = 0.0
+     
      if admin:
          registros = data['registros']
      else:
@@ -583,6 +604,38 @@ def dashboard():
          fechas_ordenadas = sorted(fechas_horas_filtradas.keys())[-7:]
          horas_fechas = [fechas_horas_filtradas.get(fecha, 0) for fecha in fechas_ordenadas]
          contador_inicios = {usuario_actual: contador_inicios.get(usuario_actual, 0)}
+
+         # Calcular totales de horas extras: diario, semanal y mensual
+         registros_usuario = data['registros'].get(usuario_actual, {})
+         try:
+             hoy_date = datetime.date.today()
+             # Diario
+             if hoy in registros_usuario and isinstance(registros_usuario[hoy], dict):
+                 horas_extras_hoy = float(registros_usuario[hoy].get('horas_extras', 0) or 0)
+             # Semanal (lunes a domingo)
+             inicio_semana = hoy_date - datetime.timedelta(days=hoy_date.weekday())
+             fin_semana = inicio_semana + datetime.timedelta(days=6)
+             for f, reg in registros_usuario.items():
+                 try:
+                     f_date = datetime.date.fromisoformat(f)
+                     if inicio_semana <= f_date <= fin_semana and isinstance(reg, dict):
+                         horas_extras_semana += float(reg.get('horas_extras', 0) or 0)
+                 except:
+                     pass
+             # Mensual
+             for f, reg in registros_usuario.items():
+                 try:
+                     f_date = datetime.date.fromisoformat(f)
+                     if f_date.year == hoy_date.year and f_date.month == hoy_date.month and isinstance(reg, dict):
+                         horas_extras_mes += float(reg.get('horas_extras', 0) or 0)
+                 except:
+                     pass
+             horas_extras_hoy = round(horas_extras_hoy, 2)
+             horas_extras_semana = round(horas_extras_semana, 2)
+             horas_extras_mes = round(horas_extras_mes, 2)
+         except Exception:
+             pass
+
          # 🔒 OCULTAR COSTOS PARA USUARIOS NORMALES
          costo_horas_extras = {}  # Vacío para usuarios normales
          costo_total_empresa = 0  # Oculto para usuarios normales
@@ -605,8 +658,11 @@ def dashboard():
          costo_total_empresa=costo_total_empresa or 0,
          valor_hora_ordinaria=round(valor_hora_ordinaria, 2) if valor_hora_ordinaria else 0,
          data=data or {'usuarios': {}, 'turnos': {'shifts': {}, 'monthly_assignments': {}}},
+         horas_extras_hoy=horas_extras_hoy,
+         horas_extras_semana=horas_extras_semana,
+         horas_extras_mes=horas_extras_mes,
          session=session
-     )
+         )
 
 # ✅ Marcar inicio
 @app.route('/marcar_inicio', methods=['POST'])
@@ -638,6 +694,27 @@ def marcar_inicio():
     flash('Hora de inicio registrada.', 'message')
     return redirect(url_for('dashboard'))
 
+def calcular_horas(inicio_iso, fin_iso):
+    """
+    Calcula horas netas (descontando 1h almuerzo) y horas extras (>8h netas).
+    Acepta ISO strings o datetime.
+    """
+    try:
+        if isinstance(inicio_iso, datetime.datetime):
+            inicio_dt = inicio_iso
+        else:
+            inicio_dt = datetime.datetime.fromisoformat(inicio_iso)
+        if isinstance(fin_iso, datetime.datetime):
+            fin_dt = fin_iso
+        else:
+            fin_dt = datetime.datetime.fromisoformat(fin_iso)
+        horas_totales = (fin_dt - inicio_dt).total_seconds() / 3600
+        horas_netas = max(0, horas_totales - 1)  # Descuento almuerzo
+        horas_extras = max(0, horas_netas - 8)
+        return round(horas_netas, 2), round(horas_extras, 2)
+    except Exception:
+        return 0.0, 0.0
+
 # ✅ Marcar salida
 @app.route('/marcar_salida', methods=['POST'])
 @login_required
@@ -651,23 +728,14 @@ def marcar_salida():
     ahora = datetime.datetime.now()
 
     if usuario in data['registros'] and hoy in data['registros'][usuario] and data['registros'][usuario][hoy]['inicio']:
-        inicio = datetime.datetime.fromisoformat(data['registros'][usuario][hoy]['inicio'])
-
-        # Calcular horas totales (con almuerzo incluido)
-        horas_totales_con_almuerzo = (ahora - inicio).total_seconds() / 3600
-
-        # Restar 1 hora de almuerzo para obtener horas netas trabajadas
-        horas_trabajadas_netas = max(0, horas_totales_con_almuerzo - 1)
-
-        # Calcular horas extras: después de 8 horas netas trabajadas
-        horas_extras = max(0, horas_trabajadas_netas - 8)
-
+        inicio_iso = data['registros'][usuario][hoy]['inicio']
+        horas_trabajadas_netas, horas_extras = calcular_horas(inicio_iso, ahora)
         data['registros'][usuario][hoy]['salida'] = ahora.isoformat()
-        data['registros'][usuario][hoy]['horas_trabajadas'] = round(horas_trabajadas_netas, 2)
-        data['registros'][usuario][hoy]['horas_extras'] = round(horas_extras, 2)
+        data['registros'][usuario][hoy]['horas_trabajadas'] = horas_trabajadas_netas
+        data['registros'][usuario][hoy]['horas_extras'] = horas_extras
         guardar_datos(data)
 
-        flash(f'Salida registrada. Horas trabajadas: {round(horas_trabajadas_netas,2)}h, Extras: {round(horas_extras,2)}h', 'message')
+        flash(f'Salida registrada. Horas trabajadas: {horas_trabajadas_netas}h, Extras: {horas_extras}h', 'message')
     else:
         flash('No hay registro de inicio.', 'error')
 
@@ -692,23 +760,14 @@ def marcar_asistencia():
     # Verificar si ya marcó entrada hoy
     if hoy in data['registros'][usuario] and data['registros'][usuario][hoy].get('inicio') and not data['registros'][usuario][hoy].get('salida'):
         # Ya marcó entrada, ahora marcar salida
-        inicio = datetime.datetime.fromisoformat(data['registros'][usuario][hoy]['inicio'])
-
-        # Calcular horas totales (con almuerzo incluido)
-        horas_totales_con_almuerzo = (ahora - inicio).total_seconds() / 3600
-
-        # Restar 1 hora de almuerzo para obtener horas netas trabajadas
-        horas_trabajadas_netas = max(0, horas_totales_con_almuerzo - 1)
-
-        # Calcular horas extras: después de 8 horas netas trabajadas
-        horas_extras = max(0, horas_trabajadas_netas - 8)
-
+        inicio_iso = data['registros'][usuario][hoy]['inicio']
+        horas_trabajadas_netas, horas_extras = calcular_horas(inicio_iso, ahora)
         data['registros'][usuario][hoy]['salida'] = ahora.isoformat()
-        data['registros'][usuario][hoy]['horas_trabajadas'] = round(horas_trabajadas_netas, 2)
-        data['registros'][usuario][hoy]['horas_extras'] = round(horas_extras, 2)
+        data['registros'][usuario][hoy]['horas_trabajadas'] = horas_trabajadas_netas
+        data['registros'][usuario][hoy]['horas_extras'] = horas_extras
         guardar_datos(data)
 
-        flash(f'✅ Salida registrada. Horas trabajadas: {round(horas_trabajadas_netas,2)}h, Extras: {round(horas_extras,2)}h', 'message')
+        flash(f'✅ Salida registrada. Horas trabajadas: {horas_trabajadas_netas}h, Extras: {horas_extras}h', 'message')
     else:
         # No ha marcado entrada hoy, marcar entrada
         if hoy in data['registros'][usuario] and data['registros'][usuario][hoy].get('inicio'):
@@ -903,36 +962,42 @@ def cambiar_contrasena():
 @app.route('/recuperar_contrasena', methods=['GET', 'POST'])
 def recuperar_contrasena():
     if request.method == 'POST':
-        correo = request.form.get('correo')
+        correo = request.form.get('correo', '').strip()
         data = cargar_datos()
-        for usr, info in data['usuarios'].items():
+        for usr, info in data.get('usuarios', {}).items():
             if info.get('correo') == correo:
-                # Generar nueva contraseña aleatoria
-                import random
-                import string
-                nueva_contrasena = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-                data['usuarios'][usr]['contrasena'] = nueva_contrasena
+                # Generar token temporal con expiración (60 minutos)
+                token = uuid.uuid4().hex
+                expira = (datetime.datetime.now() + datetime.timedelta(minutes=60)).isoformat()
+                if 'reset_tokens' not in data:
+                    data['reset_tokens'] = {}
+                data['reset_tokens'][token] = {
+                    'usuario': usr,
+                    'expira': expira
+                }
                 guardar_datos(data)
 
-                # Enviar notificación por email (mailto)
+                # Construir enlace de restablecimiento absoluto
+                base_url = request.url_root.rstrip('/')
+                reset_url = f"{base_url}{url_for('reset_password')}?token={token}"
+
+                # Preparar mailto con el enlace
                 import urllib.parse
-                asunto = urllib.parse.quote("Recuperación de Contraseña - Sistema Empleados")
-                cuerpo = urllib.parse.quote(f"Hola {info.get('nombre', usr)},\n\nTu nueva contraseña es: {nueva_contrasena}\n\nPor favor, cámbiala después de iniciar sesión.\n\nSaludos,\nSistema de Empleados")
+                asunto = urllib.parse.quote("Restablecimiento de Contraseña - Sistema Empleados")
+                cuerpo = urllib.parse.quote(
+                    f"Hola {info.get('nombre', usr)},\n\n"
+                    f"Hemos recibido tu solicitud para restablecer la contraseña.\n"
+                    f"Por favor, haz clic en el siguiente enlace (válido por 60 minutos):\n{reset_url}\n\n"
+                    f"Si no solicitaste este cambio, ignora este mensaje.\n\n"
+                    f"Saludos,\nSistema de Empleados"
+                )
                 mailto_link = f"mailto:{correo}?subject={asunto}&body={cuerpo}"
 
-                # Generar enlace de WhatsApp si hay número
-                whatsapp_link = ""
-                telefono = info.get('telefono', info.get('whatsapp', ''))
-                if telefono:
-                    telefono = telefono.replace('+', '').replace('-', '').replace(' ', '')
-                    whatsapp_msg = urllib.parse.quote(f"🔐 *Recuperación de Contraseña*\n\nHola {info.get('nombre', usr)},\n\nTu nueva contraseña es: *{nueva_contrasena}*\n\nPor favor, cámbiala después de iniciar sesión.\n\n_Sistema de Empleados_")
-                    whatsapp_link = f"https://wa.me/{telefono}?text={whatsapp_msg}"
-
-                mensaje = f'✅ Nueva contraseña generada: {nueva_contrasena}<br><a href="{mailto_link}" target="_blank" style="color:#fff;text-decoration:underline;">📧 Enviar por Email</a>'
-                if whatsapp_link:
-                    mensaje += f' | <a href="{whatsapp_link}" target="_blank" style="color:#fff;text-decoration:underline;">📱 Enviar por WhatsApp</a>'
-                
-                flash(mensaje, 'message')
+                flash(
+                    f'✅ Hemos generado un enlace de restablecimiento. '
+                    f'<a href="{mailto_link}" target="_blank" style="color:#fff;text-decoration:underline;">📧 Enviar al correo</a>',
+                    'message'
+                )
                 return redirect(url_for('login'))
         flash('Correo no encontrado', 'error')
         return redirect(url_for('recuperar_contrasena'))
@@ -965,7 +1030,7 @@ def admin_cambiar_clave():
          nueva_clave = request.form.get('nueva_clave')
          
          if usuario in data['usuarios'] and nueva_clave:
-             data['usuarios'][usuario]['contrasena'] = nueva_clave
+             data['usuarios'][usuario]['contrasena'] = generate_password_hash(nueva_clave)
              guardar_datos(data)
              flash(f'Contraseña actualizada para {usuario}', 'message')
          else:
@@ -1060,13 +1125,10 @@ def admin_editar_registro():
              data['registros'][usuario][fecha]['salida'] = salida
              
              if inicio and salida:
-                 inicio_dt = datetime.datetime.fromisoformat(inicio)
-                 salida_dt = datetime.datetime.fromisoformat(salida)
-                 horas_trabajadas = (salida_dt - inicio_dt).total_seconds() / 3600
-                 horas_extras = max(0, horas_trabajadas - 8 if inicio_dt.weekday() < 5 else horas_trabajadas - 4)
+                 horas_trabajadas, horas_extras = calcular_horas(inicio, salida)
                  
-                 data['registros'][usuario][fecha]['horas_trabajadas'] = round(horas_trabajadas, 2)
-                 data['registros'][usuario][fecha]['horas_extras'] = round(horas_extras, 2)
+                 data['registros'][usuario][fecha]['horas_trabajadas'] = horas_trabajadas
+                 data['registros'][usuario][fecha]['horas_extras'] = horas_extras
              
              guardar_datos(data)
              flash('Registro actualizado correctamente', 'message')
@@ -1456,7 +1518,7 @@ def admin_actualizar_usuario_completo():
         # Cambiar contraseña si se proporcionó
         nueva_contrasena = request.form.get('contrasena')
         if nueva_contrasena:
-            data['usuarios'][usuario]['contrasena'] = nueva_contrasena
+            data['usuarios'][usuario]['contrasena'] = generate_password_hash(nueva_contrasena)
         
         guardar_datos(data)
         flash('✅ Usuario actualizado completamente', 'message')
@@ -1482,14 +1544,10 @@ def admin_actualizar_registro():
             
             # Recalcular horas
             if inicio and salida:
-                inicio_dt = datetime.datetime.fromisoformat(inicio)
-                salida_dt = datetime.datetime.fromisoformat(salida)
-                horas_totales = (salida_dt - inicio_dt).total_seconds() / 3600
-                horas_netas = max(0, horas_totales - 1)
-                horas_extras = max(0, horas_netas - 8)
+                horas_netas, horas_extras = calcular_horas(inicio, salida)
                 
-                data['registros'][usuario][fecha]['horas_trabajadas'] = round(horas_netas, 2)
-                data['registros'][usuario][fecha]['horas_extras'] = round(horas_extras, 2)
+                data['registros'][usuario][fecha]['horas_trabajadas'] = horas_netas
+                data['registros'][usuario][fecha]['horas_extras'] = horas_extras
             
             guardar_datos(data)
             return jsonify({'success': True})
@@ -1724,6 +1782,56 @@ def obtener_usuarios_con_turnos(data):
     return usuarios_info
 
 # ✅ NUEVO: Módulo de Turnos Mensual Mejorado
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    token = request.values.get('token', '').strip()
+    data = cargar_datos()
+
+    # Validar token
+    info_token = data.get('reset_tokens', {}).get(token)
+    if not token or not info_token:
+        flash('Token inválido o expirado', 'error')
+        return redirect(url_for('recuperar_contrasena'))
+
+    # Comprobar expiración
+    try:
+        expira_dt = datetime.datetime.fromisoformat(info_token.get('expira'))
+        if datetime.datetime.now() > expira_dt:
+            # Borrar token expirado
+            del data['reset_tokens'][token]
+            guardar_datos(data)
+            flash('El token ha expirado. Solicita uno nuevo.', 'error')
+            return redirect(url_for('recuperar_contrasena'))
+    except Exception:
+        flash('Token inválido', 'error')
+        return redirect(url_for('recuperar_contrasena'))
+
+    if request.method == 'POST':
+        nueva = request.form.get('nueva', '')
+        confirmar = request.form.get('confirmar', '')
+        if len(nueva) < 6:
+            flash('La nueva contraseña debe tener al menos 6 caracteres', 'error')
+            return redirect(url_for('reset_password', token=token))
+        if nueva != confirmar:
+            flash('Las contraseñas no coinciden', 'error')
+            return redirect(url_for('reset_password', token=token))
+
+        usuario = info_token.get('usuario')
+        if usuario in data.get('usuarios', {}):
+            data['usuarios'][usuario]['contrasena'] = generate_password_hash(nueva)
+            # Invalidar token
+            if token in data.get('reset_tokens', {}):
+                del data['reset_tokens'][token]
+            guardar_datos(data)
+            flash('✅ Contraseña restablecida correctamente. Ya puedes iniciar sesión.', 'message')
+            return redirect(url_for('login'))
+        else:
+            flash('Usuario no encontrado para el token', 'error')
+            return redirect(url_for('recuperar_contrasena'))
+
+    # GET: mostrar formulario
+    return render_template('reset_password.html', token=token)
+
 @app.route('/turnos_mensual')
 @login_required
 def turnos_mensual():
@@ -1846,4 +1954,4 @@ if __name__ == '__main__':
     if app.secret_key.startswith('CHANGE_THIS'):
         logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
     
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
