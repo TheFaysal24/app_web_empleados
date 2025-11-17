@@ -1,14 +1,13 @@
 {
     "usuarios": {
         "admin": {
-            "contrasena": "pbkdf2:sha256:600000$8a0AZbIelFRnUzl6$29701dc45dd62b608f1307cfe790395d3c554d32f00394c6e968573805719202",
+            "contrasena": "pbkdf2:sha256:600000$VqknqryiraNhyIpQ$427d4457b0427e3535cb91dfb99076ca44d3f95b29334ddddf73664978318532",
             "admin": true,
-            "nombre": "Luis",
-            "cedula": "N/A",
-            "cargo": "Admin",
-            "correo": "lemolina0323@gmail.com",
-            "telefono": "3234679281",
-            "role": "admin"
+            "nombre": "Administrador",
+            "cedula": "ADMIN-001",
+            "cargo": "COORDINADOR",
+            "correo": "admin@empresa.com",
+            "telefono": ""
         },
         "natalia.arevalo": {
             "nombre": "Natalia Arevalo",
@@ -453,5 +452,6 @@
             "timestamp_creacion": "2025-11-16T22:37:32.565768"
         }
     },
-    "ultima_actualizacion": "2025-11-17T10:17:59.873595"
+    "ultima_actualizacion": "2025-11-17T10:29:54.944110",
+    "reset_tokens": {}
 }
