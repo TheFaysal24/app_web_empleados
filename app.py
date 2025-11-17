@@ -552,11 +552,11 @@ def dashboard():
                  fechas_horas_filtradas[fecha] = reg.get('horas_trabajadas', 0)
          fechas_ordenadas = sorted(fechas_horas_filtradas.keys())[-7:]
          horas_fechas = [fechas_horas_filtradas.get(fecha, 0) for fecha in fechas_ordenadas]
-    contador_inicios = {usuario_actual: contador_inicios.get(usuario_actual, 0)}
-    # 🔒 OCULTAR COSTOS PARA USUARIOS NORMALES
-    costo_horas_extras = {}  # Vacío para usuarios normales
-        costo_total_empresa = 0  # Oculto para usuarios normales
-        valor_hora_ordinaria = 0  # Oculto para usuarios normales
+         contador_inicios = {usuario_actual: contador_inicios.get(usuario_actual, 0)}
+         # 🔒 OCULTAR COSTOS PARA USUARIOS NORMALES
+         costo_horas_extras = {}  # Vacío para usuarios normales
+         costo_total_empresa = 0  # Oculto para usuarios normales
+         valor_hora_ordinaria = 0  # Oculto para usuarios normales
          total_usuarios_nuevos = 1  # Solo mostrar 1 para el usuario actual
 
      # Asegurar que todos los valores sean válidos (nunca None)
