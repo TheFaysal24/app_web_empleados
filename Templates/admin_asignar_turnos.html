@@ -255,9 +255,12 @@
       {% if dia in shifts %}
         {% for hora, usuario_actual in shifts[dia].items() %}
         <div class="turno-row">
-          <div class="turno-hora">{{ hora }}</div>
+          <div class="turno-hora">
+            <i class="fas fa-clock"></i>
+            {{ hora }}
+          </div>
           
-          <form method="POST" action="{{ url_for('admin_asignar_turno_manual') }}" style="display: contents;">
+          <form method="POST" action="{{ url_for('admin_asignar_turno_manual') }}" style="flex: 1;">
             <input type="hidden" name="dia" value="{{ dia }}">
             <input type="hidden" name="hora" value="{{ hora }}">
             
@@ -272,13 +275,15 @@
           </form>
           
           {% if usuario_actual %}
-          <form method="POST" action="{{ url_for('admin_limpiar_turno') }}" style="display: inline;">
+          <form method="POST" action="{{ url_for('admin_limpiar_turno') }}">
             <input type="hidden" name="dia" value="{{ dia }}">
             <input type="hidden" name="hora" value="{{ hora }}">
-            <button type="submit" class="btn-limpiar">
-              <i class="fas fa-times"></i>
+            <button type="submit" class="btn-limpiar" title="Liberar turno">
+              <i class="fas fa-times-circle"></i>
             </button>
           </form>
+          {% else %}
+          <div style="width: 45px;"></div>
           {% endif %}
         </div>
         {% endfor %}
