@@ -121,15 +121,16 @@
     top: 115%;
     right: 0;
     background: white;
-    border-radius: 15px;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.25);
-    min-width: 260px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    min-width: 240px;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-15px);
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
     z-index: 1000;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    padding: 8px 0;
   }
 
   .dropdown:hover .dropdown-menu {
@@ -144,49 +145,34 @@
   }
 
   .dropdown-item {
-    padding: 14px 22px;
-    color: #333;
+    padding: 10px 20px;
+    color: #374151;
     text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: all 0.25s ease;
+    display: block;
+    transition: all 0.2s ease;
     border: none;
     background: none;
     width: 100%;
     text-align: left;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 500;
     font-size: 0.95em;
-  }
-
-  .dropdown-item:first-child {
-    border-radius: 15px 15px 0 0;
-  }
-
-  .dropdown-item:last-child {
-    border-radius: 0 0 15px 15px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
   .dropdown-item:hover {
-    background: linear-gradient(90deg, #f0f9ff, #e0f2fe);
-    padding-left: 28px;
-    color: #1e40af;
-  }
-
-  .dropdown-item i {
-    width: 24px;
-    text-align: center;
-    font-size: 1.1em;
+    background: #e0f2fe;
+    color: #0369a1;
   }
 
   .menu-section {
-    padding: 8px 22px;
+    padding: 12px 20px 6px 20px;
     color: #9ca3af;
-    font-size: 0.75em;
-    font-weight: 700;
+    font-size: 0.7em;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
   .btn-action {
@@ -564,37 +550,19 @@
         </div>
       </button>
       <div class="dropdown-menu">
-        <div class="menu-section">Principal</div>
-        <a href="{{ url_for('dashboard') }}" class="dropdown-item">
-          <i class="fas fa-home"></i> Dashboard
-        </a>
-        <a href="{{ url_for('modulo_turnos') }}" class="dropdown-item">
-          <i class="fas fa-calendar-week"></i> Módulo de Turnos
-        </a>
-        <a href="{{ url_for('ajustes') }}" class="dropdown-item">
-          <i class="fas fa-user-cog"></i> Ajustes
-        </a>
-        <a href="{{ url_for('seleccionar_turno') }}" class="dropdown-item">
-          <i class="fas fa-calendar-plus"></i> Seleccionar Turno
-        </a>
-        <a href="{{ url_for('ver_turnos_asignados') }}" class="dropdown-item">
-          <i class="fas fa-calendar-check"></i> Ver Mis Turnos
-        </a>
+        <div class="menu-section">PRINCIPAL</div>
+        <a href="{{ url_for('dashboard') }}" class="dropdown-item">Dashboard</a>
+        <a href="{{ url_for('modulo_turnos') }}" class="dropdown-item">Módulo de Turnos</a>
+        <a href="{{ url_for('ajustes') }}" class="dropdown-item">Ajustes</a>
+        <a href="{{ url_for('seleccionar_turno') }}" class="dropdown-item">Seleccionar Turno</a>
+        <a href="{{ url_for('ver_turnos_asignados') }}" class="dropdown-item">Ver Mis Turnos</a>
 
         {% if admin %}
-        <div class="menu-section" style="margin-top: 10px;">Administración</div>
-        <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item">
-          <i class="fas fa-calendar-week"></i> Asignar Turnos
-        </a>
-        <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">
-          <i class="fas fa-users-cog"></i> Gestión de Usuarios
-        </a>
-        <a href="{{ url_for('admin_backups') }}" class="dropdown-item">
-          <i class="fas fa-database"></i> Backups
-        </a>
-        <a href="{{ url_for('exportar_registros') }}" class="dropdown-item">
-          <i class="fas fa-file-download"></i> Exportar a CSV
-        </a>
+        <div class="menu-section" style="margin-top: 8px;">ADMINISTRACIÓN</div>
+        <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item">Asignar Turnos</a>
+        <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">Gestión de Usuarios</a>
+        <a href="{{ url_for('admin_backups') }}" class="dropdown-item">Backups</a>
+        <a href="{{ url_for('exportar_registros') }}" class="dropdown-item">Exportar a CSV</a>
         {% endif %}
       </div>
     </div>
