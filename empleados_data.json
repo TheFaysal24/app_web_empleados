@@ -1,7 +1,7 @@
 {
     "usuarios": {
         "admin": {
-            "contrasena": "pbkdf2:sha256:600000$VqknqryiraNhyIpQ$427d4457b0427e3535cb91dfb99076ca44d3f95b29334ddddf73664978318532",
+            "contrasena": "1234",
             "admin": true,
             "nombre": "Administrador",
             "cedula": "ADMIN-001",
@@ -15,7 +15,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "natalia.arevalo@empresa.com",
             "telefono": "",
-            "contrasena": "pbkdf2:sha256:600000$0lE6Xoe3P2EWQBGv$329fdfffc1dd79dd1de165487de0c715635086d49e444fbbdc60effe3b6a08dd",
+            "contrasena": "1234",
             "admin": false
         },
         "lesly.guzman": {
@@ -33,7 +33,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "paola.garcia@empresa.com",
             "telefono": "",
-            "contrasena": "pbkdf2:sha256:600000$eplkCkhJOUToxcVf$6ad4a9ca96357fd02aa5ad05ec365f2f60e7afcf42f47992c7f73dc411871165",
+            "contrasena": "1234",
             "admin": false
         },
         "dayana.gonzalez": {
@@ -42,7 +42,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "dayana.gonzalez@empresa.com",
             "telefono": "",
-            "contrasena": "pbkdf2:sha256:600000$ZEvNKnFv5w0qPxei$72d7ac6cf3b6b75a79d3f63a2a5493a5279233d0b81e4087aaf9248e7bc11b02",
+            "contrasena": "1234",
             "admin": false
         }
     },

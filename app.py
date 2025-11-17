@@ -1228,18 +1228,10 @@ def seleccionar_turno():
         flash('✅ Turno seleccionado exitosamente', 'message')
         return redirect(url_for('ver_turnos_asignados'))
 
-    # Obtener patrones de turnos por cédula
-    patron_turnos_cedula = {
-        "1070963486": ["06:30", "08:30"],
-        "1067949514": ["08:00", "06:30"],
-        "1140870406": ["08:30", "09:00"],
-        "1068416077": ["09:00", "08:00", "06:30"]
-    }
+    # TODOS los turnos disponibles para TODOS los gestores
+    turnos_permitidos = ["06:30", "08:00", "08:30", "09:00"]
 
-    # Determinar qué turnos puede seleccionar según su cédula
-    turnos_permitidos = patron_turnos_cedula.get(cedula, [])
-
-    # Obtener turnos ya usados por este usuario en el historial
+    # Obtener turnos ya usados por este usuario en el historial (opcional, no restringe)
     turnos_usados_usuario = {}
     if 'historial_semanal' in data['turnos']:
         for semana, info_semana in data['turnos']['historial_semanal'].items():
