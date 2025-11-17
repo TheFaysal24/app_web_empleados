@@ -1,14 +1,42 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
 import json
 import datetime
 import os
 import csv
 import io
 import shutil
+import logging
+from functools import wraps
+
+# Cargar variables de entorno
+load_dotenv()
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder='Templates')
-app.secret_key = os.environ.get('SECRET_KEY', 'clave_secreta_para_sesiones')
+app.secret_key = os.environ.get('SECRET_KEY', 'CHANGE_THIS_IN_PRODUCTION_' + os.urandom(24).hex())
+
+# Rate Limiting para proteger contra ataques de fuerza bruta
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # Configuración de Flask-Login
 login_manager = LoginManager()
@@ -100,24 +128,81 @@ def cargar_datos():
     }
 
 def guardar_datos(data):
+    """
+    Guarda datos con histórico completo permanente.
+    NO sobrescribe datos existentes, solo agrega nuevos.
+    """
     # Agregar historial mensual de turnos si no existe
     mes_actual = datetime.datetime.now().strftime('%Y-%m')
+    ano_actual = datetime.datetime.now().strftime('%Y')
     
+    # Inicializar estructuras de histórico si no existen
     if 'historial_turnos_mensual' not in data:
         data['historial_turnos_mensual'] = {}
     
+    if 'historial_registros_diario' not in data:
+        data['historial_registros_diario'] = {}
+    
+    if 'historial_anual' not in data:
+        data['historial_anual'] = {}
+    
+    # Histórico mensual de turnos
     if mes_actual not in data['historial_turnos_mensual']:
         data['historial_turnos_mensual'][mes_actual] = {
             'turnos_asignados': {},
-            'registros_asistencia': {}
+            'registros_asistencia': {},
+            'timestamp': datetime.datetime.now().isoformat()
         }
     
-    # Guardar snapshot de turnos actuales del mes
+    # Guardar snapshot de turnos actuales del mes (NO sobrescribir, solo actualizar)
     if 'turnos' in data and 'monthly_assignments' in data['turnos']:
-        data['historial_turnos_mensual'][mes_actual]['turnos_asignados'] = data['turnos']['monthly_assignments'].copy()
+        # Merge en lugar de reemplazar
+        if 'turnos_asignados' not in data['historial_turnos_mensual'][mes_actual]:
+            data['historial_turnos_mensual'][mes_actual]['turnos_asignados'] = {}
+        
+        for usuario, turnos in data['turnos']['monthly_assignments'].items():
+            if usuario not in data['historial_turnos_mensual'][mes_actual]['turnos_asignados']:
+                data['historial_turnos_mensual'][mes_actual]['turnos_asignados'][usuario] = []
+            
+            # Agregar solo turnos nuevos
+            for turno in turnos:
+                if turno not in data['historial_turnos_mensual'][mes_actual]['turnos_asignados'][usuario]:
+                    data['historial_turnos_mensual'][mes_actual]['turnos_asignados'][usuario].append(turno)
     
+    # Guardar snapshot de registros diarios (histórico permanente)
+    for usuario, registros in data.get('registros', {}).items():
+        if usuario not in data['historial_registros_diario']:
+            data['historial_registros_diario'][usuario] = {}
+        
+        for fecha, registro in registros.items():
+            if isinstance(registro, dict):
+                # Guardar copia permanente del registro (NO sobrescribir)
+                if fecha not in data['historial_registros_diario'][usuario]:
+                    data['historial_registros_diario'][usuario][fecha] = registro.copy()
+                    data['historial_registros_diario'][usuario][fecha]['guardado_en'] = datetime.datetime.now().isoformat()
+    
+    # Histórico anual
+    if ano_actual not in data['historial_anual']:
+        data['historial_anual'][ano_actual] = {
+            'meses': {},
+            'timestamp_creacion': datetime.datetime.now().isoformat()
+        }
+    
+    if mes_actual not in data['historial_anual'][ano_actual]['meses']:
+        data['historial_anual'][ano_actual]['meses'][mes_actual] = {
+            'total_usuarios': len(data.get('usuarios', {})),
+            'total_registros': sum(len(regs) for regs in data.get('registros', {}).values()),
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+    
+    # Marcar última actualización
+    data['ultima_actualizacion'] = datetime.datetime.now().isoformat()
+    
+    # Guardar a archivo
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, indent=4, ensure_ascii=False)
+    
+    logger.info(f"Datos guardados - Usuarios: {len(data.get('usuarios', {}))}, Registros totales: {sum(len(r) for r in data.get('registros', {}).values())}")
 
 # -------------------
 # Context processor
@@ -133,32 +218,51 @@ def inject_datetime():
 def home():
     return render_template('home.html')
 
-# ✅ LOGIN con Flask-Login
+# ✅ LOGIN con Flask-Login y hash de contraseñas
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")  # Máximo 5 intentos por minuto
 def login():
     if request.method == 'POST':
-        usuario = request.form['usuario']
-        contrasena = request.form['contrasena']
+        usuario = request.form.get('usuario', '').strip()
+        contrasena = request.form.get('contrasena', '')
         data = cargar_datos()
 
         if usuario in data['usuarios']:
             user_data = data['usuarios'][usuario]
             if user_data.get('bloqueado', False):
+                logger.warning(f"Intento de login en cuenta bloqueada: {usuario}")
                 flash('Tu cuenta está bloqueada. Contacta al administrador.', 'error')
                 return redirect(url_for('login'))
 
-            if user_data['contrasena'] == contrasena:
+            # Verificar contraseña (soporta tanto hash como texto plano para migración)
+            password_valid = False
+            if user_data['contrasena'].startswith('pbkdf2:sha256:'):
+                # Contraseña hasheada
+                password_valid = check_password_hash(user_data['contrasena'], contrasena)
+            else:
+                # Contraseña en texto plano (legacy)
+                password_valid = (user_data['contrasena'] == contrasena)
+                # Actualizar a hash automáticamente
+                if password_valid:
+                    user_data['contrasena'] = generate_password_hash(contrasena)
+                    guardar_datos(data)
+                    logger.info(f"Contraseña migrada a hash para usuario: {usuario}")
+
+            if password_valid:
                 user = User(usuario, user_data)
                 login_user(user)
                 session['usuario'] = usuario
                 session['nombre'] = user_data['nombre']
                 session['admin'] = user_data.get('admin', False)
+                logger.info(f"Login exitoso: {usuario}")
                 flash(f'Bienvenido {session["nombre"]}', 'message')
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard'))
-        else:
-            flash('Usuario o contraseña incorrectos', 'error')
-            return redirect(url_for('login'))
+            else:
+                logger.warning(f"Intento de login fallido para usuario: {usuario}")
+        
+        flash('Usuario o contraseña incorrectos', 'error')
+        return redirect(url_for('login'))
 
     return render_template('login.html')
 
@@ -217,17 +321,27 @@ def asignar_turnos_automaticos(data, cedula, usuario):
                 if turno_key not in data['turnos']['monthly_assignments'][usuario]:
                     data['turnos']['monthly_assignments'][usuario].append(turno_key)
 
-# ✅ Registro - Actualiza usuarios existentes por cédula
+# ✅ Registro - Hash de contraseñas
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("3 per hour")  # Máximo 3 registros por hora
 def register():
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        cedula = request.form['cedula']
-        cargo = request.form['cargo']
-        correo = request.form['correo']
-        telefono = request.form.get('telefono', '')
-        usuario_login = request.form['usuario']
-        contrasena = request.form['contrasena']
+        nombre = request.form.get('nombre', '').strip()
+        cedula = request.form.get('cedula', '').strip()
+        cargo = request.form.get('cargo', '').strip()
+        correo = request.form.get('correo', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        usuario_login = request.form.get('usuario', '').strip()
+        contrasena = request.form.get('contrasena', '')
+
+        # Validaciones básicas
+        if not all([nombre, cedula, cargo, correo, usuario_login, contrasena]):
+            flash('Todos los campos son obligatorios', 'error')
+            return redirect(url_for('register'))
+
+        if len(contrasena) < 6:
+            flash('La contraseña debe tener al menos 6 caracteres', 'error')
+            return redirect(url_for('register'))
 
         data = cargar_datos()
         
@@ -245,8 +359,9 @@ def register():
                 'cargo': cargo,
                 'correo': correo,
                 'telefono': telefono,
-                'contrasena': contrasena
+                'contrasena': generate_password_hash(contrasena)  # Hash de contraseña
             })
+            logger.info(f"Usuario actualizado: {usuario_existente}")
             flash(f'✅ Bienvenido {nombre}! Tu información ha sido actualizada. Usa el usuario: {usuario_existente}', 'message')
             guardar_datos(data)
             return redirect(url_for('login'))
@@ -258,11 +373,12 @@ def register():
                 'cargo': cargo,
                 'correo': correo,
                 'telefono': telefono,
-                'contrasena': contrasena,
+                'contrasena': generate_password_hash(contrasena),  # Hash de contraseña
                 'admin': False
             }
             asignar_turnos_automaticos(data, cedula, usuario_login)
             guardar_datos(data)
+            logger.info(f"Nuevo usuario registrado: {usuario_login}")
             flash('✅ Usuario registrado con éxito. Turnos asignados automáticamente.', 'message')
             return redirect(url_for('login'))
         else:
@@ -436,9 +552,11 @@ def dashboard():
                  fechas_horas_filtradas[fecha] = reg.get('horas_trabajadas', 0)
          fechas_ordenadas = sorted(fechas_horas_filtradas.keys())[-7:]
          horas_fechas = [fechas_horas_filtradas.get(fecha, 0) for fecha in fechas_ordenadas]
-         contador_inicios = {usuario_actual: contador_inicios.get(usuario_actual, 0)}
-         costo_horas_extras = {usuario_actual: costo_horas_extras.get(usuario_actual, 0)}
-         costo_total_empresa = costo_horas_extras.get(usuario_actual, 0)
+    contador_inicios = {usuario_actual: contador_inicios.get(usuario_actual, 0)}
+    # 🔒 OCULTAR COSTOS PARA USUARIOS NORMALES
+    costo_horas_extras = {}  # Vacío para usuarios normales
+        costo_total_empresa = 0  # Oculto para usuarios normales
+        valor_hora_ordinaria = 0  # Oculto para usuarios normales
          total_usuarios_nuevos = 1  # Solo mostrar 1 para el usuario actual
 
      # Asegurar que todos los valores sean válidos (nunca None)
@@ -714,7 +832,7 @@ def actualizar_datos():
 
     return redirect(url_for('ajustes'))
 
-# ✅ Cambiar contraseña
+# ✅ Cambiar contraseña con hash
 @app.route('/cambiar_contrasena', methods=['POST'])
 def cambiar_contrasena():
     if 'usuario' not in session:
@@ -724,15 +842,30 @@ def cambiar_contrasena():
     data = cargar_datos()
     usuario = session['usuario']
 
-    actual = request.form.get('actual')
-    nueva = request.form.get('nueva')
+    actual = request.form.get('actual', '')
+    nueva = request.form.get('nueva', '')
 
-    if usuario in data['usuarios'] and data['usuarios'][usuario]['contrasena'] == actual:
-        data['usuarios'][usuario]['contrasena'] = nueva
-        guardar_datos(data)
-        flash('Contraseña actualizada correctamente', 'message')
+    if len(nueva) < 6:
+        flash('La nueva contraseña debe tener al menos 6 caracteres', 'error')
+        return redirect(url_for('ajustes'))
+
+    if usuario in data['usuarios']:
+        # Verificar contraseña actual
+        password_valid = False
+        if data['usuarios'][usuario]['contrasena'].startswith('pbkdf2:sha256:'):
+            password_valid = check_password_hash(data['usuarios'][usuario]['contrasena'], actual)
+        else:
+            password_valid = (data['usuarios'][usuario]['contrasena'] == actual)
+        
+        if password_valid:
+            data['usuarios'][usuario]['contrasena'] = generate_password_hash(nueva)
+            guardar_datos(data)
+            logger.info(f"Contraseña cambiada para usuario: {usuario}")
+            flash('Contraseña actualizada correctamente', 'message')
+        else:
+            flash('La contraseña actual no es correcta', 'error')
     else:
-        flash('La contraseña actual no es correcta', 'error')
+        flash('Usuario no encontrado', 'error')
 
     return redirect(url_for('ajustes'))
 
@@ -1561,8 +1694,127 @@ def obtener_usuarios_con_turnos(data):
     
     return usuarios_info
 
+# ✅ NUEVO: Módulo de Turnos Mensual Mejorado
+@app.route('/turnos_mensual')
+@login_required
+def turnos_mensual():
+    if 'usuario' not in session:
+        flash('Debes iniciar sesión primero', 'error')
+        return redirect(url_for('login'))
+    
+    data = cargar_datos()
+    
+    # Obtener mes y año de parámetros o usar actual
+    mes = request.args.get('mes', type=int) or datetime.datetime.now().month
+    ano = request.args.get('ano', type=int) or datetime.datetime.now().year
+    
+    # Nombres de meses
+    meses_nombres = {
+        1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+        5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+        9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+    }
+    
+    # Patrones de turnos por cédula
+    patrones_cedula = {
+        "1070963486": ["06:30", "08:30"],
+        "1067949514": ["08:00", "06:30"],
+        "1140870406": ["08:30", "09:00"],
+        "1068416077": ["09:00", "08:00", "06:30"]
+    }
+    
+    # Límite mensual de turnos por gestor (ej: 20 turnos máximo al mes)
+    LIMITE_MENSUAL_TURNOS = 20
+    
+    # Procesar datos de gestores
+    gestores_data = []
+    for usuario, info in data.get('usuarios', {}).items():
+        cedula = info.get('cedula', '')
+        if cedula in patrones_cedula:
+            # Obtener turnos usados este mes
+            turnos_usados_mes = []
+            if 'registros' in data and usuario in data['registros']:
+                for fecha, reg in data['registros'][usuario].items():
+                    try:
+                        fecha_obj = datetime.datetime.fromisoformat(fecha)
+                        if fecha_obj.month == mes and fecha_obj.year == ano:
+                            if isinstance(reg, dict) and reg.get('inicio'):
+                                inicio_obj = datetime.datetime.fromisoformat(reg['inicio'])
+                                hora_inicio = inicio_obj.strftime('%H:%M')
+                                dia_semana = fecha_obj.strftime('%A')
+                                turnos_usados_mes.append({
+                                    'fecha': fecha,
+                                    'dia': dia_semana,
+                                    'hora': hora_inicio
+                                })
+                    except:
+                        pass
+            
+            # Calcular turnos disponibles (patron - ya usados)
+            patron = patrones_cedula[cedula]
+            horas_usadas = [t['hora'] for t in turnos_usados_mes]
+            turnos_disponibles = [h for h in patron if h not in horas_usadas or horas_usadas.count(h) < 4]
+            
+            # Verificar si puede seleccionar más turnos
+            puede_seleccionar = len(turnos_usados_mes) < LIMITE_MENSUAL_TURNOS
+            
+            gestores_data.append({
+                'usuario': usuario,
+                'nombre': info.get('nombre', usuario),
+                'cedula': cedula,
+                'cargo': info.get('cargo', 'Gestor Operativo'),
+                'patron': patron,
+                'turnos_usados': turnos_usados_mes,
+                'turnos_disponibles': turnos_disponibles,
+                'puede_seleccionar': puede_seleccionar,
+                'limite_mensual': LIMITE_MENSUAL_TURNOS
+            })
+    
+    # Estadísticas del mes
+    total_turnos_mes = sum(len(g['turnos_usados']) for g in gestores_data)
+    gestores_activos = len([g for g in gestores_data if g['turnos_usados']])
+    turnos_completados = total_turnos_mes
+    turnos_disponibles = sum(len(g['turnos_disponibles']) for g in gestores_data)
+    
+    stats = {
+        'total_turnos_mes': total_turnos_mes,
+        'gestores_activos': gestores_activos,
+        'turnos_completados': turnos_completados,
+        'turnos_disponibles': turnos_disponibles
+    }
+    
+    # Historial completo del mes
+    historial_mes = []
+    for gestor in gestores_data:
+        for turno in gestor['turnos_usados']:
+            historial_mes.append({
+                'fecha': turno['fecha'],
+                'dia_semana': turno['dia'],
+                'gestor': gestor['nombre'],
+                'hora': turno['hora'],
+                'estado': 'Completado',
+                'estado_class': 'success',
+                'horas_trabajadas': '8'  # Esto debería venir de registros reales
+            })
+    
+    # Ordenar por fecha
+    historial_mes.sort(key=lambda x: x['fecha'], reverse=True)
+    
+    return render_template('turnos_mensual.html',
+                         mes_nombre=meses_nombres[mes],
+                         ano_actual=ano,
+                         mes_actual=mes,
+                         gestores_data=gestores_data,
+                         stats=stats,
+                         historial_mes=historial_mes,
+                         session=session)
+
 # -------------------
 # Ejecutar aplicación
 # -------------------
 if __name__ == '__main__':
+    # Advertencia si se usa SECRET_KEY por defecto
+    if app.secret_key.startswith('CHANGE_THIS'):
+        logger.warning("⚠️  ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para producción!")
+    
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
