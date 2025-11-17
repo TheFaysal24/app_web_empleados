@@ -100,6 +100,22 @@ def cargar_datos():
     }
 
 def guardar_datos(data):
+    # Agregar historial mensual de turnos si no existe
+    mes_actual = datetime.datetime.now().strftime('%Y-%m')
+    
+    if 'historial_turnos_mensual' not in data:
+        data['historial_turnos_mensual'] = {}
+    
+    if mes_actual not in data['historial_turnos_mensual']:
+        data['historial_turnos_mensual'][mes_actual] = {
+            'turnos_asignados': {},
+            'registros_asistencia': {}
+        }
+    
+    # Guardar snapshot de turnos actuales del mes
+    if 'turnos' in data and 'monthly_assignments' in data['turnos']:
+        data['historial_turnos_mensual'][mes_actual]['turnos_asignados'] = data['turnos']['monthly_assignments'].copy()
+    
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
 

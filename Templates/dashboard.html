@@ -1,4 +1,3 @@
-{% extends "base.html" %}
 {% block title %}Dashboard Premium{% endblock %}
 {% block content %}
 <style>
@@ -794,118 +793,85 @@
 </div>
 {% endif %}
 
-<!-- Gráficos debajo de la tabla -->
+<!-- Widgets de Acceso Rápido (Usuarios) -->
+{% if not admin %}
+<div class="table-card">
+  <h3 class="section-title"><i class="fas fa-th-large"></i> Acceso Rápido a Módulos</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+    <a href="{{ url_for('modulo_turnos') }}" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 25px; border-radius: 15px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 30px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 20px rgba(102, 126, 234, 0.3)'">
+      <i class="fas fa-calendar-week" style="font-size: 2.5em; display: block; margin-bottom: 15px;"></i>
+      <div style="font-size: 1.1em;">Módulo de Turnos</div>
+      <div style="font-size: 0.85em; opacity: 0.9; margin-top: 5px;">Ver historial completo</div>
+    </a>
+    <a href="{{ url_for('seleccionar_turno') }}" style="background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 25px; border-radius: 15px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 30px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 20px rgba(16, 185, 129, 0.3)'">
+      <i class="fas fa-calendar-plus" style="font-size: 2.5em; display: block; margin-bottom: 15px;"></i>
+      <div style="font-size: 1.1em;">Seleccionar Turno</div>
+      <div style="font-size: 0.85em; opacity: 0.9; margin-top: 5px;">Escoge tu horario</div>
+    </a>
+    <a href="{{ url_for('ver_turnos_asignados') }}" style="background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; padding: 25px; border-radius: 15px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 30px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 20px rgba(59, 130, 246, 0.3)'">
+      <i class="fas fa-calendar-check" style="font-size: 2.5em; display: block; margin-bottom: 15px;"></i>
+      <div style="font-size: 1.1em;">Mis Turnos</div>
+      <div style="font-size: 0.85em; opacity: 0.9; margin-top: 5px;">Ver mis asignaciones</div>
+    </a>
+    <a href="{{ url_for('ajustes') }}" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; padding: 25px; border-radius: 15px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 30px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 20px rgba(245, 158, 11, 0.3)'">
+      <i class="fas fa-user-cog" style="font-size: 2.5em; display: block; margin-bottom: 15px;"></i>
+      <div style="font-size: 1.1em;">Mi Perfil</div>
+      <div style="font-size: 0.85em; opacity: 0.9; margin-top: 5px;">Configuración personal</div>
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Gráficos (Solo Admin) -->
+{% if admin %}
 <div class="grid-2">
   <div class="chart-card">
-    <h4>📈 Horas por Día (Últimos 7 días)</h4>
+    <h4>📈 Horas Trabajadas (Últimos 7 días)</h4>
     <canvas id="graficoHoras" style="max-height: 300px;"></canvas>
   </div>
 
   <div class="chart-card">
-    <h4>👤 Horas por Usuario (Semana)</h4>
-    <canvas id="graficoInicios" style="max-height: 300px;"></canvas>
-  </div>
-</div>
-
-<!-- Segundo fila de gráficos -->
-<div class="grid-2">
-  <div class="chart-card">
-    <h4>💰 Costo Horas Extras por Usuario</h4>
+    <h4>💰 Costos por Horas Extras</h4>
     <canvas id="graficoCostos" style="max-height: 300px;"></canvas>
   </div>
+</div>
+
+<div class="grid-2">
+  <div class="chart-card">
+    <h4>👥 Distribución de Turnos</h4>
+    <canvas id="graficoInicios" style="max-height: 300px;"></canvas>
+  </div>
 
   <div class="chart-card">
-    <h4>📊 Horas por Usuario (Mes)</h4>
-    <canvas id="graficoCargos" style="max-height: 300px;"></canvas>
+    <h4>📊 Evolución Mensual</h4>
+    <canvas id="graficoExtras" style="max-height: 300px;"></canvas>
   </div>
 </div>
+{% endif %}
 
-<!-- Tabla de registros completa -->
-<div class="table-card">
-  <h3 class="section-title"><i class="fas fa-table"></i> Todos los Registros</h3>
-  {% if registros %}
-    <div style="overflow-x: auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Usuario</th>
-            <th>Fecha</th>
-            <th>Hora Inicio</th>
-            <th>Hora Salida</th>
-            <th>Horas Trabajadas</th>
-            <th>Horas Extras</th>
-            <th>💰 Costo Extras</th>
-            <th>Total Horas (Día)</th>
-            <th>💰 Costo Total (Día)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% set total_horas_semana = namespace(count=0) %}
-          {% set total_costos_semana = namespace(count=0) %}
-          {% set total_horas_mes = namespace(count=0) %}
-          {% set total_costos_mes = namespace(count=0) %}
-
-          {% for usr, regs in registros.items() %}
-            {% if regs and regs is mapping %}
-              {% for fecha, reg in regs.items() %}
-                {% if reg is mapping %}
-                  <tr>
-                    <td><strong>{{ usr }}</strong></td>
-                    <td>{{ fecha }}</td>
-                    <td>{{ reg.get('inicio', '')[:16][11:] if reg.get('inicio') else '-' }}</td>
-                    <td>{{ reg.get('salida', '')[:16][11:] if reg.get('salida') else '-' }}</td>
-                    <td><span class="badge badge-success">{{ reg.get('horas_trabajadas', 0) }}h</span></td>
-                    <td><span class="badge badge-warning">{{ reg.get('horas_extras', 0) }}h</span></td>
-                    <td><span class="badge badge-cost">$ {{ "{:,.0f}".format(reg.get('costo_horas_extras', 0)) }}</span></td>
-                    <td><span class="badge badge-info">{{ reg.get('horas_trabajadas', 0) + reg.get('horas_extras', 0) }}h</span></td>
-                    <td><span class="badge badge-cost">$ {{ "{:,.0f}".format(reg.get('costo_total_dia', 0)) }}</span></td>
-                  </tr>
-                  {% set total_horas_semana.count = total_horas_semana.count + reg.get('horas_trabajadas', 0) %}
-                  {% set total_costos_semana.count = total_costos_semana.count + reg.get('costo_horas_extras', 0) %}
-                  {% set total_horas_mes.count = total_horas_mes.count + reg.get('horas_trabajadas', 0) %}
-                  {% set total_costos_mes.count = total_costos_mes.count + reg.get('costo_horas_extras', 0) %}
-                {% endif %}
-              {% endfor %}
-            {% endif %}
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Resumen semanal y mensual -->
-    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-      <h4 style="margin: 0 0 10px 0; color: #667eea;">📊 Resumen de Horas y Costos</h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-        <div style="text-align: center;">
-          <strong>Horas Semana:</strong> {{ total_horas_semana.count }}h
-        </div>
-        <div style="text-align: center;">
-          <strong>Costo Extras Semana:</strong> $ {{ "{:,.0f}".format(total_costos_semana.count) }}
-        </div>
-        <div style="text-align: center;">
-          <strong>Horas Mes:</strong> {{ total_horas_mes.count }}h
-        </div>
-        <div style="text-align: center;">
-          <strong>Costo Extras Mes:</strong> $ {{ "{:,.0f}".format(total_costos_mes.count) }}
-        </div>
-      </div>
-    </div>
-  {% else %}
-    <div class="no-data">
-      <i class="fas fa-inbox" style="font-size: 3em; opacity: 0.3;"></i>
-      <p>No hay registros disponibles. Comienza a registrar turnos.</p>
-    </div>
-  {% endif %}
+<!-- Botones de exportación (Solo Admin) -->
+{% if admin %}
+<div class="export-buttons">
+  <h5 style="width: 100%; margin: 0 0 10px 0; color: #667eea; font-weight: 700;">⬇️ Descargar Datos</h5>
+  <a href="{{ url_for('exportar_registros') }}" class="btn-export-small">
+    <i class="fas fa-download"></i> Registros CSV
+  </a>
+  <a href="{{ url_for('exportar_datos') }}" class="btn-export-small">
+    <i class="fas fa-file-csv"></i> Datos Completos
+  </a>
 </div>
+{% endif %}
 
 <!-- Variables de datos del servidor -->
 <script type="text/javascript">
   var serverData = {
     fechas: {{ fechas|default([])|tojson|safe }},
     horas: {{ horas_fechas|default([])|tojson|safe }},
-    contadores: {{ contador_inicios|default({})|tojson|safe }},
+    contadores: {{ contador_inicios|default({})|tojson|safe }}
+    {% if admin %},
     costos: {{ costo_horas_extras|default({})|tojson|safe }},
     usuarios: {{ data.get('usuarios', {})|tojson|safe }}
+    {% endif %}
   };
 </script>
 
