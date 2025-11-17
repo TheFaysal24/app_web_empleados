@@ -1,7 +1,7 @@
 {
     "usuarios": {
         "admin": {
-            "contrasena": "1234",
+            "contrasena": "pbkdf2:sha256:600000$jC2pe98C4thItu8G$afccc6e3af5f5f554144a438121f97f312989172f5da9753ef94a11745eb71dc",
             "admin": true,
             "nombre": "Administrador",
             "cedula": "N/A",
@@ -22,7 +22,7 @@
         "lesly.guzman": {
             "nombre": "Lesly Guzman",
             "cedula": "1067949514",
-            "cargo": "TECNICO MINTIC",
+            "cargo": "GESTOR OPERATIVO",
             "correo": "lesly.guzman@empresa.com",
             "telefono": "",
             "contrasena": "1234",
@@ -31,7 +31,7 @@
         "paola.garcia": {
             "nombre": "Paola Garcia",
             "cedula": "1140870406",
-            "cargo": "LIDER DE PROCESO",
+            "cargo": "GESTOR OPERATIVO",
             "correo": "paola.garcia@empresa.com",
             "telefono": "",
             "contrasena": "1234",
@@ -40,7 +40,7 @@
         "dayana.gonzalez": {
             "nombre": "Dayana Gonzalez",
             "cedula": "1068416077",
-            "cargo": "SUPERVISOR DE CAMPO",
+            "cargo": "GESTOR OPERATIVO",
             "correo": "dayana.gonzalez@empresa.com",
             "telefono": "",
             "contrasena": "1234",
@@ -405,5 +405,38 @@
         "lesly.guzman": {},
         "paola.garcia": {},
         "dayana.gonzalez": {}
-    }
+    },
+    "historial_turnos_mensual": {
+        "2025-11": {
+            "turnos_asignados": {
+                "dayana.gonzalez": [
+                    "tuesday_06:30",
+                    "wednesday_06:30",
+                    "thursday_06:30",
+                    "friday_06:30"
+                ],
+                "natalia.arevalo": []
+            },
+            "registros_asistencia": {}
+        }
+    },
+    "historial_registros_diario": {
+        "natalia.arevalo": {},
+        "lesly.guzman": {},
+        "paola.garcia": {},
+        "dayana.gonzalez": {}
+    },
+    "historial_anual": {
+        "2025": {
+            "meses": {
+                "2025-11": {
+                    "total_usuarios": 5,
+                    "total_registros": 0,
+                    "timestamp": "2025-11-16T22:37:32.566206"
+                }
+            },
+            "timestamp_creacion": "2025-11-16T22:37:32.565768"
+        }
+    },
+    "ultima_actualizacion": "2025-11-16T22:37:32.566218"
 }

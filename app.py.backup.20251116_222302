@@ -1815,6 +1815,6 @@ def turnos_mensual():
 if __name__ == '__main__':
     # Advertencia si se usa SECRET_KEY por defecto
     if app.secret_key.startswith('CHANGE_THIS'):
-        logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
+        logger.warning("⚠️  ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para producción!")
     
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)

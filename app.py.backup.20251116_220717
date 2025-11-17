@@ -553,10 +553,8 @@ def dashboard():
          fechas_ordenadas = sorted(fechas_horas_filtradas.keys())[-7:]
          horas_fechas = [fechas_horas_filtradas.get(fecha, 0) for fecha in fechas_ordenadas]
          contador_inicios = {usuario_actual: contador_inicios.get(usuario_actual, 0)}
-         # 🔒 OCULTAR COSTOS PARA USUARIOS NORMALES
-         costo_horas_extras = {}  # Vacío para usuarios normales
-         costo_total_empresa = 0  # Oculto para usuarios normales
-         valor_hora_ordinaria = 0  # Oculto para usuarios normales
+         costo_horas_extras = {usuario_actual: costo_horas_extras.get(usuario_actual, 0)}
+         costo_total_empresa = costo_horas_extras.get(usuario_actual, 0)
          total_usuarios_nuevos = 1  # Solo mostrar 1 para el usuario actual
 
      # Asegurar que todos los valores sean válidos (nunca None)
@@ -1815,6 +1813,6 @@ def turnos_mensual():
 if __name__ == '__main__':
     # Advertencia si se usa SECRET_KEY por defecto
     if app.secret_key.startswith('CHANGE_THIS'):
-        logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
+        logger.warning("⚠️  ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para producción!")
     
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
