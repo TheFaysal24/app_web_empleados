@@ -99,17 +99,46 @@ def load_user(user_id):
 def cargar_datos():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+            
+            # Asegurar que existan las claves principales
+            if 'usuarios' not in data:
+                data['usuarios'] = {}
+            if 'turnos' not in data:
+                data['turnos'] = {}
+            if 'registros' not in data:
+                data['registros'] = {}
+            if 'historial_turnos_mensual' not in data:
+                data['historial_turnos_mensual'] = {}
+            
+            # Asegurar estructura de turnos
+            if 'shifts' not in data['turnos']:
+                data['turnos']['shifts'] = {
+                    'monday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
+                    'tuesday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
+                    'wednesday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
+                    'thursday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
+                    'friday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
+                    'saturday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None}
+                }
+            if 'monthly_assignments' not in data['turnos']:
+                data['turnos']['monthly_assignments'] = {}
+            if 'current_month' not in data['turnos']:
+                data['turnos']['current_month'] = datetime.datetime.now().strftime('%Y-%m')
+            
+            return data
+    
+    # Datos iniciales solo si NO existe el archivo
     return {
         'usuarios': {
-            'LuisMolina': {
-                'contrasena': 'Mathiasmc',
+            'admin': {
+                'contrasena': '1234',
                 'admin': True,
-                'nombre': 'Luis Molina',
-                'cedula': '',
-                'cargo': 'Coordinador',
-                'correo': 'lemolina0323@gmail.com',
-                'role': 'manager'
+                'nombre': 'Administrador',
+                'cedula': 'N/A',
+                'cargo': 'COORDINADOR',
+                'correo': 'admin@empresa.com',
+                'telefono': ''
             }
         },
         'turnos': {
@@ -119,12 +148,13 @@ def cargar_datos():
                 'wednesday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
                 'thursday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
                 'friday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None},
-                'saturday': {'08:00': None}
+                'saturday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None}
             },
             'monthly_assignments': {},
             'current_month': datetime.datetime.now().strftime('%Y-%m')
         },
-        'registros': {}
+        'registros': {},
+        'historial_turnos_mensual': {}
     }
 
 def guardar_datos(data):
@@ -1163,20 +1193,19 @@ def seleccionar_turno():
                         turnos_usados_usuario[dia_key] = []
                     turnos_usados_usuario[dia_key].append(hora)
 
-    # Preparar datos para el template
+    # Preparar datos para el template - TODOS los turnos disponibles si no están ocupados por OTRO usuario
     shifts = data['turnos']['shifts']
     available_shifts = {}
 
     for dia, horas in shifts.items():
         available_shifts[dia] = {}
         for hora, assigned_user in horas.items():
-            # Verificar: 1) está en su patrón, 2) no ocupado por otro, 3) no lo usó esta semana
+            # Verificar: 1) está en su patrón, 2) no ocupado por OTRO usuario
             esta_en_patron = hora in turnos_permitidos
-            no_ocupado = assigned_user is None
-            no_usado_esta_semana = hora not in turnos_usados_usuario.get(dia, [])
+            no_ocupado_por_otro = assigned_user is None or assigned_user == usuario
             
-            # Disponible solo si cumple las 3 condiciones
-            available_shifts[dia][hora] = esta_en_patron and no_ocupado and no_usado_esta_semana
+            # Disponible si está en su patrón y no lo tiene otro usuario
+            available_shifts[dia][hora] = esta_en_patron and no_ocupado_por_otro
 
     return render_template('seleccionar_turno.html',
                          shifts=shifts,

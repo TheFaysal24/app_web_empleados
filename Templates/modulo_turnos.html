@@ -351,9 +351,16 @@
     </div>
   </div>
 
-  <!-- Selector de Semana -->
+  <!-- Selector de Mes y Semana -->
   <div class="week-selector">
     <div class="week-info">
+      <i class="fas fa-calendar-alt"></i> 
+      <select onchange="window.location.href='{{ url_for('modulo_turnos') }}?mes='+this.value" style="padding: 8px 12px; border: 2px solid #667eea; border-radius: 8px; font-weight: 600; cursor: pointer; background: white;">
+        <option value="2025-11" selected>Noviembre 2025</option>
+        <option value="2025-12">Diciembre 2025</option>
+        <option value="2026-01">Enero 2026</option>
+      </select>
+      <span style="margin: 0 15px;">|</span>
       <i class="fas fa-calendar-week"></i> Semana {{ semana_actual }} - {{ fecha_inicio_semana }} al {{ fecha_fin_semana }}
     </div>
     <div class="week-nav">
