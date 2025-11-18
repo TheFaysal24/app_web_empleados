@@ -15,7 +15,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "natalia.arevalo@empresa.com",
             "telefono": "",
-            "contrasena": "pbkdf2:sha256:600000$3MucGBDB2wkRLu5B$54db2dddaf2f7036de847b8fa399238faeb7489f0e3edfc7ebcc1bc0a5e77329",
+            "contrasena": "pbkdf2:sha256:600000$PJCYTyXi8dZeJmC7$a8cdfb6840d139de94ba1378bf3b4328b684a6d7ad14273731f6fb003b8fdf5a",
             "admin": false
         },
         "lesly.guzman": {
@@ -24,7 +24,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "lesly.guzman@empresa.com",
             "telefono": "",
-            "contrasena": "1234",
+            "contrasena": "pbkdf2:sha256:600000$PJCYTyXi8dZeJmC7$a8cdfb6840d139de94ba1378bf3b4328b684a6d7ad14273731f6fb003b8fdf5a",
             "admin": false
         },
         "paola.garcia": {
@@ -33,7 +33,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "paola.garcia@empresa.com",
             "telefono": "",
-            "contrasena": "1234",
+            "contrasena": "pbkdf2:sha256:600000$PJCYTyXi8dZeJmC7$a8cdfb6840d139de94ba1378bf3b4328b684a6d7ad14273731f6fb003b8fdf5a",
             "admin": false
         },
         "dayana.gonzalez": {
@@ -42,7 +42,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "dayana.gonzalez@empresa.com",
             "telefono": "",
-            "contrasena": "1234",
+            "contrasena": "pbkdf2:sha256:600000$PJCYTyXi8dZeJmC7$a8cdfb6840d139de94ba1378bf3b4328b684a6d7ad14273731f6fb003b8fdf5a",
             "admin": false
         }
     },
