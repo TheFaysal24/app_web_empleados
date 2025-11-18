@@ -346,7 +346,7 @@ def home():
 
 # ✅ LOGIN con Flask-Login y hash de contraseñas
 @app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")  # Máximo 5 intentos por minuto
+@limiter.limit("20 per minute")  # Máximo 20 intentos por minuto
 def login():
     if request.method == 'POST':
         usuario = request.form.get('usuario', '').strip()
@@ -449,7 +449,7 @@ def asignar_turnos_automaticos(data, cedula, usuario):
 
 # ✅ Registro - Hash de contraseñas
 @app.route('/register', methods=['GET', 'POST'])
-@limiter.limit("3 per hour")  # Máximo 3 registros por hora
+@limiter.limit("10 per hour")  # Máximo 10 registros por hora
 def register():
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
