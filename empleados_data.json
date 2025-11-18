@@ -1,7 +1,7 @@
 {
     "usuarios": {
         "admin": {
-            "contrasena": "pbkdf2:sha256:600000$PJCYTyXi8dZeJmC7$a8cdfb6840d139de94ba1378bf3b4328b684a6d7ad14273731f6fb003b8fdf5a",
+            "contrasena": "pbkdf2:sha256:600000$R1aNlQVnuniLCruu$59abf753eeea01fdf2cba3c963b50c90f76d0a8f42859950871f87f41c86e23a",
             "admin": true,
             "nombre": "Administrador",
             "cedula": "ADMIN-001",
@@ -15,7 +15,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "natalia.arevalo@empresa.com",
             "telefono": "",
-            "contrasena": "pbkdf2:sha256:600000$PJCYTyXi8dZeJmC7$a8cdfb6840d139de94ba1378bf3b4328b684a6d7ad14273731f6fb003b8fdf5a",
+            "contrasena": "pbkdf2:sha256:600000$tksGviY0RfNFtwn5$e6146a063a9c964837e29415e2f7957d0545cfd91929b1a83d06c01d16ed6c34",
             "admin": false
         },
         "lesly.guzman": {
@@ -24,7 +24,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "lesly.guzman@empresa.com",
             "telefono": "",
-            "contrasena": "pbkdf2:sha256:600000$PJCYTyXi8dZeJmC7$a8cdfb6840d139de94ba1378bf3b4328b684a6d7ad14273731f6fb003b8fdf5a",
+            "contrasena": "pbkdf2:sha256:600000$tksGviY0RfNFtwn5$e6146a063a9c964837e29415e2f7957d0545cfd91929b1a83d06c01d16ed6c34",
             "admin": false
         },
         "paola.garcia": {
@@ -33,7 +33,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "paola.garcia@empresa.com",
             "telefono": "",
-            "contrasena": "pbkdf2:sha256:600000$PJCYTyXi8dZeJmC7$a8cdfb6840d139de94ba1378bf3b4328b684a6d7ad14273731f6fb003b8fdf5a",
+            "contrasena": "pbkdf2:sha256:600000$tksGviY0RfNFtwn5$e6146a063a9c964837e29415e2f7957d0545cfd91929b1a83d06c01d16ed6c34",
             "admin": false
         },
         "dayana.gonzalez": {
@@ -42,7 +42,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "dayana.gonzalez@empresa.com",
             "telefono": "",
-            "contrasena": "pbkdf2:sha256:600000$PJCYTyXi8dZeJmC7$a8cdfb6840d139de94ba1378bf3b4328b684a6d7ad14273731f6fb003b8fdf5a",
+            "contrasena": "pbkdf2:sha256:600000$tksGviY0RfNFtwn5$e6146a063a9c964837e29415e2f7957d0545cfd91929b1a83d06c01d16ed6c34",
             "admin": false
         }
     },
@@ -425,7 +425,14 @@
                 "horas_extras": 0
             }
         },
-        "lesly.guzman": {},
+        "lesly.guzman": {
+            "2024-07-26": {
+                "inicio": "2024-07-26T09:00:00.000000",
+                "salida": null,
+                "horas_trabajadas": 0,
+                "horas_extras": 0
+            }
+        },
         "paola.garcia": {
             "2025-11-17": {
                 "inicio": "2025-11-17T09:49:03.623065",
@@ -434,7 +441,14 @@
                 "horas_extras": 0
             }
         },
-        "dayana.gonzalez": {}
+        "dayana.gonzalez": {
+            "2024-07-26": {
+                "inicio": "2024-07-26T09:01:00.000000",
+                "salida": null,
+                "horas_trabajadas": 0,
+                "horas_extras": 0
+            }
+        }
     },
     "historial_turnos_mensual": {
         "2025-11": {

@@ -223,7 +223,7 @@ def cargar_datos():
     return {
         'usuarios': {
             'admin': {
-                'contrasena': '1234',
+                'contrasena': generate_password_hash('1234'),
                 'admin': True,
                 'nombre': 'Administrador',
                 'cedula': 'N/A',
@@ -456,11 +456,11 @@ def register():
         cargo = request.form.get('cargo', '').strip()
         correo = request.form.get('correo', '').strip()
         telefono = request.form.get('telefono', '').strip()
-        usuario_login = request.form.get('usuario', '').strip()
+        usuario = request.form.get('usuario', '').strip()
         contrasena = request.form.get('contrasena', '')
 
         # Validaciones básicas
-        if not all([nombre, cedula, cargo, correo, usuario_login, contrasena]):
+        if not all([nombre, cedula, cargo, correo, usuario, contrasena]):
             flash('Todos los campos son obligatorios', 'error')
             return redirect(url_for('register'))
 
@@ -469,6 +469,11 @@ def register():
             return redirect(url_for('register'))
 
         data = cargar_datos()
+
+        # 1. Verificar si el nombre de usuario ya existe
+        if usuario in data['usuarios']:
+            flash('El nombre de usuario ya existe. Por favor, elige otro.', 'error')
+            return redirect(url_for('register'))
         
         # Buscar si ya existe un usuario con esta cédula
         usuario_existente = None
@@ -478,37 +483,34 @@ def register():
                 break
         
         if usuario_existente:
-            # Actualizar información del usuario existente
+            # 2. Si la cédula ya existe, actualizamos la información de ese usuario
             data['usuarios'][usuario_existente].update({
                 'nombre': nombre,
                 'cargo': cargo,
                 'correo': correo,
                 'telefono': telefono,
-                'contrasena': generate_password_hash(contrasena)  # Hash de contraseña
+                'contrasena': generate_password_hash(contrasena)
             })
             logger.info(f"Usuario actualizado: {usuario_existente}")
-            flash(f'✅ Bienvenido {nombre}! Tu información ha sido actualizada. Usa el usuario: {usuario_existente}', 'message')
+            flash(f'✅ ¡Hola {nombre}! Tu información ha sido actualizada. Tu nombre de usuario es "{usuario_existente}".', 'message')
             guardar_datos(data)
             return redirect(url_for('login'))
-        elif usuario_login not in data['usuarios']:
-            # Crear nuevo usuario si no existe
-            data['usuarios'][usuario_login] = {
+        else:
+            # 3. Si ni el usuario ni la cédula existen, creamos un nuevo usuario
+            data['usuarios'][usuario] = {
                 'nombre': nombre,
                 'cedula': cedula,
                 'cargo': cargo,
                 'correo': correo,
                 'telefono': telefono,
-                'contrasena': generate_password_hash(contrasena),  # Hash de contraseña
+                'contrasena': generate_password_hash(contrasena),
                 'admin': False
             }
-            asignar_turnos_automaticos(data, cedula, usuario_login)
+            asignar_turnos_automaticos(data, cedula, usuario)
             guardar_datos(data)
-            logger.info(f"Nuevo usuario registrado: {usuario_login}")
+            logger.info(f"Nuevo usuario registrado: {usuario}")
             flash('✅ Usuario registrado con éxito. Turnos asignados automáticamente.', 'message')
             return redirect(url_for('login'))
-        else:
-            flash('El nombre de usuario ya existe.', 'error')
-            return redirect(url_for('register'))
     return render_template('register.html')
 
 # ✅ Logout con Flask-Login
