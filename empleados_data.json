@@ -1,7 +1,7 @@
 {
     "usuarios": {
         "admin": {
-            "contrasena": "1234",
+            "contrasena": "pbkdf2:sha256:600000$PJCYTyXi8dZeJmC7$a8cdfb6840d139de94ba1378bf3b4328b684a6d7ad14273731f6fb003b8fdf5a",
             "admin": true,
             "nombre": "Administrador",
             "cedula": "ADMIN-001",
@@ -15,7 +15,7 @@
             "cargo": "GESTOR OPERATIVO",
             "correo": "natalia.arevalo@empresa.com",
             "telefono": "",
-            "contrasena": "1234",
+            "contrasena": "pbkdf2:sha256:600000$3MucGBDB2wkRLu5B$54db2dddaf2f7036de847b8fa399238faeb7489f0e3edfc7ebcc1bc0a5e77329",
             "admin": false
         },
         "lesly.guzman": {
@@ -56,27 +56,27 @@
             },
             "tuesday": {
                 "06:30": "dayana.gonzalez",
-                "08:00": null,
-                "08:30": null,
-                "09:00": null
+                "08:00": "paola.garcia",
+                "08:30": "lesly.guzman",
+                "09:00": "natalia.arevalo"
             },
             "wednesday": {
                 "06:30": "dayana.gonzalez",
-                "08:00": null,
-                "08:30": null,
-                "09:00": null
+                "08:00": "paola.garcia",
+                "08:30": "lesly.guzman",
+                "09:00": "natalia.arevalo"
             },
             "thursday": {
                 "06:30": "dayana.gonzalez",
-                "08:00": null,
-                "08:30": null,
-                "09:00": null
+                "08:00": "paola.garcia",
+                "08:30": "lesly.guzman",
+                "09:00": "natalia.arevalo"
             },
             "friday": {
                 "06:30": "dayana.gonzalez",
-                "08:00": null,
-                "08:30": null,
-                "09:00": null
+                "08:00": "paola.garcia",
+                "08:30": "lesly.guzman",
+                "09:00": "natalia.arevalo"
             },
             "saturday": {
                 "06:30": null,
@@ -92,7 +92,24 @@
                 "thursday_06:30",
                 "friday_06:30"
             ],
-            "natalia.arevalo": []
+            "natalia.arevalo": [
+                "tuesday_09:00",
+                "wednesday_09:00",
+                "thursday_09:00",
+                "friday_09:00"
+            ],
+            "paola.garcia": [
+                "tuesday_08:00",
+                "wednesday_08:00",
+                "thursday_08:00",
+                "friday_08:00"
+            ],
+            "lesly.guzman": [
+                "tuesday_08:30",
+                "wednesday_08:30",
+                "thursday_08:30",
+                "friday_08:30"
+            ]
         },
         "current_month": "2025-11",
         "historial_semanal": {
@@ -400,7 +417,14 @@
         }
     },
     "registros": {
-        "natalia.arevalo": {},
+        "natalia.arevalo": {
+            "2025-11-17": {
+                "inicio": "2025-11-17T10:50:47.799039",
+                "salida": "2025-11-17T10:50:52.140818",
+                "horas_trabajadas": 0,
+                "horas_extras": 0
+            }
+        },
         "lesly.guzman": {},
         "paola.garcia": {
             "2025-11-17": {
@@ -421,13 +445,38 @@
                     "thursday_06:30",
                     "friday_06:30"
                 ],
-                "natalia.arevalo": []
+                "natalia.arevalo": [
+                    "tuesday_09:00",
+                    "wednesday_09:00",
+                    "thursday_09:00",
+                    "friday_09:00"
+                ],
+                "paola.garcia": [
+                    "tuesday_08:00",
+                    "wednesday_08:00",
+                    "thursday_08:00",
+                    "friday_08:00"
+                ],
+                "lesly.guzman": [
+                    "tuesday_08:30",
+                    "wednesday_08:30",
+                    "thursday_08:30",
+                    "friday_08:30"
+                ]
             },
             "registros_asistencia": {}
         }
     },
     "historial_registros_diario": {
-        "natalia.arevalo": {},
+        "natalia.arevalo": {
+            "2025-11-17": {
+                "inicio": "2025-11-17T10:50:47.799039",
+                "salida": null,
+                "horas_trabajadas": 0,
+                "horas_extras": 0,
+                "guardado_en": "2025-11-17T10:50:47.799145"
+            }
+        },
         "lesly.guzman": {},
         "paola.garcia": {
             "2025-11-17": {
@@ -452,6 +501,6 @@
             "timestamp_creacion": "2025-11-16T22:37:32.565768"
         }
     },
-    "ultima_actualizacion": "2025-11-17T10:29:54.944110",
+    "ultima_actualizacion": "2025-11-18T07:45:30.184509-05:00",
     "reset_tokens": {}
 }

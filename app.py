@@ -28,6 +28,82 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Zona horaria y utilidades de tiempo/lock de archivo
+try:
+    from zoneinfo import ZoneInfo
+    TZ = ZoneInfo(os.environ.get('APP_TZ', 'America/Bogota'))
+except Exception:
+    TZ = None
+
+try:
+    import fcntl  # Unix
+except Exception:
+    fcntl = None
+try:
+    import msvcrt  # Windows
+except Exception:
+    msvcrt = None
+
+from contextlib import contextmanager
+
+
+def now_local():
+    """Fecha/hora local consistente. Por defecto America/Bogota, configurable con APP_TZ."""
+    try:
+        return datetime.datetime.now(TZ) if TZ else datetime.datetime.now()
+    except Exception:
+        return datetime.datetime.now()
+
+
+def today_local_iso():
+    """Fecha local en ISO (YYYY-MM-DD)."""
+    try:
+        return now_local().date().isoformat()
+    except Exception:
+        return datetime.date.today().isoformat()
+
+
+@contextmanager
+def locked_file_write(target_path):
+    """Lock de archivo simple entre procesos y escritura atómica (tmp + replace)."""
+    lock_path = target_path + '.lock'
+    lock_file = open(lock_path, 'w')
+    try:
+        if msvcrt:
+            # Bloqueo en Windows
+            try:
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_LOCK, 1)
+            except Exception:
+                pass
+        elif fcntl:
+            # Bloqueo en Unix
+            try:
+                fcntl.flock(lock_file, fcntl.LOCK_EX)
+            except Exception:
+                pass
+        yield
+    finally:
+        try:
+            if msvcrt:
+                try:
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+                except Exception:
+                    pass
+            elif fcntl:
+                try:
+                    fcntl.flock(lock_file, fcntl.LOCK_UN)
+                except Exception:
+                    pass
+        finally:
+            try:
+                lock_file.close()
+            except Exception:
+                pass
+            try:
+                os.remove(lock_path)
+            except Exception:
+                pass
+
 app = Flask(__name__, template_folder='Templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'CHANGE_THIS_IN_PRODUCTION_' + os.urandom(24).hex())
 
@@ -75,7 +151,7 @@ class User(UserMixin):
 def backup_automatico():
     """Crea backup manual del archivo de datos"""
     try:
-        fecha = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        fecha = now_local().strftime('%Y%m%d_%H%M%S')
         if not os.path.exists('backups'):
             os.makedirs('backups')
 
@@ -140,7 +216,7 @@ def cargar_datos():
             if 'monthly_assignments' not in data['turnos']:
                 data['turnos']['monthly_assignments'] = {}
             if 'current_month' not in data['turnos']:
-                data['turnos']['current_month'] = datetime.datetime.now().strftime('%Y-%m')
+                data['turnos']['current_month'] = now_local().strftime('%Y-%m')
             
             return data
     
@@ -167,7 +243,7 @@ def cargar_datos():
                 'saturday': {'06:30': None, '08:00': None, '08:30': None, '09:00': None}
             },
             'monthly_assignments': {},
-            'current_month': datetime.datetime.now().strftime('%Y-%m')
+            'current_month': now_local().strftime('%Y-%m')
         },
         'registros': {},
         'historial_turnos_mensual': {}
@@ -242,12 +318,16 @@ def guardar_datos(data):
         }
     
     # Marcar última actualización
-    data['ultima_actualizacion'] = datetime.datetime.now().isoformat()
-    
-    # Guardar a archivo
-    with open(DATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-    
+    data['ultima_actualizacion'] = now_local().isoformat()
+
+    # Guardar a archivo (escritura atómica con lock)
+    json_str = json.dumps(data, indent=4, ensure_ascii=False)
+    tmp_path = DATA_FILE + '.tmp'
+    with locked_file_write(DATA_FILE):
+        with open(tmp_path, 'w', encoding='utf-8') as f:
+            f.write(json_str)
+        os.replace(tmp_path, DATA_FILE)
+
     logger.info(f"Datos guardados - Usuarios: {len(data.get('usuarios', {}))}, Registros totales: {sum(len(r) for r in data.get('registros', {}).values())}")
 
 # -------------------
@@ -673,8 +753,8 @@ def marcar_inicio():
 
     data = cargar_datos()
     usuario = session['usuario']
-    hoy = datetime.date.today().isoformat()
-    ahora = datetime.datetime.now().isoformat()
+    hoy = today_local_iso()
+    ahora = now_local().isoformat()
 
     if usuario not in data['registros']:
         data['registros'][usuario] = {}
@@ -724,8 +804,8 @@ def marcar_salida():
 
     data = cargar_datos()
     usuario = session['usuario']
-    hoy = datetime.date.today().isoformat()
-    ahora = datetime.datetime.now()
+    hoy = today_local_iso()
+    ahora = now_local()
 
     if usuario in data['registros'] and hoy in data['registros'][usuario] and data['registros'][usuario][hoy]['inicio']:
         inicio_iso = data['registros'][usuario][hoy]['inicio']
@@ -750,8 +830,8 @@ def marcar_asistencia():
 
     data = cargar_datos()
     usuario = session['usuario']
-    hoy = datetime.date.today().isoformat()
-    ahora = datetime.datetime.now()
+    hoy = today_local_iso()
+    ahora = now_local()
 
     # Inicializar registros del usuario si no existen
     if usuario not in data['registros']:
@@ -968,7 +1048,7 @@ def recuperar_contrasena():
             if info.get('correo') == correo:
                 # Generar token temporal con expiración (60 minutos)
                 token = uuid.uuid4().hex
-                expira = (datetime.datetime.now() + datetime.timedelta(minutes=60)).isoformat()
+                expira = (now_local() + datetime.timedelta(minutes=60)).isoformat()
                 if 'reset_tokens' not in data:
                     data['reset_tokens'] = {}
                 data['reset_tokens'][token] = {
@@ -1788,7 +1868,7 @@ def reset_password():
     # Comprobar expiración
     try:
         expira_dt = datetime.datetime.fromisoformat(info_token.get('expira'))
-        if datetime.datetime.now() > expira_dt:
+        if now_local() > expira_dt:
             # Borrar token expirado
             del data['reset_tokens'][token]
             guardar_datos(data)
@@ -1834,8 +1914,8 @@ def turnos_mensual():
     data = cargar_datos()
     
     # Obtener mes y año de parámetros o usar actual
-    mes = request.args.get('mes', type=int) or datetime.datetime.now().month
-    ano = request.args.get('ano', type=int) or datetime.datetime.now().year
+    mes = request.args.get('mes', type=int) or now_local().month
+    ano = request.args.get('ano', type=int) or now_local().year
     
     # Nombres de meses
     meses_nombres = {
