@@ -6,3 +6,4 @@ gunicorn==21.2.0
 Werkzeug==2.3.7
 python-dotenv==1.0.0
 tzdata==2024.1
+psycopg2-binary

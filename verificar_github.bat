@@ -51,6 +51,13 @@ if %ERRORLEVEL% EQU 0 (
     echo    [ERROR] python-dotenv NO incluido
 )
 
+findstr /C:"psycopg2-binary" requirements.txt >nul
+if %ERRORLEVEL% EQU 0 (
+    echo    [OK] psycopg2-binary incluido
+) else (
+    echo    [ERROR] psycopg2-binary NO incluido
+)
+
 REM 4. Estadísticas
 echo.
 echo 4. Estadisticas del proyecto...

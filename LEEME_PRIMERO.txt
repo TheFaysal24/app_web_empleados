@@ -132,22 +132,11 @@ Esto verifica:
 ✓ Datos compartimentados
 
 ================================================
-  DEPLOYMENT EN RENDER
+  DEPLOYMENT EN HEROKU
 ================================================
 
-Después de subir a GitHub:
-
-1. Ir a render.com
-2. New Web Service
-3. Connect GitHub repo
-4. Configurar:
-   Build: pip install -r requirements.txt
-   Start: gunicorn app:app
-5. Variables entorno:
-   SECRET_KEY=...
-   EMAIL_PASSWORD=...
-6. Deploy automático ✓
-
+Sigue las instrucciones detalladas en el archivo:
+  **CONFIGURACION_HEROKU.txt**
 ================================================
   RESUMEN
 ================================================

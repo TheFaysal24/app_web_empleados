@@ -2,6 +2,7 @@
     "usuarios": {
         "admin": {
             "contrasena": "pbkdf2:sha256:600000$R1aNlQVnuniLCruu$59abf753eeea01fdf2cba3c963b50c90f76d0a8f42859950871f87f41c86e23a",
+            "contrasena": "pbkdf2:sha256:600000$YgWv1zL8xJqK9sBf$c8b7b7e5b5a5d5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
             "admin": true,
             "nombre": "Administrador",
             "cedula": "ADMIN-001",

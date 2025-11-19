@@ -16,7 +16,8 @@ print("📦 Instalando dependencias...")
 dependencias = [
     "Flask-Limiter==3.5.0",
     "Flask-WTF==1.2.1", 
-    "python-dotenv==1.0.0"
+    "python-dotenv==1.0.0",
+    "psycopg2-binary"
 ]
 
 for dep in dependencias:
