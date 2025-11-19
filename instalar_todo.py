@@ -38,14 +38,6 @@ if not os.path.exists('.env'):
 else:
     print("⏭️  Archivo .env ya existe\n")
 
-# 3. Aplicar patch de mejoras
-print("🔧 Aplicando mejoras al código...")
-try:
-    exec(open('patch_mejoras.py').read())
-except Exception as e:
-    print(f"⚠️  Nota: {e}")
-    print("   Las mejoras ya pueden estar aplicadas\n")
-
 print()
 print("=" * 60)
 print("  ✅ INSTALACIÓN COMPLETADA")

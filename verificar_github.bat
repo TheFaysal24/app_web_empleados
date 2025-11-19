@@ -24,7 +24,7 @@ if exist .gitignore (
 REM 2. Verificar archivos importantes
 echo.
 echo 2. Verificando archivos importantes...
-set archivos=app.py requirements.txt README.md Templates\turnos_mensual.html static\modern-design.css .env.example
+set archivos=app.py requirements.txt README.md Procfile CONFIGURACION_HEROKU.txt
 
 for %%f in (%archivos%) do (
     if exist %%f (
@@ -62,11 +62,9 @@ REM 4. Estadísticas
 echo.
 echo 4. Estadisticas del proyecto...
 echo    Archivos Python: 
-dir /b /s *.py 2>nul | find /c ".py"
+dir /b *.py 2>nul | find /c ".py"
 echo    Templates HTML:
-dir /b /s *.html 2>nul | find /c ".html"
-echo    Archivos Markdown:
-dir /b /s *.md 2>nul | find /c ".md"
+dir /b Templates\*.html 2>nul | find /c ".html"
 
 echo.
 echo ========================================
@@ -75,7 +73,8 @@ echo ========================================
 echo.
 echo Proximos pasos:
 echo   1. git add .
-echo   2. git commit -m "v2.1.0: Sistema completo con mejoras"
+echo   2. git commit -m "Version final para despliegue"
 echo   3. git push origin main
+echo   4. git push heroku main
 echo.
 pause
