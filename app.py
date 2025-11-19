@@ -389,7 +389,7 @@ def asignar_turnos_automaticos(cedula, id_usuario):
         turno_disponible_id = cursor.fetchone()
         
         if turno_disponible_id:
-            turno_disponible_id = turno_disponible_id[0]
+            turno_disponible_id = turno_disponible_id['id']
             
             # Verificar si el turno ya está asignado para hoy
             cursor.execute(
@@ -1229,7 +1229,7 @@ def admin_desbloquear():
     
     if user_id:
         try:
-            cursor.execute("UPDATE usuarios SET bloqueado = FALSE WHERE id = %s", (user_id[0],))
+            cursor.execute("UPDATE usuarios SET bloqueado = FALSE WHERE id = %s", (user_id['id'],))
             conn.commit()
             flash(f'Usuario {username} desbloqueado', 'message')
         except Exception as e:
@@ -1258,7 +1258,7 @@ def admin_bloquear():
     
     if user_id:
         try:
-            cursor.execute("UPDATE usuarios SET bloqueado = TRUE WHERE id = %s", (user_id[0],))
+            cursor.execute("UPDATE usuarios SET bloqueado = TRUE WHERE id = %s", (user_id['id'],))
             conn.commit()
             flash(f'Usuario {username} bloqueado', 'message')
         except Exception as e:
@@ -1291,7 +1291,7 @@ def admin_eliminar_registro():
         try:
             cursor.execute(
                 "DELETE FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s",
-                (user_id[0], fecha_str)
+                (user_id['id'], fecha_str)
             )
             conn.commit()
             if cursor.rowcount > 0:
@@ -2004,11 +2004,11 @@ def validar_turno_usuario(id_usuario, user_role, dia, hora):
     
     # Contar turnos asignados este mes
     cursor.execute("""
-        SELECT COUNT(*)
+        SELECT COUNT(*) AS total
         FROM turnos_asignados ta
         WHERE ta.id_usuario = %s AND TO_CHAR(ta.fecha_asignacion, 'YYYY-MM') = %s
     """, (id_usuario, mes_actual))
-    turnos_mes = cursor.fetchone()[0]
+    turnos_mes = cursor.fetchone()['total']
 
     # Si ya tiene 4 turnos, no puede seleccionar más hasta próximo mes
     if turnos_mes >= 4:
@@ -2102,18 +2102,18 @@ def modulo_turnos():
     historial_turnos = generar_historial_turnos(fecha_base)
     
     # Estadísticas
-    cursor.execute("SELECT COUNT(*) FROM turnos_asignados WHERE fecha_asignacion BETWEEN %s AND %s", (inicio_semana.date(), fin_semana.date()))
-    total_turnos = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) AS total FROM turnos_asignados WHERE fecha_asignacion BETWEEN %s AND %s", (inicio_semana.date(), fin_semana.date()))
+    total_turnos = cursor.fetchone()['total']
 
-    cursor.execute("SELECT COUNT(DISTINCT id_usuario) FROM turnos_asignados WHERE fecha_asignacion BETWEEN %s AND %s", (inicio_semana.date(), fin_semana.date()))
-    usuarios_activos = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(DISTINCT id_usuario) AS total FROM turnos_asignados WHERE fecha_asignacion BETWEEN %s AND %s", (inicio_semana.date(), fin_semana.date()))
+    usuarios_activos = cursor.fetchone()['total']
 
     cursor.execute("""
-        SELECT COUNT(*) FROM turnos_disponibles td
+        SELECT COUNT(*) AS total FROM turnos_disponibles td
         LEFT JOIN turnos_asignados ta ON td.id = ta.id_turno_disponible AND ta.fecha_asignacion BETWEEN %s AND %s
         WHERE ta.id IS NULL
     """, (inicio_semana.date(), fin_semana.date()))
-    turnos_libres = cursor.fetchone()[0]
+    turnos_libres = cursor.fetchone()['total']
     
     stats = {
         'total_turnos': total_turnos,
@@ -2177,11 +2177,11 @@ def generar_historial_turnos(fecha_base):
                 
                 # Verificar si hay turnos asignados para esta semana
                 cursor.execute("""
-                    SELECT COUNT(*) FROM turnos_asignados ta
+                    SELECT COUNT(*) AS total FROM turnos_asignados ta
                     JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
                     WHERE ta.id_usuario = %s AND ta.fecha_asignacion BETWEEN %s AND %s
                 """, (info['id_usuario'], fecha_inicio.date(), (fecha_inicio + datetime.timedelta(days=5)).date()))
-                turnos_count = cursor.fetchone()[0]
+                turnos_count = cursor.fetchone()['total']
 
                 if turnos_count > 0:
                     if semana < semanas_transcurridas:
@@ -2228,10 +2228,10 @@ def obtener_usuarios_con_turnos():
         
         # Contar turnos del usuario para hoy
         cursor.execute("""
-            SELECT COUNT(*) FROM turnos_asignados ta
+            SELECT COUNT(*) AS total FROM turnos_asignados ta
             WHERE ta.id_usuario = %s AND ta.fecha_asignacion = %s
         """, (user_info['id'], today_local_iso()))
-        total_turnos = cursor.fetchone()[0]
+        total_turnos = cursor.fetchone()['total']
         
         usuarios_info.append({
             'usuario': user_info['username'],
