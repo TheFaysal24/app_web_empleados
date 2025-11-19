@@ -597,6 +597,7 @@ def dashboard():
     salario_minimo = 1384308
     valor_hora_ordinaria = salario_minimo / (30 * 8)
 
+    year = now_local().year
     hoy_date = now_local().date()
     hoy_iso = hoy_date.isoformat()
 
