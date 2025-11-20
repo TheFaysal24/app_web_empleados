@@ -2724,10 +2724,12 @@ def importar_turnos_historicos():
 # -------------------
 # Ejecutar aplicación
 # -------------------
-if __name__ == '__main__':
-    init_db() # Inicializar la base de datos al iniciar la aplicación
-    # Advertencia si se usa SECRET_KEY por defecto
-    if app.secret_key.startswith('CHANGE_THIS'):
-        logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
-    
+# Inicializar la base de datos al iniciar la aplicación
+init_db()
+
+# Advertencia si se usa SECRET_KEY por defecto
+if app.secret_key.startswith('CHANGE_THIS'):
+    logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
+
+if __name__ == '__main__':    
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
