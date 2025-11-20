@@ -561,7 +561,7 @@ def register():
             cursor.close()
             conn.close()
             return redirect(url_for('login'))
-    return render_template('register.html', csrf_token=generate_csrf())
+    return render_template('register.html')
 
 # ✅ Logout con Flask-Login
 @app.route('/logout')
