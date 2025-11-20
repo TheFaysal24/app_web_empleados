@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_wtf import FlaskForm
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import json
@@ -102,6 +103,10 @@ class User(UserMixin):
 
     def get_role(self):
         return self.cargo # Usar cargo como rol
+
+# Formulario vacío para protección CSRF en páginas sin formularios complejos
+class EmptyForm(FlaskForm):
+    pass
 
 # Helper para parsear tiempos con am/pm a formato 24h
 def parse_time_am_pm(time_str):
