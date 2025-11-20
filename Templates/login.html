@@ -431,6 +431,7 @@
     <p>Ingresa tus credenciales para continuar</p>
 
     <form method="POST" action="{{ url_for('login') }}">
+      {{ csrf_token() }}
       <div class="form-group">
         <label class="form-label" for="usuario">
           <i class="fas fa-user"></i> Usuario

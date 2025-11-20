@@ -7,7 +7,7 @@
     min-height: 100vh;
     padding: 20px;
   }
-
+ 
   .container {
     max-width: 1600px;
     margin: 0 auto;
@@ -20,7 +20,7 @@
     margin-bottom: 30px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   }
-
+ 
   .header-card h2 {
     margin: 0 0 10px 0;
     background: linear-gradient(135deg, #667eea, #764ba2);
@@ -29,128 +29,119 @@
     font-size: 2.5em;
     font-weight: 800;
   }
-
-  .asignar-grid {
+ 
+  .gestor-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 25px;
   }
-
-  .dia-panel {
+ 
+  .gestor-card {
     background: white;
     border-radius: 15px;
     padding: 25px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   }
 
-  .dia-panel h4 {
+  .gestor-card h3 {
     color: #667eea;
     margin: 0 0 20px 0;
     padding-bottom: 15px;
     border-bottom: 2px solid #f0f0f0;
-    font-size: 1.3em;
+    font-size: 1.5em;
     font-weight: 700;
+    white-space: normal; /* Permite que el texto se ajuste */
+    overflow-wrap: break-word; /* Rompe palabras largas */
   }
-
-  .turno-row {
-    display: grid;
-    grid-template-columns: 80px 1fr 50px;
-    gap: 12px;
-    align-items: center;
-    padding: 15px;
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    border-radius: 12px;
-    margin-bottom: 12px;
-    border-left: 4px solid #667eea;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+ 
+  .form-group {
+    margin-bottom: 15px;
   }
-
-  .turno-row:hover {
-    transform: translateX(5px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+ 
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #555;
   }
-
-  .turno-hora {
-    font-weight: 700;
-    color: #667eea;
-    font-size: 1.15em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .select-gestor {
+ 
+  .form-group select {
+    width: 100%;
     padding: 10px 12px;
     border: 2px solid #e0e0e0;
     border-radius: 10px;
-    font-size: 0.9em;
+    font-size: 1em;
     cursor: pointer;
     transition: all 0.3s ease;
     background: white;
     font-weight: 500;
+    appearance: none; /* Eliminar estilo nativo del select */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23667eea'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
   }
-
-  .select-gestor:focus {
+ 
+  .form-group select:focus {
     border-color: #667eea;
     outline: none;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
-
-  .select-gestor:hover {
+ 
+  .form-group select:hover {
     border-color: #667eea;
   }
-
-  .btn-limpiar {
-    background: linear-gradient(135deg, #ef4444, #f87171);
+ 
+  .btn-guardar-semana {
+    background: linear-gradient(135deg, #10b981, #34d399);
     color: white;
     border: none;
-    padding: 10px;
-    border-radius: 10px;
+    padding: 12px 20px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 600;
+    font-size: 1em;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-    width: 45px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    margin-top: 20px;
+    width: 100%;
   }
-
-  .btn-limpiar:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 18px rgba(239, 68, 68, 0.5);
+ 
+  .btn-guardar-semana:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
   }
-
-  .btn-limpiar i {
-    font-size: 1.1em;
-  }
-
+ 
   .nav-buttons {
     background: rgba(255, 255, 255, 0.95);
     padding: 20px;
     border-radius: 15px;
     margin-bottom: 25px;
     display: flex;
+    align-items: center;
     gap: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   }
-
+ 
   .btn-back {
     display: inline-flex;
     align-items: center;
     gap: 10px;
     background: linear-gradient(135deg, #6b7280, #9ca3af);
     color: white;
-    padding: 12px 24px;
+    padding: 10px 20px;
     border-radius: 12px;
     text-decoration: none;
     font-weight: 600;
     transition: all 0.3s ease;
     box-shadow: 0 8px 20px rgba(107, 114, 128, 0.3);
   }
-
+ 
+  .btn-back:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(107, 114, 128, 0.4);
+  }
+ 
   .resumen-card {
     background: white;
     border-radius: 15px;
@@ -158,7 +149,7 @@
     margin-bottom: 25px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   }
-
+ 
   .resumen-card h3 {
     color: #667eea;
     margin: 0 0 20px 0;
@@ -167,25 +158,27 @@
     font-size: 1.5em;
     font-weight: 700;
   }
-
+ 
   .gestor-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 15px;
   }
-
+ 
   .gestor-box {
     background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
     border-left: 5px solid #667eea;
     padding: 15px;
     border-radius: 10px;
   }
-
+ 
   .gestor-box strong {
     color: #667eea;
     font-size: 1.1em;
+    white-space: normal; /* Permite que el texto se ajuste */
+    overflow-wrap: break-word; /* Rompe palabras largas */
   }
-
+ 
   .turno-badge {
     display: inline-block;
     background: white;
@@ -195,6 +188,12 @@
     font-size: 0.85em;
     font-weight: 600;
     color: #667eea;
+  }
+
+  @media (max-width: 768px) {
+    .nav-buttons {
+      flex-direction: column;
+    }
   }
 </style>
 
@@ -210,84 +209,63 @@
     <p style="color: #666; font-size: 1.1em;">Asigna turnos a cada gestor operativo para la semana</p>
   </div>
 
-  <!-- Resumen de Asignaciones -->
+  <!-- Resumen de Turnos Asignados -->
   <div class="resumen-card">
-    <h3><i class="fas fa-users"></i> Resumen de Turnos Asignados Esta Semana</h3>
+    <h3><i class="fas fa-calendar-check"></i> Resumen de Turnos Asignados</h3>
     <div class="gestor-summary">
-      {% for usr, info in gestores.items() %}
-      <div class="gestor-box">
-        <strong>{{ info.nombre }}</strong>
-        <div style="font-size: 0.85em; color: #666; margin: 5px 0;">
-          <i class="fas fa-id-card"></i> {{ info.cedula }}
+      {% for username, info in gestores.items() %}
+        <div class="gestor-box">
+          <strong>{{ info.nombre }}</strong>
+          <div>
+            {% set turnos_del_gestor = turnos_asignados.get(info.id, {}) %}
+            {% if turnos_del_gestor %}
+              {% for dia, hora in turnos_del_gestor.items() %}
+                <span class="turno-badge">{{ dias_nombres[dia][:3] }}: {{ hora }}</span>
+              {% endfor %}
+            {% else %}
+              <span style="color: #999; font-style: italic;">Sin turnos asignados para la semana.</span>
+            {% endif %}
+          </div>
         </div>
-        <div style="margin-top: 10px;">
-          {% set turnos_gestor = [] %}
-          {% for dia, horas in shifts.items() %}
-            {% for hora, usuario in horas.items() %}
-              {% if usuario == usr %}
-                {% set _ = turnos_gestor.append(hora) %}
-              {% endif %}
-            {% endfor %}
-          {% endfor %}
-          
-          {% if turnos_gestor %}
-            {% for turno in turnos_gestor %}
-            <span class="turno-badge"><i class="fas fa-clock"></i> {{ turno }}</span>
-            {% endfor %}
-          {% else %}
-            <span style="color: #999; font-size: 0.9em;">Sin turnos asignados</span>
-          {% endif %}
-        </div>
-      </div>
+      {% else %}
+        <p>No hay gestores para mostrar.</p>
       {% endfor %}
     </div>
   </div>
 
-  <!-- Panel de Asignación por Día -->
-  <div class="asignar-grid">
-    {% set dias_nombres = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado'} %}
-    {% set dias_iconos = {'monday': '🌅', 'tuesday': '🌄', 'wednesday': '🌞', 'thursday': '☀️', 'friday': '🌤️', 'saturday': '🌈'} %}
-    
-    {% for dia, nombre in dias_nombres.items() %}
-    <div class="dia-panel">
-      <h4>{{ dias_iconos[dia] }} {{ nombre }}</h4>
-      
-      {% if dia in shifts %}
-        {% for hora, usuario_actual in shifts[dia].items() %}
-        <div class="turno-row">
-          <div class="turno-hora">
-            <i class="fas fa-clock"></i>
-            {{ hora }}
-          </div>
-          
-          <form method="POST" action="{{ url_for('admin_asignar_turno_manual') }}" style="flex: 1;">
-            <input type="hidden" name="dia" value="{{ dia }}">
-            <input type="hidden" name="hora" value="{{ hora }}">
-            
-            <select name="usuario" class="select-gestor" onchange="this.form.submit()">
-              <option value="">-- Disponible --</option>
-              {% for usr, info in gestores.items() %}
-              <option value="{{ usr }}" {% if usuario_actual == usr %}selected{% endif %}>
-                {{ info.nombre }}
-              </option>
+  <!-- Panel de Asignación por Gestor -->
+  <div class="gestor-grid">
+    {% set dias_nombres = {
+      'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
+      'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'
+    } %}
+
+    {% for username, info in gestores.items() %}
+    <div class="gestor-card">
+      <h3><i class="fas fa-user-circle"></i> {{ info.nombre }} ({{ info.cargo }})</h3>
+      <form method="POST" action="{{ url_for('admin_asignar_turno_manual') }}">
+        <input type="hidden" name="id_usuario" value="{{ info.id }}">
+        
+        {% for dia_str in dias_semana %}
+        <div class="form-group">
+          <label for="turno_{{ info.id }}_{{ dia_str }}">{{ dias_nombres[dia_str] }}</label>
+          <select name="turno_{{ dia_str }}" id="turno_{{ info.id }}_{{ dia_str }}">
+            <option value="">-- Libre --</option>
+            {% if turnos_disponibles[dia_str] %}
+              {% for hora_disponible in turnos_disponibles[dia_str] %}
+                <option value="{{ hora_disponible }}"
+                  {% if turnos_asignados.get(info.id, {}).get(dia_str) == hora_disponible %}selected{% endif %}>
+                  {{ hora_disponible }}
+                </option>
               {% endfor %}
-            </select>
-          </form>
-          
-          {% if usuario_actual %}
-          <form method="POST" action="{{ url_for('admin_limpiar_turno') }}">
-            <input type="hidden" name="dia" value="{{ dia }}">
-            <input type="hidden" name="hora" value="{{ hora }}">
-            <button type="submit" class="btn-limpiar" title="Liberar turno">
-              <i class="fas fa-times-circle"></i>
-            </button>
-          </form>
-          {% else %}
-          <div style="width: 45px;"></div>
-          {% endif %}
+            {% endif %}
+          </select>
         </div>
         {% endfor %}
-      {% endif %}
+        <button type="submit" class="btn-guardar-semana">
+          <i class="fas fa-save"></i> Guardar Semana
+        </button>
+      </form>
     </div>
     {% endfor %}
   </div>

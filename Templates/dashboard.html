@@ -715,7 +715,6 @@
         </thead>
         <tbody>
           {% set row_count = namespace(count=0) %}
-          {% if registros %}
           {% for usr, regs in registros.items() %}
             {% if regs and regs is mapping %}
             {% set last_reg = regs.items()|list|last %}
@@ -732,9 +731,7 @@
               </tr>
               {% set row_count.count = row_count.count + 1 %}
             {% endif %}
-            {% endif %}
           {% endfor %}
-          {% endif %}
         </tbody>
       </table>
     </div>
@@ -756,91 +753,36 @@
     </a>
     {% endif %}
   </h3>
-  
-  {% if data and data.get('turnos') and data.get('turnos').get('shifts') %}
   <div style="overflow-x: auto;">
     <table style="width: 100%; border-collapse: collapse;">
       <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
         <tr>
           <th style="padding: 12px; text-align: left;">Gestor</th>
-          <th style="padding: 12px; text-align: left;">Cargo</th>
-          <th style="padding: 12px; text-align: center;">Lunes</th>
-          <th style="padding: 12px; text-align: center;">Martes</th>
-          <th style="padding: 12px; text-align: center;">Miércoles</th>
-          <th style="padding: 12px; text-align: center;">Jueves</th>
-          <th style="padding: 12px; text-align: center;">Viernes</th>
-          <th style="padding: 12px; text-align: center;">Sábado</th>
-          {% if admin %}
-          <th style="padding: 12px; text-align: center;">Acciones</th>
-          {% endif %}
+          {% set dias_semana_map = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'} %}
+          {% for fecha in fechas_semana_actual %}
+            <th style="padding: 12px; text-align: center;">{{ dias_semana_map.get(fecha.strftime('%A').lower(), '') }}<br><small style="font-weight: normal; opacity: 0.8;">{{ fecha.strftime('%d/%m') }}</small></th>
+          {% endfor %}
         </tr>
       </thead>
       <tbody>
-        {% set cedulas_gestores = ["1070963486", "1067949514", "1140870406", "1068416077"] %}
-        {% for usr, info in data['usuarios'].items() %}
-          {% if info.get('cedula') in cedulas_gestores %}
+        {% for username, turnos_del_usuario in turnos_semana_actual.items() %}
           <tr style="border-bottom: 1px solid #e0e0e0;">
-            <td style="padding: 12px; font-weight: 700;">{{ info.get('nombre', usr) }}</td>
-            <td style="padding: 12px;">{{ info.get('cargo', 'Gestor') }}</td>
-            
-            {% set dias_orden = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] %}
-            {% for dia in dias_orden %}
+            <td style="padding: 12px; font-weight: 700;">{{ username }}</td>
+            {% for fecha in fechas_semana_actual %}
               <td style="padding: 12px; text-align: center;">
-                {% set turno_dia = [] %}
-                {% if data['turnos']['shifts'].get(dia) %}
-                  {% for hora, usuario in data['turnos']['shifts'][dia].items() %}
-                    {% if usuario == usr %}
-                      {% set _ = turno_dia.append(hora) %}
-                    {% endif %}
-                  {% endfor %}
-                {% endif %}
-                
-                {% if turno_dia %}
-                  {% for hora in turno_dia %}
-                  <span class="badge badge-success">{{ hora }}</span>
-                  {% endfor %}
+                {% set dia_str = fecha.strftime('%A').lower() %}
+                {% set hora_asignada = turnos_del_usuario.get(dia_str) %}
+                {% if hora_asignada %}
+                  <span class="badge badge-success">{{ hora_asignada }}</span>
                 {% else %}
                   <span style="color: #ccc;">-</span>
                 {% endif %}
               </td>
             {% endfor %}
-            
-            {% if admin %}
-            <td style="padding: 12px; text-align: center;">
-              <a href="{{ url_for('admin_asignar_turnos') }}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.85em; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fas fa-edit"></i> Editar
-              </a>
-            </td>
-            {% endif %}
           </tr>
-          {% endif %}
         {% endfor %}
       </tbody>
     </table>
-  </div>
-  {% else %}
-  <div class="no-data">
-    <i class="fas fa-calendar-times" style="font-size: 3em; opacity: 0.3;"></i>
-    <p>No hay turnos asignados</p>
-  </div>
-  {% endif %}
-</div>
-
-
-
-
-
-<!-- Gráficos (Solo Admin) -->
-{% if admin %}
-<div class="grid-2">
-  <div class="chart-card">
-    <h4>📈 Horas Trabajadas (Últimos 7 días)</h4>
-    <canvas id="graficoHoras" style="max-height: 300px;"></canvas>
-  </div>
-
-  <div class="chart-card">
-    <h4>💰 Costos por Horas Extras</h4>
-    <canvas id="graficoCostos" style="max-height: 300px;"></canvas>
   </div>
 </div>
 
@@ -850,22 +792,11 @@
     <canvas id="graficoInicios" style="max-height: 300px;"></canvas>
   </div>
 
-  <div class="chart-card">
-    <h4>📊 Evolución Mensual</h4>
-    <canvas id="graficoExtras" style="max-height: 300px;"></canvas>
-  </div>
 </div>
-{% endif %}
-
-<!-- Botones de exportación (Solo Admin) -->
 {% if admin %}
 <div class="export-buttons">
-  <h5 style="width: 100%; margin: 0 0 10px 0; color: #667eea; font-weight: 700;">⬇️ Descargar Datos</h5>
   <a href="{{ url_for('exportar_registros') }}" class="btn-export-small">
     <i class="fas fa-download"></i> Registros CSV
-  </a>
-  <a href="{{ url_for('exportar_datos') }}" class="btn-export-small">
-    <i class="fas fa-file-csv"></i> Datos Completos
   </a>
 </div>
 {% endif %}
@@ -980,30 +911,21 @@
       combinedData.sort((a, b) => b.inicios - a.inicios);
 
       // Tomar solo los top 5 para mejor visualización
-      const topData = combinedData.slice(0, 5);
-      const topUsuarios = topData.map(d => d.usuario);
-      const topInicios = topData.map(d => d.inicios);
+      const topData = combinedData.slice(0, 5);cios);
       const topPorcentajes = topData.map(d => d.porcentaje);
 
       new Chart(ctx2, {
         type: 'bar',
         data: {
-          labels: topUsuarios.map((u, i) => u + '\n' + topInicios[i] + ' (' + topPorcentajes[i] + '%)'),
-          datasets: [{
-            label: 'Inicios por Usuario',
-            data: topInicios,
+          label
+            lab
             backgroundColor: [
-              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
-              'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
-            ].slice(0, topUsuarios.length),
-            borderRadius: 8,
-            borderSkipped: false,
+              '#667eea', // Azul
+              '#764ba2', // Morado
+            ],
+            borderRadius: 8,d: false,
             borderWidth: 0
           }]
-        },
         options: {
           responsive: true,
           maintainAspectRatio: true,
@@ -1037,9 +959,7 @@
             x: {
               ticks: {
                 color: '#667eea',
-                font: { weight: 'bold', size: 10 },
-                maxRotation: 0,
-                minRotation: 0
+                font: { weight: 'bold', size: 11 }
               },
               grid: {
                 display: false
@@ -1077,22 +997,17 @@
             label: 'Costo Horas Extras ($)',
             data: topCostos.map(d => d.costo),
             backgroundColor: [
-              'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
-              'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              'linear-gradient(135deg, #fa709a 0%, #fecfef 100%)',
-              'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+              '#ff6b6b', // Rojo
+              '#f093fb', // Rosa claro
+              '#667eea', // Azul
+              '#fa709a', // Rosa oscuro
+              '#11998e'  // Verde azulado
             ].slice(0, topCostos.length),
             borderRadius: 8,
             borderSkipped: false,
             borderWidth: 0
           }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
+        },n
               display: false
             },
             tooltip: {
@@ -1120,9 +1035,7 @@
             x: {
               ticks: {
                 color: '#667eea',
-                font: { weight: 'bold', size: 10 },
-                maxRotation: 0,
-                minRotation: 0
+                font: { weight: 'bold', size: 11 }
               },
               grid: {
                 display: false
@@ -1136,9 +1049,8 @@
 
     // Gráfico de distribución de cargos
     const ctx4 = document.getElementById('graficoCargos');
-    if (ctx4 && serverData.usuarios && Object.keys(serverData.usuarios).length > 0) {
+    if (ctx4 && serverData.usuarios) {
       const cargosCount = {};
-
       Object.values(serverData.usuarios).forEach(user => {
         const cargo = user.cargo || 'Sin definir';
         cargosCount[cargo] = (cargosCount[cargo] || 0) + 1;
@@ -1150,15 +1062,15 @@
       new Chart(ctx4, {
         type: 'pie',
         data: {
-          labels: cargos.map((c, i) => c + ' (' + cantidades[i] + ')'),
+          labels: cargos, // Solo el nombre del cargo
           datasets: [{
             data: cantidades,
             backgroundColor: [
-              '#667eea',
-              '#764ba2',
-              '#f093fb',
-              '#f5576c',
-              '#667eea',
+              '#667eea', // Azul
+              '#764ba2', // Morado
+              '#f093fb', // Rosa claro
+              '#f5576c', // Rojo coral
+              '#667eea', // Azul (repetido para más categorías)
               '#764ba2',
               '#fa709a',
               '#11998e',
@@ -1168,24 +1080,23 @@
             borderWidth: 2
           }]
         },
-        options: {
+        options: {,
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           plugins: {
-            legend: {
-              position: 'bottom',
+            legend: {'bottom',
               labels: {
                 font: { size: 10, weight: 'bold' },
                 color: '#667eea',
                 padding: 8
-              }
+              },
             },
             tooltip: {
               callbacks: {
                 label: function(context) {
                   const value = context.parsed;
                   const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percentage = ((value / total) * 100).toFixed(1);
+                  const percentage = ((value / total) * 100).toFixed(1); // Mostrar porcentaje en tooltip
                   return value + ' empleados (' + percentage + '%)';
                 }
               }

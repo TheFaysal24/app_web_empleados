@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import json
@@ -14,6 +15,7 @@ import shutil
 import logging
 from functools import wraps
 import uuid
+import re
 
 # Cargar variables de entorno
 load_dotenv()
@@ -60,6 +62,9 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
+# ✅ Protección CSRF
+csrf = CSRFProtect(app)
+
 # Configuración de Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -98,23 +103,82 @@ class User(UserMixin):
     def get_role(self):
         return self.cargo # Usar cargo como rol
 
-# --- Funciones de Base de Datos MySQL ---
+# Helper para parsear tiempos con am/pm a formato 24h
+def parse_time_am_pm(time_str):
+    if not time_str:
+        return None
+    time_str = time_str.replace('.', '').replace(' ', '').lower()
+    if 'a.m' in time_str:
+        time_str = time_str.replace('a.m', '')
+        hour, minute = map(int, time_str.split(':'))
+        if hour == 12: hour = 0 # 12 AM es 00:00
+    elif 'p.m' in time_str:
+        time_str = time_str.replace('p.m', '')
+        hour, minute = map(int, time_str.split(':'))
+        if hour != 12: hour += 12 # 12 PM es 12:00, otros add 12
+    else: # Asumir formato 24-horas si no hay am/pm
+        hour, minute = map(int, time_str.split(':'))
+    return f"{hour:02d}:{minute:02d}"
+
+# ✅ FUNCIONES DE VALIDACIÓN
+def validar_email(email):
+    """Valida formato de email"""
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+def validar_cedula(cedula):
+    """Valida cédula (solo números, 8-15 dígitos)"""
+    return cedula.isdigit() and 8 <= len(cedula) <= 15
+
+def sanitizar_string(valor, max_len=255):
+    """Sanitiza y valida string"""
+    if not isinstance(valor, str):
+        return None
+    valor = valor.strip()
+    if len(valor) > max_len or len(valor) == 0:
+        return None
+    # Evitar inyección SQL - solo caracteres seguros
+    if '<' in valor or '>' in valor or '"' in valor or "'" in valor or '--' in valor:
+        return None
+    return valor
+
+def validar_fecha(fecha_str):
+    """Valida formato ISO de fecha (YYYY-MM-DD)"""
+    try:
+        datetime.datetime.fromisoformat(fecha_str)
+        return True
+    except:
+        return False
+
+def validar_username(username):
+    """Valida username (alfanumérico, guiones y subguiones permitidos)"""
+    return bool(re.match(r'^[a-zA-Z0-9_-]{3,50}$', username))
+
+# --- Funciones de Base de Datos PostgreSQL ---
 def get_db_connection():
-    """Crea y retorna una conexión a la base de datos MySQL."""
-    # Render proporciona una URL de conexión completa en la variable de entorno DATABASE_URL
+    """Crea y retorna una conexión a la base de datos PostgreSQL."""
     conn_args = {'cursor_factory': psycopg2.extras.DictCursor}
     db_url = os.environ.get('DATABASE_URL')
+    
     if db_url: # En producción (Render)
         return psycopg2.connect(db_url, **conn_args)
-    else: # En desarrollo (local)
-        # Conexión local para desarrollo
-        return psycopg2.connect(
-            host=os.environ.get('DB_HOST', 'localhost'),
-            user=os.environ.get('DB_USER', 'postgres'),
-            password=os.environ.get('DB_PASSWORD', ''),
-            dbname=os.environ.get('DB_NAME', 'sistema_empleados'),
-            **conn_args
-        )
+    else: # En desarrollo (local) - USAR VARIABLES DE ENTORNO
+        try:
+            conn = psycopg2.connect(
+                host=os.environ.get('DB_HOST', 'localhost'),
+                user=os.environ.get('DB_USER', 'postgres'),
+                password=os.environ.get('DB_PASSWORD', ''),
+                dbname=os.environ.get('DB_NAME', 'sistema_empleados'),
+                **conn_args
+            )
+            return conn
+        except psycopg2.OperationalError as e:
+            logger.error(f"Error de conexión a BD: {e}")
+            logger.error("Asegúrate de que:")
+            logger.error("  1. PostgreSQL esté corriendo")
+            logger.error("  2. Archivo .env esté configurado")
+            logger.error("  3. Usuario y contraseña sean correctos")
+            raise
 
 def init_db():
     """Inicializa la base de datos: crea tablas si no existen y el usuario admin."""
@@ -144,8 +208,8 @@ def init_db():
             UNIQUE (dia_semana, hora)
         )
     """)
-    dias = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-    horas = ['06:30', '08:00', '08:30', '09:00']
+    dias = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] # Añadido 'sunday'
+    horas = ['06:30', '07:00', '08:00', '08:30', '09:00', '10:00', '11:00', '11:30'] # Añadidas nuevas horas
     for dia in dias:
         for hora in horas:
             try:
@@ -365,8 +429,10 @@ def asignar_turnos_automaticos(cedula, id_usuario):
 
     # Calcular qué semana estamos desde Nov 3
     fecha_base = datetime.datetime(2025, 11, 3)
-    hoy = datetime.datetime.now()
-    semanas_transcurridas = ((hoy - fecha_base).days // 7) + 1
+    hoy = now_local() # Puede ser aware o naive
+    # Hacemos ambas fechas naive para poder compararlas sin error
+    hoy_naive = hoy.replace(tzinfo=None)
+    semanas_transcurridas = ((hoy_naive - fecha_base).days // 7) + 1
     
     # Obtener patrón de turnos para esta cédula
     patron = shift_assignments[cedula]
@@ -411,20 +477,34 @@ def asignar_turnos_automaticos(cedula, id_usuario):
 
 # ✅ Registro - Hash de contraseñas
 @app.route('/register', methods=['GET', 'POST'])
+@csrf.exempt  # Temporarily disabled for debugging
 @limiter.limit("10 per hour")  # Máximo 10 registros por hora
 def register():
     if request.method == 'POST':
-        nombre = request.form.get('nombre', '').strip()
-        cedula = request.form.get('cedula', '').strip()
-        cargo = request.form.get('cargo', '').strip()
-        correo = request.form.get('correo', '').strip()
-        telefono = request.form.get('telefono', '').strip()
-        username = request.form.get('usuario', '').strip()
+        # ✅ VALIDACIÓN DE INPUTS
+        nombre = sanitizar_string(request.form.get('nombre', ''), 100)
+        cedula = sanitizar_string(request.form.get('cedula', ''), 20)
+        cargo = sanitizar_string(request.form.get('cargo', ''), 100)
+        correo = sanitizar_string(request.form.get('correo', ''), 120)
+        telefono = sanitizar_string(request.form.get('telefono', ''), 20)
+        username = sanitizar_string(request.form.get('usuario', ''), 50)
         contrasena = request.form.get('contrasena', '')
 
-        # Validaciones básicas
+        # Validaciones específicas
         if not all([nombre, cedula, cargo, correo, username, contrasena]):
-            flash('Todos los campos son obligatorios', 'error')
+            flash('Todos los campos son obligatorios y válidos', 'error')
+            return redirect(url_for('register'))
+
+        if not validar_username(username):
+            flash('Username inválido. Solo alfanuméricos, guiones y subguiones (3-50 caracteres)', 'error')
+            return redirect(url_for('register'))
+
+        if not validar_email(correo):
+            flash('Email inválido', 'error')
+            return redirect(url_for('register'))
+
+        if not validar_cedula(cedula):
+            flash('Cédula inválida. Debe contener solo números (8-15 dígitos)', 'error')
             return redirect(url_for('register'))
 
         if len(contrasena) < 6:
@@ -448,32 +528,40 @@ def register():
         
         if usuario_existente:
             # 2. Si la cédula ya existe, actualizamos la información de ese usuario
-            cursor.execute(
-                "UPDATE usuarios SET nombre = %s, cargo = %s, correo = %s, telefono = %s, contrasena = %s WHERE id = %s",
-                (nombre, cargo, correo, telefono, generate_password_hash(contrasena), usuario_existente['id'])
-            )
-            conn.commit()
-            logger.info(f"Usuario actualizado: {usuario_existente['username']}")
-            flash(f'✅ ¡Hola {nombre}! Tu información ha sido actualizada. Tu nombre de usuario es "{usuario_existente["username"]}".', 'message')
+            try:
+                cursor.execute(
+                    "UPDATE usuarios SET nombre = %s, cargo = %s, correo = %s, telefono = %s, contrasena = %s WHERE id = %s",
+                    (nombre, cargo, correo, telefono, generate_password_hash(contrasena), usuario_existente['id'])
+                )
+                conn.commit()
+                logger.info(f"Usuario actualizado: {usuario_existente['username']}")
+                flash(f'Usuario actualizado: {usuario_existente["username"]}.', 'message')
+            except psycopg2.DatabaseError as e:
+                logger.error(f"Error al actualizar usuario: {e}")
+                flash('Error al actualizar usuario', 'error')
             cursor.close()
             conn.close()
             return redirect(url_for('login'))
         else:
             # 3. Si ni el usuario ni la cédula existen, creamos un nuevo usuario
-            hashed_password = generate_password_hash(contrasena)
-            cursor.execute(
-                "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
-                (username, hashed_password, False, nombre, cedula, cargo, correo, telefono)
-            )
-            id_nuevo_usuario = cursor.fetchone()['id']
-            conn.commit()
-            asignar_turnos_automaticos(cedula, id_nuevo_usuario)
-            logger.info(f"Nuevo usuario registrado: {username}")
-            flash('✅ Usuario registrado con éxito. Turnos asignados automáticamente.', 'message')
+            try:
+                hashed_password = generate_password_hash(contrasena)
+                cursor.execute(
+                    "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    (username, hashed_password, False, nombre, cedula, cargo, correo, telefono)
+                )
+                id_nuevo_usuario = cursor.fetchone()['id']
+                conn.commit()
+                asignar_turnos_automaticos(cedula, id_nuevo_usuario)
+                logger.info(f"Nuevo usuario registrado: {username}")
+                flash('Usuario registrado con éxito. Turnos asignados automáticamente.', 'message')
+            except psycopg2.DatabaseError as e:
+                logger.error(f"Error al crear usuario: {e}")
+                flash('Error al registrar usuario', 'error')
             cursor.close()
             conn.close()
             return redirect(url_for('login'))
-    return render_template('register.html')
+    return render_template('register.html', csrf_token=generate_csrf())
 
 # ✅ Logout con Flask-Login
 @app.route('/logout')
@@ -484,7 +572,7 @@ def logout():
     flash('Sesión cerrada', 'message')
     return redirect(url_for('home'))
 
-# ✅ User Dashboard - Panel personalizado para usuarios regulares
+# ✅ User Dashboard - Panel personalizado para usuarios regulares con HORARIOS DE INICIO/SALIDA
 @app.route('/user_dashboard')
 @login_required
 def user_dashboard():
@@ -584,15 +672,12 @@ def dashboard():
     
     admin = current_user.admin
     
-    horas_extras_hoy = 0.0
-    horas_extras_semana = 0.0
-    horas_extras_mes = 0.0
-    
     registros_limpios = {}
     contador_inicios = {}
     costo_horas_extras = {}
     usuarios_iniciados_hoy = 0
     total_usuarios_nuevos = 0
+    turnos_usuarios = {}  # ✅ NUEVO: Almacenar turnos seleccionados por usuario
 
     salario_minimo = 1384308
     valor_hora_ordinaria = salario_minimo / (30 * 8)
@@ -610,6 +695,7 @@ def dashboard():
             user_id = user_info['id']
             username = user_info['username']
             
+            # Obtener registros de asistencia
             cursor.execute(
                 "SELECT fecha, inicio, salida, horas_trabajadas, horas_extras FROM registros_asistencia WHERE id_usuario = %s ORDER BY fecha DESC",
                 (user_id,)
@@ -618,9 +704,21 @@ def dashboard():
             
             registros_limpios[username] = {}
             for reg in user_registros_db:
+                # ✅ Incluir hora de inicio/salida en formato HH:MM
+                inicio_time = None
+                salida_time = None
+                if reg['inicio']:
+                    inicio_dt = reg['inicio']
+                    inicio_time = f"{inicio_dt.hour:02d}:{inicio_dt.minute:02d}"
+                if reg['salida']:
+                    salida_dt = reg['salida']
+                    salida_time = f"{salida_dt.hour:02d}:{salida_dt.minute:02d}"
+                
                 registros_limpios[username][reg['fecha'].isoformat()] = {
                     'inicio': reg['inicio'].isoformat() if reg['inicio'] else None,
                     'salida': reg['salida'].isoformat() if reg['salida'] else None,
+                    'inicio_time': inicio_time,  # ✅ NUEVO
+                    'salida_time': salida_time,  # ✅ NUEVO
                     'horas_trabajadas': float(reg['horas_trabajadas']),
                     'horas_extras': float(reg['horas_extras'])
                 }
@@ -641,6 +739,20 @@ def dashboard():
 
             if hoy_iso in registros_limpios[username] and registros_limpios[username][hoy_iso].get('inicio'):
                 usuarios_iniciados_hoy += 1
+            
+            # ✅ NUEVO: Obtener turnos seleccionados del usuario
+            cursor.execute("""
+                SELECT td.dia_semana, td.hora
+                FROM turnos_asignados ta
+                JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+                WHERE ta.id_usuario = %s
+                ORDER BY CASE td.dia_semana
+                    WHEN 'monday' THEN 1 WHEN 'tuesday' THEN 2 WHEN 'wednesday' THEN 3
+                    WHEN 'thursday' THEN 4 WHEN 'friday' THEN 5 WHEN 'saturday' THEN 6 ELSE 7
+                END, td.hora
+            """, (user_id,))
+            turnos_db = cursor.fetchall()
+            turnos_usuarios[username] = [(t['dia_semana'], t['hora']) for t in turnos_db]
         
         fechas_horas = {}
         cursor.execute("SELECT fecha, SUM(horas_trabajadas) as total_horas FROM registros_asistencia GROUP BY fecha ORDER BY fecha DESC LIMIT 7")
@@ -667,9 +779,21 @@ def dashboard():
         
         registros_limpios[username] = {}
         for reg in user_registros_db:
+            # ✅ Incluir hora de inicio/salida en formato HH:MM
+            inicio_time = None
+            salida_time = None
+            if reg['inicio']:
+                inicio_dt = reg['inicio']
+                inicio_time = f"{inicio_dt.hour:02d}:{inicio_dt.minute:02d}"
+            if reg['salida']:
+                salida_dt = reg['salida']
+                salida_time = f"{salida_dt.hour:02d}:{salida_dt.minute:02d}"
+            
             registros_limpios[username][reg['fecha'].isoformat()] = {
                 'inicio': reg['inicio'].isoformat() if reg['inicio'] else None,
                 'salida': reg['salida'].isoformat() if reg['salida'] else None,
+                'inicio_time': inicio_time,  # ✅ NUEVO
+                'salida_time': salida_time,  # ✅ NUEVO
                 'horas_trabajadas': float(reg['horas_trabajadas']),
                 'horas_extras': float(reg['horas_extras'])
             }
@@ -683,10 +807,45 @@ def dashboard():
         horas_fechas = [fechas_horas_filtradas.get(fecha, 0) for fecha in fechas_ordenadas]
 
         # 🔒 OCULTAR COSTOS PARA USUARIOS NORMALES
-        # Para usuarios no-admin, los costos y valores monetarios se dejan en 0.
         costo_horas_extras = {}
         costo_total_empresa = 0
         valor_hora_ordinaria = 0
+        
+        # ✅ NUEVO: Obtener turnos seleccionados del usuario
+        cursor.execute("""
+            SELECT td.dia_semana, td.hora
+            FROM turnos_asignados ta
+            JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+            WHERE ta.id_usuario = %s
+            ORDER BY CASE td.dia_semana
+                WHEN 'monday' THEN 1 WHEN 'tuesday' THEN 2 WHEN 'wednesday' THEN 3
+                WHEN 'thursday' THEN 4 WHEN 'friday' THEN 5 WHEN 'saturday' THEN 6 ELSE 7
+            END, td.hora
+        """, (usuario_id,))
+        turnos_db = cursor.fetchall()
+        turnos_usuarios[username] = [(t['dia_semana'], t['hora']) for t in turnos_db]
+
+    # Obtener turnos de la semana actual para la tabla del dashboard
+    turnos_semana_actual = {}
+    inicio_semana = hoy_date - datetime.timedelta(days=hoy_date.weekday())
+    fin_semana = inicio_semana + datetime.timedelta(days=6)
+    
+    cursor.execute("""
+        SELECT u.username, td.dia_semana, td.hora
+        FROM turnos_asignados ta
+        JOIN usuarios u ON ta.id_usuario = u.id
+        JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+        WHERE ta.fecha_asignacion BETWEEN %s AND %s
+    """, (inicio_semana, fin_semana))
+    
+    turnos_db = cursor.fetchall()
+    for turno in turnos_db:
+        if turno['username'] not in turnos_semana_actual:
+            turnos_semana_actual[turno['username']] = {}
+        turnos_semana_actual[turno['username']][turno['dia_semana']] = turno['hora']
+
+    # Obtener fechas de la semana actual
+    fechas_semana_actual = [(hoy_date - datetime.timedelta(days=hoy_date.weekday()) + datetime.timedelta(days=i)) for i in range(7)]
 
     cursor.close()
     conn.close()
@@ -705,10 +864,10 @@ def dashboard():
         costo_horas_extras=costo_horas_extras or {},
         costo_total_empresa=costo_total_empresa,
         valor_hora_ordinaria=round(valor_hora_ordinaria, 2) if valor_hora_ordinaria else 0,
-        data={'usuarios': {}, 'turnos': {'shifts': {}, 'monthly_assignments': {}}}, # Data ya no se carga de JSON
-        horas_extras_hoy=horas_extras_hoy,
-        horas_extras_semana=horas_extras_semana,
-        horas_extras_mes=horas_extras_mes,
+        data={'usuarios': {}, 'turnos': {'shifts': {}, 'monthly_assignments': {}}},
+        turnos_semana_actual=turnos_semana_actual,
+        turnos_usuarios=turnos_usuarios,  # ✅ NUEVO: Pasar turnos seleccionados
+        fechas_semana_actual=fechas_semana_actual,
         session=session
     )
 
@@ -1685,7 +1844,16 @@ def admin_asignar_turnos():
     cedulas_gestores = ["1070963486", "1067949514", "1140870406", "1068416077"]
     gestores = {}
     
-    cursor.execute("SELECT id, username, nombre, cedula, cargo FROM usuarios WHERE cedula IN (%s, %s, %s, %s)", tuple(cedulas_gestores))
+    # Obtener todos los turnos disponibles para los menús desplegables
+    cursor.execute("SELECT dia_semana, hora FROM turnos_disponibles ORDER BY hora")
+    turnos_disponibles_db = cursor.fetchall()
+    turnos_disponibles_por_dia = {}
+    for turno in turnos_disponibles_db:
+        if turno['dia_semana'] not in turnos_disponibles_por_dia:
+            turnos_disponibles_por_dia[turno['dia_semana']] = []
+        turnos_disponibles_por_dia[turno['dia_semana']].append(turno['hora'])
+
+    cursor.execute("SELECT id, username, nombre, cedula, cargo FROM usuarios WHERE cedula = ANY(%s)", (cedulas_gestores,))
     gestores_db = cursor.fetchall()
 
     for usr_info in gestores_db:
@@ -1695,39 +1863,35 @@ def admin_asignar_turnos():
             'cedula': usr_info['cedula'],
             'cargo': usr_info['cargo']
         }
-    
-    # Obtener todos los turnos disponibles y sus asignaciones para hoy
-    shifts = {}
-    order_clause = """
-        ORDER BY CASE td.dia_semana
-            WHEN 'monday' THEN 1 WHEN 'tuesday' THEN 2 WHEN 'wednesday' THEN 3
-            WHEN 'thursday' THEN 4 WHEN 'friday' THEN 5 WHEN 'saturday' THEN 6 ELSE 7
-        END, td.hora
-    """
-    cursor.execute(f"""
-        SELECT 
-            td.id AS turno_disponible_id, td.dia_semana, td.hora,
-            u.username AS assigned_username
-        FROM turnos_disponibles td
-        LEFT JOIN turnos_asignados ta ON td.id = ta.id_turno_disponible AND ta.fecha_asignacion = %s
-        LEFT JOIN usuarios u ON ta.id_usuario = u.id
-    """ + order_clause, (today_local_iso(),))
-    all_shifts_data = cursor.fetchall()
 
-    for shift_data in all_shifts_data:
-        dia = shift_data['dia_semana']
-        hora = shift_data['hora']
-        if dia not in shifts:
-            shifts[dia] = {}
-        shifts[dia][hora] = shift_data['assigned_username']
+    # Obtener turnos ya asignados para la semana actual
+    hoy = now_local().date()
+    inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
+    fin_semana = inicio_semana + datetime.timedelta(days=6)
+
+    cursor.execute("""
+        SELECT ta.id_usuario, td.dia_semana, td.hora
+        FROM turnos_asignados ta
+        JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+        WHERE ta.fecha_asignacion BETWEEN %s AND %s
+    """, (inicio_semana, fin_semana))
+    
+    turnos_asignados_semana = cursor.fetchall()
+    
+    # Estructurar los turnos asignados por usuario y día
+    turnos_por_gestor = {g['id']: {} for g in gestores.values()}
+    for turno in turnos_asignados_semana:
+        if turno['id_usuario'] in turnos_por_gestor:
+            turnos_por_gestor[turno['id_usuario']][turno['dia_semana']] = turno['hora']
     
     cursor.close()
     conn.close()
     
     return render_template('admin_asignar_turnos.html',
-                         shifts=shifts,
+                         turnos_disponibles=turnos_disponibles_por_dia,
+                         turnos_asignados=turnos_por_gestor,
                          gestores=gestores,
-                         data={'usuarios': {}}) # Data ya no se carga de JSON
+                         dias_semana=['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])
 
 # ✅ Asignar turno manual (Admin)
 @app.route('/admin/asignar_turno_manual', methods=['POST'])
@@ -1739,54 +1903,48 @@ def admin_asignar_turno_manual():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    dia = request.form.get('dia')
-    hora = request.form.get('hora')
-    username_to_assign = request.form.get('usuario') # Este es el username del gestor
+    id_usuario = request.form.get('id_usuario')
+    dias_semana = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
     
-    if dia and hora:
-        cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, hora))
-        turno_disponible_id = cursor.fetchone()
-        
-        if not turno_disponible_id:
-            flash('Turno no válido', 'error')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('admin_asignar_turnos'))
-        
-        turno_disponible_id = turno_disponible_id['id']
+    hoy = now_local().date()
+    inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
 
-        if username_to_assign:
-            cursor.execute("SELECT id, nombre FROM usuarios WHERE username = %s", (username_to_assign,))
-            user_data = cursor.fetchone()
-            
-            if user_data:
-                try:
+    try:
+        # Primero, eliminamos los turnos de la semana para este usuario para evitar conflictos
+        cursor.execute(
+            "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion BETWEEN %s AND %s",
+            (id_usuario, inicio_semana, inicio_semana + datetime.timedelta(days=6))
+        )
+
+        # Ahora, insertamos los nuevos turnos
+        for i, dia_str in enumerate(dias_semana):
+            hora = request.form.get(f'turno_{dia_str}')
+            if hora: # Si se seleccionó una hora para ese día
+                fecha_asignacion = inicio_semana + datetime.timedelta(days=i)
+                
+                # Obtener el id del turno disponible
+                cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia_str, hora))
+                turno_disponible_row = cursor.fetchone()
+                
+                if turno_disponible_row:
+                    id_turno_disponible = turno_disponible_row['id']
+                    
+                    # Insertar el nuevo turno asignado
                     cursor.execute(
-                        "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_turno_disponible, fecha_asignacion) DO UPDATE SET id_usuario = EXCLUDED.id_usuario",
-                        (user_data['id'], turno_disponible_id, today_local_iso())
+                        "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
+                        (id_usuario, id_turno_disponible, fecha_asignacion)
                     )
-                    conn.commit()
-                    flash(f'✅ Turno asignado a {user_data["nombre"]}', 'message')
-                except Exception as e:
-                    flash(f'Error al asignar turno: {e}', 'error')
-                    logger.error(f"Error admin_asignar_turno_manual para {username_to_assign}: {e}")
-            else:
-                flash('Usuario no encontrado para asignar turno', 'error')
-        else:
-            # Limpiar el turno
-            try:
-                cursor.execute(
-                    "DELETE FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
-                    (turno_disponible_id, today_local_iso())
-                )
-                conn.commit()
-                flash('✅ Turno liberado', 'message')
-            except Exception as e:
-                flash(f'Error al liberar turno: {e}', 'error')
-                logger.error(f"Error admin_asignar_turno_manual (liberar): {e}")
-    
-    cursor.close()
-    conn.close()
+        
+        conn.commit()
+        flash('✅ Turnos de la semana guardados exitosamente.', 'message')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error al guardar los turnos: {e}', 'error')
+        logger.error(f"Error en admin_asignar_turno_manual para usuario {id_usuario}: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
     return redirect(url_for('admin_asignar_turnos'))
 
 # ✅ Limpiar turno (Admin)
@@ -2057,40 +2215,45 @@ def modulo_turnos():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    semana_param = request.args.get('semana', type=int)
+    semana_param = request.args.get('semana', type=int) or 0
     
-    fecha_base = datetime.datetime(2025, 11, 3)
-    hoy = now_local()
+    if TZ:
+        fecha_base = datetime.datetime(2025, 11, 3, tzinfo=TZ)
+        hoy = now_local()
+    else:
+        fecha_base = datetime.datetime(2025, 11, 3)
+        hoy = datetime.datetime.now()
     
-    dias_transcurridos = (hoy - fecha_base).days
+    dias_transcurridos = (hoy.date() - fecha_base.date()).days
     semana_actual = (dias_transcurridos // 7) + 1
-    
     if semana_param:
-        semana_actual = semana_param
+        semana_actual = semana_param if semana_param > 0 else semana_actual
     
     inicio_semana = fecha_base + datetime.timedelta(weeks=semana_actual-1)
     fin_semana = inicio_semana + datetime.timedelta(days=5)
-    
+
     fechas_semana = []
     for i in range(6):
         fecha = inicio_semana + datetime.timedelta(days=i)
         fechas_semana.append(fecha.strftime('%d/%m/%Y'))
     
     # Obtener turnos de la semana actual
-    shifts = {}
-    order_clause = """
-        ORDER BY CASE td.dia_semana
-            WHEN 'monday' THEN 1 WHEN 'tuesday' THEN 2 WHEN 'wednesday' THEN 3
-            WHEN 'thursday' THEN 4 WHEN 'friday' THEN 5 WHEN 'saturday' THEN 6 ELSE 7
-        END, hora
-    """
-    cursor.execute(f"""
+    shifts = {}    
+    # Esta consulta obtiene TODOS los turnos disponibles y los une con los asignados para la semana seleccionada.
+    cursor.execute("""
         SELECT 
-            td.dia_semana, td.hora, u.username AS assigned_username
+            td.dia_semana, 
+            td.hora, 
+            u.username AS assigned_username
         FROM turnos_disponibles td
-        LEFT JOIN turnos_asignados ta ON td.id = ta.id_turno_disponible AND ta.fecha_asignacion BETWEEN %s AND %s
-        LEFT JOIN usuarios u ON ta.id_usuario = u.id
-    """ + order_clause, (inicio_semana.date(), fin_semana.date()))
+        LEFT JOIN (
+            SELECT ta.id_turno_disponible, u.username
+            FROM turnos_asignados ta
+            JOIN usuarios u ON ta.id_usuario = u.id
+            WHERE ta.fecha_asignacion BETWEEN %s AND %s
+        ) AS asignados ON td.id = asignados.id_turno_disponible
+        ORDER BY CASE td.dia_semana WHEN 'monday' THEN 1 WHEN 'tuesday' THEN 2 WHEN 'wednesday' THEN 3 WHEN 'thursday' THEN 4 WHEN 'friday' THEN 5 WHEN 'saturday' THEN 6 ELSE 7 END, td.hora
+    """, (inicio_semana.date(), fin_semana.date()))
     current_week_shifts = cursor.fetchall()
 
     for shift_data in current_week_shifts:
@@ -2139,6 +2302,7 @@ def modulo_turnos():
                          data={'usuarios': {}}) # Data ya no se carga de JSON
 
 def generar_historial_turnos(fecha_base):
+    fecha_base = fecha_base.replace(tzinfo=TZ) # Asegurar que la fecha base sea aware
     """Genera historial completo de turnos desde Nov 3, 2025 (adaptado para DB)"""
     historial = []
     
@@ -2433,6 +2597,129 @@ def turnos_mensual():
                          stats=stats,
                          historial_mes=historial_mes,
                          session=session)
+
+# ✅ NUEVA RUTA: Importar Turnos Históricos (Admin)
+@app.route('/admin/importar_turnos_historicos')
+@login_required
+def importar_turnos_historicos():
+    if not current_user.is_admin():
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('home'))
+
+    # Datos históricos proporcionados por el usuario
+    raw_shift_data = {
+        "NATALIA AREVALO": {"cedula": "1070963486", "shifts": [
+            ("5/11/2025", "6:30 a.m."), ("6/11/2025", "6:30 a.m."), ("7/11/2025", "6:30 a.m."),
+            ("8/11/2025", "8:30 a.m."), ("9/11/2025", "8:30 a.m."), ("10/11/2025", "8:30 a.m."),
+            ("11/11/2025", "8:30 a.m."), ("12/11/2025", "8:30 a.m."), ("13/11/2025", "8:30 a.m."),
+            ("14/11/2025", "8:30 a.m."), ("15/11/2025", "11:30 a.m."), ("18/11/2025", "9:00 a.m.")
+        ]},
+        "LESLY GUZMAN": {"cedula": "1067949514", "shifts": [
+            ("5/11/2025", "8:00 a.m."), ("6/11/2025", "8:00 a.m."), ("7/11/2025", "8:00 a.m."),
+            ("8/11/2025", "6:30 a.m."), ("9/11/2025", "6:30 a.m."), ("10/11/2025", "6:30 a.m."),
+            ("11/11/2025", "6:30 a.m."), ("12/11/2025", "6:30 a.m."), ("13/11/2025", "6:30 a.m."),
+            ("14/11/2025", "6:30 a.m."), ("15/11/2025", "11:00 a.m."), ("18/11/2025", "8:30 a.m.")
+        ]},
+        "PAOLA GARCIA": {"cedula": "1140870406", "shifts": [
+            ("5/11/2025", "8:30 a.m."), ("6/11/2025", "8:30 a.m."), ("7/11/2025", "8:30 a.m."),
+            ("8/11/2025", "9:00 a.m."), ("9/11/2025", "9:00 a.m."), ("10/11/2025", "9:00 a.m."),
+            ("11/11/2025", "9:00 a.m."), ("12/11/2025", "9:00 a.m."), ("13/11/2025", "9:00 a.m."),
+            ("14/11/2025", "9:00 a.m."), ("15/11/2025", "10:00 a.m."), ("18/11/2025", "8:00 a.m.")
+        ]},
+        "DAYANA GONZALEZ": {"cedula": "1068416077", "shifts": [
+            ("5/11/2025", "9:00 a.m."), ("6/11/2025", "9:00 a.m."), ("7/11/2025", "9:00 a.m."),
+            ("8/11/2025", "8:00 a.m."), ("9/11/2025", "8:00 a.m."), ("10/11/2025", "8:00 a.m."),
+            ("11/11/2025", "8:00 a.m."), ("12/11/2025", "8:00 a.m."), ("13/11/2025", "8:00 a.m."),
+            ("14/11/2025", "8:00 a.m."), ("15/11/2025", "7:00 a.m."), ("18/11/2025", "6:30 a.m.")
+        ]}
+    }
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    imported_count = 0
+    skipped_count = 0
+    error_messages = []
+
+    for user_name, user_data in raw_shift_data.items():
+        cedula = user_data["cedula"]
+        
+        cursor.execute("SELECT id FROM usuarios WHERE cedula = %s", (cedula,))
+        user_id_row = cursor.fetchone()
+
+        if not user_id_row:
+            error_messages.append(f"Usuario con cédula {cedula} ({user_name}) no encontrado. Saltando sus turnos.")
+            skipped_count += len(user_data["shifts"])
+            continue
+        
+        id_usuario = user_id_row['id']
+
+        for date_str, time_str_am_pm in user_data["shifts"]:
+            try:
+                # Parsear fecha (ej. "5/11/2025" a datetime.date)
+                day, month, year = map(int, date_str.split('/'))
+                fecha_asignacion = datetime.date(year, month, day)
+                dia_semana = fecha_asignacion.strftime('%A').lower() # ej. 'wednesday'
+
+                # Parsear hora (ej. "6:30 a.m." a "06:30")
+                hora_24h = parse_time_am_pm(time_str_am_pm)
+                if not hora_24h:
+                    error_messages.append(f"Hora inválida '{time_str_am_pm}' para {user_name} en {date_str}. Saltando.")
+                    skipped_count += 1
+                    continue
+
+                # Obtener id_turno_disponible
+                cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia_semana, hora_24h))
+                turno_disponible_id_row = cursor.fetchone()
+
+                if not turno_disponible_id_row:
+                    error_messages.append(f"Turno disponible '{dia_semana} {hora_24h}' no encontrado en la base de datos para {user_name} en {date_str}. Asegúrate de que init_db() se ejecutó correctamente. Saltando.")
+                    skipped_count += 1
+                    continue
+                
+                id_turno_disponible = turno_disponible_id_row['id']
+
+                # Insertar en turnos_asignados (ON CONFLICT DO NOTHING para evitar duplicados)
+                cursor.execute(
+                    "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
+                    (id_usuario, id_turno_disponible, fecha_asignacion)
+                )
+                if cursor.rowcount > 0:
+                    imported_count += 1
+                else:
+                    # Si el turno ya existía, también contamos como "saltado" en la importación de asistencia
+                    skipped_count += 1
+
+                # ✅ AÑADIR REGISTRO DE ASISTENCIA CON LA HORA DE INICIO
+                # Construir el objeto datetime para el inicio
+                h, m = map(int, hora_24h.split(':'))
+                inicio_dt = datetime.datetime(year, month, day, h, m)
+                # Asegurarse de que tenga la zona horaria correcta
+                inicio_dt_tz = TZ.localize(inicio_dt) if TZ and hasattr(TZ, 'localize') else inicio_dt
+
+                # Insertar en registros_asistencia, si no existe ya un registro para ese día
+                cursor.execute(
+                    "INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING",
+                    (id_usuario, fecha_asignacion, inicio_dt_tz.isoformat())
+                )
+                # No necesitamos contar esto por separado, el conteo de turnos es suficiente
+
+            except Exception as e:
+                error_messages.append(f"Error procesando turno para {user_name} en {date_str} {time_str_am_pm}: {e}. Saltando.")
+                logger.error(f"Error importando turno histórico: {e}")
+                skipped_count += 1
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    if imported_count > 0:
+        flash(f"✅ Se importaron y registraron {imported_count} turnos históricos exitosamente.", 'message')
+    if skipped_count > 0:
+        flash(f"⚠️ Se saltaron {skipped_count} turnos (ya existían o hubo errores).", 'warning')
+    for msg in error_messages:
+        flash(msg, 'error')
+
+    return redirect(url_for('admin_usuarios')) # Redirigir a la GESTIÓN DE USUARIOS para ver los registros
 
 # -------------------
 # Ejecutar aplicación

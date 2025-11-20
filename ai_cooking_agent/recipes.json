@@ -1,0 +1,65 @@
+[
+  {
+    "name": "Classic Pasta Carbonara",
+    "prep_time": "10 minutes",
+    "cook_time": "20 minutes",
+    "servings": 4,
+    "ingredients": [
+      "400g spaghetti",
+      "200g guanciale or pancetta, diced",
+      "4 large eggs",
+      "100g Pecorino Romano cheese, grated",
+      "Black pepper to taste",
+      "Salt for pasta water"
+    ],
+    "instructions": "Cook pasta in salted water. Fry guanciale until crispy. Beat eggs with cheese. Combine all ingredients."
+  },
+  {
+    "name": "Simple Tomato Basil Pasta",
+    "prep_time": "5 minutes",
+    "cook_time": "15 minutes",
+    "servings": 2,
+    "ingredients": [
+      "250g pasta",
+      "400g canned tomatoes",
+      "3 cloves garlic, minced",
+      "Fresh basil leaves",
+      "Olive oil",
+      "Salt and pepper"
+    ],
+    "instructions": "Sauté garlic in olive oil, add tomatoes, simmer 10 minutes, toss with pasta and basil."
+  },
+  {
+    "name": "Vegetable Stir-Fry",
+    "prep_time": "15 minutes",
+    "cook_time": "10 minutes",
+    "servings": 3,
+    "ingredients": [
+      "2 cups mixed vegetables (broccoli, bell pepper, carrot)",
+      "2 tbsp soy sauce",
+      "1 tbsp sesame oil",
+      "2 cloves garlic",
+      "1 tsp ginger",
+      "Cooked rice for serving"
+    ],
+    "instructions": "Heat wok, add oil, stir-fry vegetables, season with soy sauce and ginger."
+  },
+  {
+    "name": "Chocolate Chip Cookies",
+    "prep_time": "15 minutes",
+    "cook_time": "12 minutes",
+    "servings": 24,
+    "ingredients": [
+      "225g butter, softened",
+      "150g brown sugar",
+      "100g white sugar",
+      "2 eggs",
+      "2 tsp vanilla extract",
+      "280g all-purpose flour",
+      "1 tsp baking soda",
+      "1 tsp salt",
+      "340g chocolate chips"
+    ],
+    "instructions": "Mix butter and sugars, add eggs and vanilla, mix dry ingredients, fold in chocolate chips, bake at 375°F for 12 minutes."
+  }
+]

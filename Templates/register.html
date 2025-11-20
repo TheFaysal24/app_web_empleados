@@ -378,6 +378,7 @@
     <p>Completa el formulario para registrarte</p>
 
     <form method="POST" action="{{ url_for('register') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label" for="nombre">
