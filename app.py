@@ -2240,7 +2240,7 @@ def modulo_turnos():
         SELECT 
             td.dia_semana, 
             td.hora, 
-            u.username AS assigned_username
+            asignados.username AS assigned_username
         FROM turnos_disponibles td
         LEFT JOIN (
             SELECT ta.id_turno_disponible, u.username
