@@ -357,6 +357,7 @@ def home():
 # ✅ LOGIN con Flask-Login y hash de contraseñas
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")  # Máximo 20 intentos por minuto
+@csrf.exempt # <-- AÑADIR ESTA LÍNEA TEMPORALMENTE PARA DEPURAR
 def login():
     if request.method == 'POST':
         username = request.form.get('usuario', '').strip()
@@ -1264,11 +1265,7 @@ def recuperar_contrasena():
                 )
                 mailto_link = f"mailto:{correo}?subject={asunto}&body={cuerpo}"
 
-                flash(
-                    f'✅ Hemos generado un enlace de restablecimiento. '
-                    f'<a href="{mailto_link}" target="_blank" style="color:#fff;text-decoration:underline;">📧 Enviar al correo</a>',
-                    'message'
-                )
+                flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.', 'message')
                 cursor.close()
                 conn.close()
                 return redirect(url_for('login'))
