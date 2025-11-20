@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_limiter import Limiter
+from flask_wtf import FlaskForm
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -102,6 +103,10 @@ class User(UserMixin):
 
     def get_role(self):
         return self.cargo # Usar cargo como rol
+
+# Formulario vacío para protección CSRF en páginas sin formularios complejos
+class EmptyForm(FlaskForm):
+    pass
 
 # Helper para parsear tiempos con am/pm a formato 24h
 def parse_time_am_pm(time_str):
@@ -480,6 +485,8 @@ def asignar_turnos_automaticos(cedula, id_usuario):
 @app.route('/register', methods=['GET', 'POST'])
 @limiter.limit("10 per hour")  # Máximo 10 registros por hora
 def register():
+    form = EmptyForm() # Crear una instancia del formulario
+
     if request.method == 'POST':
         # ✅ VALIDACIÓN DE INPUTS
         nombre = sanitizar_string(request.form.get('nombre', ''), 100)
@@ -560,8 +567,8 @@ def register():
                 flash('Error al registrar usuario', 'error')
             cursor.close()
             conn.close()
-            return redirect(url_for('login'))
-    return render_template('register.html')
+            return redirect(url_for('login'))    
+    return render_template('register.html', form=form)
 
 # ✅ Logout con Flask-Login
 @app.route('/logout')
