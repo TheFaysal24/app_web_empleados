@@ -477,7 +477,6 @@ def asignar_turnos_automaticos(cedula, id_usuario):
 
 # ✅ Registro - Hash de contraseñas
 @app.route('/register', methods=['GET', 'POST'])
-@csrf.exempt  # Temporarily disabled for debugging
 @limiter.limit("10 per hour")  # Máximo 10 registros por hora
 def register():
     if request.method == 'POST':
