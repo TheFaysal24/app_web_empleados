@@ -138,7 +138,7 @@
   </div>
 
   <form method="POST" action="{{ url_for('register') }}">
-    {{ csrf_token() }}
+    {{ form.hidden_tag() }}
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label" for="nombre">Nombre Completo</label>
