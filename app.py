@@ -487,7 +487,7 @@ def asignar_turnos_automaticos(cedula, id_usuario):
 def register():
     form = EmptyForm() # Crear una instancia del formulario
 
-    if request.method == 'POST':
+    if form.validate_on_submit():
         # ✅ VALIDACIÓN DE INPUTS
         nombre = sanitizar_string(request.form.get('nombre', ''), 100)
         cedula = sanitizar_string(request.form.get('cedula', ''), 20)
