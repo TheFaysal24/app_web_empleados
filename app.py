@@ -362,9 +362,10 @@ def home():
 # ✅ LOGIN con Flask-Login y hash de contraseñas
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")  # Máximo 20 intentos por minuto
-@csrf.exempt # <-- AÑADIR ESTA LÍNEA TEMPORALMENTE PARA DEPURAR
 def login():
-    if request.method == 'POST':
+    form = EmptyForm() # Usar el mismo formulario para CSRF
+
+    if form.validate_on_submit():
         username = request.form.get('usuario', '').strip()
         contrasena = request.form.get('contrasena', '')
         
@@ -409,7 +410,7 @@ def login():
         flash('Usuario o contraseña incorrectos', 'error')
         return redirect(url_for('login'))
 
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 # Función para asignar turnos automáticamente basado en cédula y rotación
 def asignar_turnos_automaticos(cedula, id_usuario):
