@@ -1248,35 +1248,24 @@ def recuperar_contrasena():
             
             try:
                 cursor.execute(
-                    "INSERT INTO reset_tokens (token, id_usuario, expira) VALUES (%s, %s, %s) ON CONFLICT (token) DO NOTHING", (token, user_data['id'], expira.isoformat()))
-                conn.commit()
-
-                base_url = request.url_root.rstrip('/')
-                reset_url = f"{base_url}{url_for('reset_password')}?token={token}"
-
-                import urllib.parse
-                asunto = urllib.parse.quote("Restablecimiento de Contraseña - Sistema Empleados")
-                cuerpo = urllib.parse.quote(
-                    f"Hola {user_data.get('nombre', user_data['username'])},\n\n"
-                    f"Hemos recibido tu solicitud para restablecer la contraseña.\n"
-                    f"Por favor, haz clic en el siguiente enlace (válido por 60 minutos):\n{reset_url}\n\n"
-                    f"Si no solicitaste este cambio, ignora este mensaje.\n\n"
-                    f"Saludos,\nSistema de Empleados"
+                    "INSERT INTO reset_tokens (token, id_usuario, expira) VALUES (%s, %s, %s) ON CONFLICT (token) DO NOTHING", 
+                    (token, user_data['id'], expira.isoformat())
                 )
-                mailto_link = f"mailto:{correo}?subject={asunto}&body={cuerpo}"
-
+                conn.commit()
                 flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.', 'message')
-                cursor.close()
-                conn.close()
-                return redirect(url_for('login'))
             except Exception as e:
                 flash(f'Error al generar token de restablecimiento: {e}', 'error')
                 logger.error(f"Error en recuperar_contrasena para {correo}: {e}")
         
-        flash('Correo no encontrado', 'error')
+        # Por seguridad, mostramos el mismo mensaje incluso si el correo no existe
+        # para no revelar qué correos están registrados en el sistema.
+        else:
+            flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.', 'message')
+
         cursor.close()
         conn.close()
-        return redirect(url_for('recuperar_contrasena'))
+        return redirect(url_for('login'))
+
     return render_template('recuperar_contrasena.html')
 
 # ✅ Panel de Administración
