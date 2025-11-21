@@ -916,30 +916,32 @@ def marcar_inicio():
 
     form = EmptyForm()
     if form.validate_on_submit():
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        usuario_id = current_user.id
-        hoy = today_local_iso()
-        ahora = now_local().isoformat()
+        conn = None
+        cursor = None
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            usuario_id = current_user.id
+            hoy = today_local_iso()
+            ahora = now_local().isoformat()
 
-        cursor.execute(
-            "SELECT id FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL",
-            (usuario_id, hoy)
-        )
-        if cursor.fetchone():
-            flash('Ya registraste tu inicio hoy', 'error')
-        else:
-            try:
+            cursor.execute(
+                "SELECT id FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL",
+                (usuario_id, hoy)
+            )
+            if cursor.fetchone():
+                flash('Ya registraste tu inicio hoy', 'error')
+            else:
                 cursor.execute("INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING", (usuario_id, hoy, ahora))
                 conn.commit()
                 flash('Hora de inicio registrada.', 'message')
-            except Exception as e:
-                flash(f'Error al registrar inicio: {e}', 'error')
-                logger.error(f"Error al marcar inicio para {current_user.username}: {e}")
+        except Exception as e:
+            flash(f'Error al registrar inicio: {e}', 'error')
+            logger.error(f"Error al marcar inicio para {current_user.username}: {e}")
         finally:
-            cursor.close()
-            conn.close()
+            if cursor: cursor.close()
+            if conn: conn.close()
 
     return redirect(url_for('dashboard'))
 
@@ -953,15 +955,18 @@ def calcular_horas(inicio_iso, fin_iso):
             inicio_dt = inicio_iso
         else:
             inicio_dt = datetime.datetime.fromisoformat(inicio_iso)
+        
         if isinstance(fin_iso, datetime.datetime):
             fin_dt = fin_iso
         else:
             fin_dt = datetime.datetime.fromisoformat(fin_iso)
+            
         horas_totales = (fin_dt - inicio_dt).total_seconds() / 3600
         horas_netas = max(0, horas_totales - 1)  # Descuento almuerzo
         horas_extras = max(0, horas_netas - 8)
         return round(horas_netas, 2), round(horas_extras, 2)
-    except Exception:
+    except (ValueError, TypeError):
+        # Captura errores si las fechas son inválidas o nulas
         return 0.0, 0.0
 
 # ✅ Marcar salida
@@ -1198,22 +1203,23 @@ def actualizar_datos():
 
     form = EmptyForm()
     if form.validate_on_submit():
-    
         if not current_user.is_admin():
             flash('Solo administradores pueden modificar datos personales', 'error')
             return redirect(url_for('ajustes'))
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        usuario_id = current_user.id
-
-        nombre = request.form.get('nombre')
-        cargo = request.form.get('cargo')
-        correo = request.form.get('correo')
-        telefono = request.form.get('telefono')
-
+        conn = None
+        cursor = None
         try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            usuario_id = current_user.id
+
+            nombre = request.form.get('nombre')
+            cargo = request.form.get('cargo')
+            correo = request.form.get('correo')
+            telefono = request.form.get('telefono')
+
             cursor.execute(
                 "UPDATE usuarios SET nombre = %s, cargo = %s, correo = %s, telefono = %s WHERE id = %s",
                 (nombre, cargo, correo, telefono, usuario_id)
@@ -1224,8 +1230,8 @@ def actualizar_datos():
             flash(f'Error al actualizar datos: {e}', 'error')
             logger.error(f"Error al actualizar datos para {current_user.username}: {e}")
         finally:
-            cursor.close()
-            conn.close()
+            if cursor: cursor.close()
+            if conn: conn.close()
 
     return redirect(url_for('ajustes'))
 
@@ -1364,52 +1370,51 @@ def admin_cambiar_clave():
     if not current_user.is_admin():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
+
     form = EmptyForm()
-    # La validación del formulario se hace aquí para el método POST
     if request.method == 'POST':
         if form.validate_on_submit():
+            conn = get_db_connection()
+            cursor = conn.cursor()
             username = request.form.get('usuario')
             nueva_clave = request.form.get('nueva_clave')
-            
-            cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
-            user_id = cursor.fetchone()
-            
-            if user_id and nueva_clave:
-                try:
-                    cursor.execute(
-                        "UPDATE usuarios SET contrasena = %s WHERE id = %s",
-                        (generate_password_hash(nueva_clave), user_id['id'])
-                    )
-                    conn.commit()
-                    flash(f'Contraseña actualizada para {username}', 'message')
-                except Exception as e:
-                    flash(f'Error al actualizar contraseña: {e}', 'error')
-                    logger.error(f"Error admin_cambiar_clave para {username}: {e}")
-            else:
-                flash('Error al actualizar contraseña', 'error')
-            
-            cursor.close()
-            conn.close()
+            try:
+                cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
+                user_id = cursor.fetchone()
+                
+                if user_id and nueva_clave:
+                        cursor.execute(
+                            "UPDATE usuarios SET contrasena = %s WHERE id = %s",
+                            (generate_password_hash(nueva_clave), user_id['id'])
+                        )
+                        conn.commit()
+                        flash(f'Contraseña actualizada para {username}', 'message')
+                else:
+                    flash('Error al actualizar contraseña', 'error')
+            except Exception as e:
+                flash(f'Error al actualizar contraseña: {e}', 'error')
+                logger.error(f"Error admin_cambiar_clave para {username}: {e}")
+            finally:
+                if cursor: cursor.close() # Asegurarse de cerrar la conexión
+                if conn: conn.close() # Asegurarse de cerrar la conexión
             return redirect(url_for('admin_usuarios'))
-    
+
+    # Lógica para GET
     username = request.args.get('usuario')
     user_data = None
-    if username:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
         cursor.execute("SELECT id, username, nombre FROM usuarios WHERE username = %s", (username,))
         user_data = cursor.fetchone()
-    
-    cursor.close()
-    conn.close()
-
-    if user_data:
-        return render_template('admin_cambiar_clave.html', usuario=username, datos=user_data)
-    
-    flash('Usuario no encontrado', 'error')
-    return redirect(url_for('admin_usuarios'))
+        if user_data:
+            return render_template('admin_cambiar_clave.html', usuario=username, datos=user_data, form=form)
+        else:
+            flash('Usuario no encontrado', 'error')
+            return redirect(url_for('admin_usuarios'))
+    finally: # Asegurarse de cerrar la conexión
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 # ✅ Desbloquear usuario (Admin)
 @app.route('/admin/desbloquear', methods=['POST'])
