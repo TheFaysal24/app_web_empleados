@@ -879,6 +879,9 @@ def dashboard():
     # Obtener fechas de la semana actual
     fechas_semana_actual = [(hoy_date - datetime.timedelta(days=hoy_date.weekday()) + datetime.timedelta(days=i)) for i in range(7)]
 
+    # ✅ AÑADIR FORMULARIO VACÍO PARA LOS BOTONES DE ASISTENCIA
+    form = EmptyForm()
+
     cursor.close()
     conn.close()
 
@@ -900,7 +903,8 @@ def dashboard():
         turnos_semana_actual=turnos_semana_actual,
         turnos_usuarios=turnos_usuarios,  # ✅ NUEVO: Pasar turnos seleccionados
         fechas_semana_actual=fechas_semana_actual,
-        session=session
+        session=session,
+        form=form  # ✅ Pasar el formulario a la plantilla
     )
 
 # ✅ Marcar inicio
