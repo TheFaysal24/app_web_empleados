@@ -70,6 +70,11 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
+# ✅ Configuración de Sesión y Seguridad Robusta (Solución de Raíz)
+app.config['WTF_CSRF_TIME_LIMIT'] = None  # El token CSRF es válido mientras dure la sesión (evita errores en pestañas abiertas)
+app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=31) # Sesiones largas de 31 días
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True # Refrescar sesión en cada petición activa
+
 # ✅ Protección CSRF
 csrf = CSRFProtect(app)
 
