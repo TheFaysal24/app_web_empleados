@@ -364,6 +364,7 @@
 
   <!-- Grid de Turnos -->
   <form method="POST">
+    {{ csrf_token() }}
     <div class="turnos-grid">
       {% set dias_nombres = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado'} %}
       {% set dias_iconos = {'monday': '🌅', 'tuesday': '🌄', 'wednesday': '🌞', 'thursday': '☀️', 'friday': '🌤️', 'saturday': '🌈'} %}
