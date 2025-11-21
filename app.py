@@ -1325,6 +1325,8 @@ def admin_usuarios():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -1365,9 +1367,13 @@ def admin_cambiar_clave():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     if request.method == 'POST':
         username = request.form.get('usuario')
         nueva_clave = request.form.get('nueva_clave')
@@ -1417,26 +1423,26 @@ def admin_desbloquear():
     
     form = EmptyForm()
     if form.validate_on_submit():
-    username = request.form.get('usuario')
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
-    user_id = cursor.fetchone()
-    
-    if user_id:
-        try:
-            cursor.execute("UPDATE usuarios SET bloqueado = FALSE WHERE id = %s", (user_id['id'],))
-            conn.commit()
-            flash(f'Usuario {username} desbloqueado', 'message')
-        except Exception as e:
-            flash(f'Error al desbloquear usuario: {e}', 'error')
-            logger.error(f"Error admin_desbloquear para {username}: {e}")
-    else:
-        flash('Usuario no encontrado', 'error')
-    
-    cursor.close()
-    conn.close()
+        username = request.form.get('usuario')
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
+        user_id = cursor.fetchone()
+        
+        if user_id:
+            try:
+                cursor.execute("UPDATE usuarios SET bloqueado = FALSE WHERE id = %s", (user_id['id'],))
+                conn.commit()
+                flash(f'Usuario {username} desbloqueado', 'message')
+            except Exception as e:
+                flash(f'Error al desbloquear usuario: {e}', 'error')
+                logger.error(f"Error admin_desbloquear para {username}: {e}")
+        else:
+            flash('Usuario no encontrado', 'error')
+        
+        cursor.close()
+        conn.close()
     return redirect(url_for('admin_usuarios'))
 
 # ✅ Bloquear usuario (Admin)
@@ -1448,26 +1454,26 @@ def admin_bloquear():
     
     form = EmptyForm()
     if form.validate_on_submit():
-    username = request.form.get('usuario')
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
-    user_id = cursor.fetchone()
-    
-    if user_id:
-        try:
-            cursor.execute("UPDATE usuarios SET bloqueado = TRUE WHERE id = %s", (user_id['id'],))
-            conn.commit()
-            flash(f'Usuario {username} bloqueado', 'message')
-        except Exception as e:
-            flash(f'Error al bloquear usuario: {e}', 'error')
-            logger.error(f"Error admin_bloquear para {username}: {e}")
-    else:
-        flash('Usuario no encontrado', 'error')
-    
-    cursor.close()
-    conn.close()
+        username = request.form.get('usuario')
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
+        user_id = cursor.fetchone()
+        
+        if user_id:
+            try:
+                cursor.execute("UPDATE usuarios SET bloqueado = TRUE WHERE id = %s", (user_id['id'],))
+                conn.commit()
+                flash(f'Usuario {username} bloqueado', 'message')
+            except Exception as e:
+                flash(f'Error al bloquear usuario: {e}', 'error')
+                logger.error(f"Error admin_bloquear para {username}: {e}")
+        else:
+            flash('Usuario no encontrado', 'error')
+        
+        cursor.close()
+        conn.close()
     return redirect(url_for('admin_usuarios'))
 
 # ✅ Eliminar registro (Admin)
@@ -1479,34 +1485,34 @@ def admin_eliminar_registro():
     
     form = EmptyForm()
     if form.validate_on_submit():
-    username = request.form.get('usuario')
-    fecha_str = request.form.get('fecha')
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
-    user_id = cursor.fetchone()
-    
-    if user_id:
-        try:
-            cursor.execute(
-                "DELETE FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s",
-                (user_id['id'], fecha_str)
-            )
-            conn.commit()
-            if cursor.rowcount > 0:
-                flash(f'Registro del {fecha_str} eliminado para {username}', 'message')
-            else:
-                flash('Registro no encontrado', 'error')
-        except Exception as e:
-            flash(f'Error al eliminar registro: {e}', 'error')
-            logger.error(f"Error admin_eliminar_registro para {username} en {fecha_str}: {e}")
-    else:
-        flash('Usuario no encontrado', 'error')
-    
-    cursor.close()
-    conn.close()
+        username = request.form.get('usuario')
+        fecha_str = request.form.get('fecha')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
+        user_id = cursor.fetchone()
+        
+        if user_id:
+            try:
+                cursor.execute(
+                    "DELETE FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s",
+                    (user_id['id'], fecha_str)
+                )
+                conn.commit()
+                if cursor.rowcount > 0:
+                    flash(f'Registro del {fecha_str} eliminado para {username}', 'message')
+                else:
+                    flash('Registro no encontrado', 'error')
+            except Exception as e:
+                flash(f'Error al eliminar registro: {e}', 'error')
+                logger.error(f"Error admin_eliminar_registro para {username} en {fecha_str}: {e}")
+        else:
+            flash('Usuario no encontrado', 'error')
+        
+        cursor.close()
+        conn.close()
     return redirect(url_for('admin_usuarios'))
 
 # ✅ Editar registro (Admin)
@@ -1516,6 +1522,8 @@ def admin_editar_registro():
         flash('Acceso denegado', 'error')
         return redirect(url_for('dashboard'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -1828,8 +1836,8 @@ def eliminar_turno():
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
 
-    form = EmptyForm()
-    if not form.validate_on_submit():
+    form = EmptyForm() # Se añade para validación CSRF
+    if form.validate_on_submit():
         return redirect(url_for('ver_turnos_asignados'))
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -1888,6 +1896,8 @@ def admin_asignar_turnos():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     
