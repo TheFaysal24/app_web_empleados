@@ -1325,8 +1325,8 @@ def admin_usuarios():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
-    form = EmptyForm()
-    if form.validate_on_submit():
+    form = EmptyForm() # Se añade para validación CSRF
+    if form.validate_on_submit(): # Se valida el token CSRF
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -1367,14 +1367,12 @@ def admin_cambiar_clave():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
-    form = EmptyForm()
-    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     
     form = EmptyForm()
-    if form.validate_on_submit():
-    if request.method == 'POST':
+    # La validación del formulario se hace aquí para el método POST
+    if form.validate_on_submit() and request.method == 'POST':
         username = request.form.get('usuario')
         nueva_clave = request.form.get('nueva_clave')
         
@@ -1522,13 +1520,10 @@ def admin_editar_registro():
         flash('Acceso denegado', 'error')
         return redirect(url_for('dashboard'))
     
-    form = EmptyForm()
-    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     
     form = EmptyForm()
-    if form.validate_on_submit():
     if request.method == 'POST':
         username = request.form.get('usuario')
         fecha_str = request.form.get('fecha')
@@ -1896,8 +1891,8 @@ def admin_asignar_turnos():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
-    form = EmptyForm()
-    if form.validate_on_submit():
+    form = EmptyForm() # Se añade para validación CSRF
+    if form.validate_on_submit(): # Se valida el token CSRF
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -1961,8 +1956,8 @@ def admin_asignar_turno_manual():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
-    form = EmptyForm()
-    if form.validate_on_submit():
+    form = EmptyForm() # Se añade para validación CSRF
+    if form.validate_on_submit(): # Se valida el token CSRF
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -2017,8 +2012,8 @@ def admin_limpiar_turno():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
-    form = EmptyForm()
-    if form.validate_on_submit():
+    form = EmptyForm() # Se añade para validación CSRF
+    if form.validate_on_submit(): # Se valida el token CSRF
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -2098,8 +2093,6 @@ def admin_actualizar_usuario_completo():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
-    form = EmptyForm()
-    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     
