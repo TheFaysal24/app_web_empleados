@@ -1696,16 +1696,26 @@ def seleccionar_turno():
     form = EmptyForm()
 
     if form.validate_on_submit():
-        turno_key = request.form.get('turno')  # Formato: "dia_hora"
+        turno_key = request.form.get('turno')  # Formato: "dia_hora" o "fecha_dia_hora"
+        fecha_seleccionada_str = request.form.get('fecha_seleccionada') # NUEVO: Recibir fecha del form
 
         if not turno_key:
             flash('Selecciona un turno válido', 'error')
             cursor.close()
             conn.close()
             return redirect(url_for('seleccionar_turno'))
+        
+        # Determinar la fecha de asignación
+        try:
+            # Si se proporciona una fecha, usarla. Si no, usar hoy.
+            fecha_asignacion = datetime.datetime.strptime(fecha_seleccionada_str, '%Y-%m-%d').date() if fecha_seleccionada_str else today_local_iso()
+        except ValueError:
+            flash('Formato de fecha inválido. Usa YYYY-MM-DD.', 'error')
+            return redirect(url_for('seleccionar_turno'))
 
-        dia, hora = turno_key.split('_')
-
+        partes_turno = turno_key.split('_')
+        dia, hora = partes_turno[0], partes_turno[1]
+        
         cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, hora))
         turno_disponible_id = cursor.fetchone()
         
@@ -1720,7 +1730,7 @@ def seleccionar_turno():
         # Validar que el turno esté disponible (no asignado a otro para hoy)
         cursor.execute(
             "SELECT u.username FROM turnos_asignados ta JOIN usuarios u ON ta.id_usuario = u.id WHERE ta.id_turno_disponible = %s AND ta.fecha_asignacion = %s",
-            (turno_disponible_id, today_local_iso())
+            (turno_disponible_id, fecha_asignacion)
         )
         assigned_user = cursor.fetchone()
 
@@ -1733,11 +1743,11 @@ def seleccionar_turno():
         # Asignar turno
         try:
             cursor.execute(
-                "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO UPDATE SET id_usuario = EXCLUDED.id_usuario",
-                (usuario_id, turno_disponible_id, today_local_iso())
+                "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
+                (usuario_id, turno_disponible_id, fecha_asignacion)
             )
             conn.commit()
-            flash('✅ Turno seleccionado exitosamente', 'message')
+            flash(f'✅ Turno seleccionado para el {fecha_asignacion.strftime("%d/%m/%Y")} exitosamente', 'message')
         except Exception as e:
             flash(f'Error al seleccionar turno: {e}', 'error')
             logger.error(f"Error seleccionar_turno para {username}: {e}")
@@ -1745,6 +1755,9 @@ def seleccionar_turno():
         cursor.close()
         conn.close()
         return redirect(url_for('ver_turnos_asignados'))
+
+    # Para el selector de fecha en el template
+    fecha_para_input = today_local_iso()
 
     # Preparar datos para el template
     shifts = {}
@@ -1769,8 +1782,8 @@ def seleccionar_turno():
         
         # Verificar si el turno está asignado para hoy
         cursor.execute(
-            "SELECT u.username FROM turnos_asignados ta JOIN usuarios u ON ta.id_usuario = u.id WHERE ta.id_turno_disponible = %s AND ta.fecha_asignacion = %s",
-            (s_info['id'], today_local_iso())
+            "SELECT u.username FROM turnos_asignados ta JOIN usuarios u ON ta.id_usuario = u.id WHERE ta.id_turno_disponible = %s AND ta.fecha_asignacion = %s", # Se podría hacer dinámico con la fecha seleccionada
+            (s_info['id'], fecha_para_input)
         )
         assigned_user_data = cursor.fetchone()
         
@@ -1786,6 +1799,7 @@ def seleccionar_turno():
                          shifts=shifts,
                          available_shifts=available_shifts,
                          turnos_usados_usuario={}, # Esto requeriría un historial más complejo en DB
+                         fecha_para_input=fecha_para_input, # NUEVO: Pasar fecha para el input
                          form=form,
                          session=session)
 
@@ -1878,11 +1892,11 @@ def eliminar_turno():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        usuario_id = current_user.id
-        username = current_user.username
         dia = request.form.get('dia')
         hora = request.form.get('hora')
-        fecha_str = request.form.get('fecha')
+        fecha_str = request.form.get('fecha_asignacion') # Usar un nombre más específico
+        # El usuario que se va a eliminar puede ser el actual o uno especificado por el admin
+        usuario_a_eliminar = request.form.get('usuario_a_eliminar', current_user.username)
         
         if not dia or not hora:
             flash('Datos de turno inválidos', 'error')
@@ -1890,9 +1904,18 @@ def eliminar_turno():
             conn.close()
             return redirect(url_for('ver_turnos_asignados'))
             
-        fecha_asignacion = today_local_iso()
-        if fecha_str:
-            fecha_asignacion = fecha_str
+        try:
+            fecha_asignacion = datetime.datetime.strptime(fecha_str, '%Y-%m-%d').date() if fecha_str else today_local_iso()
+        except ValueError:
+            flash('Formato de fecha inválido.', 'error')
+            return redirect(url_for('ver_turnos_asignados'))
+
+        # Obtener el ID del usuario cuyo turno se va a eliminar
+        cursor.execute("SELECT id FROM usuarios WHERE username = %s", (usuario_a_eliminar,))
+        user_to_delete_row = cursor.fetchone()
+        if not user_to_delete_row:
+            flash(f"Usuario '{usuario_a_eliminar}' no encontrado.", 'error')
+            return redirect(url_for('ver_turnos_asignados'))
 
         cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, hora))
         turno_disponible_id = cursor.fetchone()
@@ -1906,23 +1929,21 @@ def eliminar_turno():
         turno_disponible_id = turno_disponible_id['id']
 
         # Verificar que el turno pertenece al usuario o es admin
-        cursor.execute(
-            "SELECT id_usuario FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
-            (turno_disponible_id, fecha_asignacion)
-        )
-        assigned_user_id_db = cursor.fetchone()
-        
-        if assigned_user_id_db and (assigned_user_id_db['id_usuario'] == usuario_id or current_user.is_admin()):
+        if usuario_a_eliminar == current_user.username or current_user.is_admin():
             try:
                 cursor.execute(
-                    "DELETE FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
-                    (turno_disponible_id, fecha_asignacion)
+                    "DELETE FROM turnos_asignados WHERE id_usuario = %s AND id_turno_disponible = %s AND fecha_asignacion = %s",
+                    (user_to_delete_row['id'], turno_disponible_id, fecha_asignacion)
                 )
-                conn.commit()
-                flash('✅ Turno eliminado correctamente y disponible para otros', 'message')
+                if cursor.rowcount > 0:
+                    conn.commit()
+                    flash('✅ Turno eliminado correctamente y disponible para otros', 'message')
+                else:
+                    flash('No se encontró el turno asignado para eliminar.', 'warning')
+
             except Exception as e:
                 flash(f'Error al eliminar turno: {e}', 'error')
-                logger.error(f"Error eliminar_turno para {username}: {e}")
+                logger.error(f"Error eliminar_turno para {usuario_a_eliminar}: {e}")
         else:
             flash('No puedes eliminar este turno', 'error')
 
@@ -1930,6 +1951,7 @@ def eliminar_turno():
         conn.close()
 
     return redirect(url_for('ver_turnos_asignados'))
+
 
 # ✅ Panel de asignación manual de turnos (Admin)
 @app.route('/admin/asignar_turnos')
