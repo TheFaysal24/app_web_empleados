@@ -916,7 +916,6 @@ def marcar_inicio():
 
     form = EmptyForm()
     if form.validate_on_submit():
-
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1239,7 +1238,6 @@ def cambiar_contrasena():
 
     form = EmptyForm() 
     if form.validate_on_submit():
-
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1326,10 +1324,10 @@ def admin_usuarios():
         return redirect(url_for('home'))
     
     form = EmptyForm() # Se añade para validación CSRF
-    if form.validate_on_submit(): # Se valida el token CSRF
+    # La validación CSRF es implícita con el formulario, no se necesita un bloque `if` para un GET.
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     cursor.execute("SELECT id, username, nombre, cedula, cargo, correo, telefono, admin, bloqueado FROM usuarios")
     usuarios_db = cursor.fetchall()
     
@@ -1358,7 +1356,7 @@ def admin_usuarios():
     cursor.close()
     conn.close()
     
-    return render_template('admin_usuarios.html', usuarios=usuarios, registros=registros)
+    return render_template('admin_usuarios.html', usuarios=usuarios, registros=registros, form=form)
 
 # ✅ Cambiar contraseña de usuario (Admin)
 @app.route('/admin/cambiar_clave', methods=['GET', 'POST'])
@@ -1372,30 +1370,31 @@ def admin_cambiar_clave():
     
     form = EmptyForm()
     # La validación del formulario se hace aquí para el método POST
-    if form.validate_on_submit() and request.method == 'POST':
-        username = request.form.get('usuario')
-        nueva_clave = request.form.get('nueva_clave')
-        
-        cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
-        user_id = cursor.fetchone()
-        
-        if user_id and nueva_clave:
-            try:
-                cursor.execute(
-                    "UPDATE usuarios SET contrasena = %s WHERE id = %s",
-                    (generate_password_hash(nueva_clave), user_id['id'])
-                )
-                conn.commit()
-                flash(f'Contraseña actualizada para {username}', 'message')
-            except Exception as e:
-                flash(f'Error al actualizar contraseña: {e}', 'error')
-                logger.error(f"Error admin_cambiar_clave para {username}: {e}")
-        else:
-            flash('Error al actualizar contraseña', 'error')
-        
-        cursor.close()
-        conn.close()
-        return redirect(url_for('admin_usuarios'))
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            username = request.form.get('usuario')
+            nueva_clave = request.form.get('nueva_clave')
+            
+            cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
+            user_id = cursor.fetchone()
+            
+            if user_id and nueva_clave:
+                try:
+                    cursor.execute(
+                        "UPDATE usuarios SET contrasena = %s WHERE id = %s",
+                        (generate_password_hash(nueva_clave), user_id['id'])
+                    )
+                    conn.commit()
+                    flash(f'Contraseña actualizada para {username}', 'message')
+                except Exception as e:
+                    flash(f'Error al actualizar contraseña: {e}', 'error')
+                    logger.error(f"Error admin_cambiar_clave para {username}: {e}")
+            else:
+                flash('Error al actualizar contraseña', 'error')
+            
+            cursor.close()
+            conn.close()
+            return redirect(url_for('admin_usuarios'))
     
     username = request.args.get('usuario')
     user_data = None
@@ -1485,7 +1484,7 @@ def admin_eliminar_registro():
     if form.validate_on_submit():
         username = request.form.get('usuario')
         fecha_str = request.form.get('fecha')
-        
+
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1756,10 +1755,10 @@ def ver_turnos_asignados():
         return redirect(url_for('login'))
 
     form = EmptyForm() # Se añade para validación CSRF
-    if form.validate_on_submit():
-        return redirect(url_for('ver_turnos_asignados'))
+    # La validación CSRF es implícita con el formulario, no se necesita un bloque `if` para un GET.
     conn = get_db_connection()
     cursor = conn.cursor()
+
     
     usuario_id = current_user.id
     admin = current_user.is_admin()
@@ -1833,55 +1832,55 @@ def eliminar_turno():
 
     form = EmptyForm() # Se añade para validación CSRF
     if form.validate_on_submit():
-        return redirect(url_for('ver_turnos_asignados'))
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    usuario_id = current_user.id
-    username = current_user.username
-    dia = request.form.get('dia')
-    hora = request.form.get('hora')
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        usuario_id = current_user.id
+        username = current_user.username
+        dia = request.form.get('dia')
+        hora = request.form.get('hora')
 
-    if not dia or not hora:
-        flash('Datos de turno inválidos', 'error')
+        if not dia or not hora:
+            flash('Datos de turno inválidos', 'error')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('ver_turnos_asignados'))
+
+        cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, hora))
+        turno_disponible_id = cursor.fetchone()
+        
+        if not turno_disponible_id:
+            flash('Turno no encontrado', 'error')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('ver_turnos_asignados'))
+        
+        turno_disponible_id = turno_disponible_id['id']
+
+        # Verificar que el turno pertenece al usuario o es admin
+        cursor.execute(
+            "SELECT id_usuario FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
+            (turno_disponible_id, today_local_iso())
+        )
+        assigned_user_id_db = cursor.fetchone()
+        
+        if assigned_user_id_db and (assigned_user_id_db['id_usuario'] == usuario_id or current_user.is_admin()):
+            try:
+                cursor.execute(
+                    "DELETE FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
+                    (turno_disponible_id, today_local_iso())
+                )
+                conn.commit()
+                flash('✅ Turno eliminado correctamente y disponible para otros', 'message')
+            except Exception as e:
+                flash(f'Error al eliminar turno: {e}', 'error')
+                logger.error(f"Error eliminar_turno para {username}: {e}")
+        else:
+            flash('No puedes eliminar este turno', 'error')
+
         cursor.close()
         conn.close()
-        return redirect(url_for('ver_turnos_asignados'))
 
-    cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, hora))
-    turno_disponible_id = cursor.fetchone()
-    
-    if not turno_disponible_id:
-        flash('Turno no encontrado', 'error')
-        cursor.close()
-        conn.close()
-        return redirect(url_for('ver_turnos_asignados'))
-    
-    turno_disponible_id = turno_disponible_id['id']
-
-    # Verificar que el turno pertenece al usuario o es admin
-    cursor.execute(
-        "SELECT id_usuario FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
-        (turno_disponible_id, today_local_iso())
-    )
-    assigned_user_id_db = cursor.fetchone()
-    
-    if assigned_user_id_db and (assigned_user_id_db['id_usuario'] == usuario_id or current_user.is_admin()):
-        try:
-            cursor.execute(
-                "DELETE FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
-                (turno_disponible_id, today_local_iso())
-            )
-            conn.commit()
-            flash('✅ Turno eliminado correctamente y disponible para otros', 'message')
-        except Exception as e:
-            flash(f'Error al eliminar turno: {e}', 'error')
-            logger.error(f"Error eliminar_turno para {username}: {e}")
-    else:
-        flash('No puedes eliminar este turno', 'error')
-
-    cursor.close()
-    conn.close()
     return redirect(url_for('ver_turnos_asignados'))
 
 # ✅ Panel de asignación manual de turnos (Admin)
@@ -1892,7 +1891,7 @@ def admin_asignar_turnos():
         return redirect(url_for('home'))
     
     form = EmptyForm() # Se añade para validación CSRF
-    if form.validate_on_submit(): # Se valida el token CSRF
+    # La validación CSRF es implícita con el formulario, no se necesita un bloque `if` para un GET.
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -1947,7 +1946,8 @@ def admin_asignar_turnos():
                          turnos_disponibles=turnos_disponibles_por_dia,
                          turnos_asignados=turnos_por_gestor,
                          gestores=gestores,
-                         dias_semana=['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])
+                         dias_semana=['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+                         form=form)
 
 # ✅ Asignar turno manual (Admin)
 @app.route('/admin/asignar_turno_manual', methods=['POST'])
@@ -1958,50 +1958,50 @@ def admin_asignar_turno_manual():
     
     form = EmptyForm() # Se añade para validación CSRF
     if form.validate_on_submit(): # Se valida el token CSRF
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    id_usuario = request.form.get('id_usuario')
-    dias_semana = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    
-    hoy = now_local().date()
-    inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
-
-    try:
-        # Primero, eliminamos los turnos de la semana para este usuario para evitar conflictos
-        cursor.execute(
-            "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion BETWEEN %s AND %s",
-            (id_usuario, inicio_semana, inicio_semana + datetime.timedelta(days=6))
-        )
-
-        # Ahora, insertamos los nuevos turnos
-        for i, dia_str in enumerate(dias_semana):
-            hora = request.form.get(f'turno_{dia_str}')
-            if hora: # Si se seleccionó una hora para ese día
-                fecha_asignacion = inicio_semana + datetime.timedelta(days=i)
-                
-                # Obtener el id del turno disponible
-                cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia_str, hora))
-                turno_disponible_row = cursor.fetchone()
-                
-                if turno_disponible_row:
-                    id_turno_disponible = turno_disponible_row['id']
-                    
-                    # Insertar el nuevo turno asignado
-                    cursor.execute(
-                        "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
-                        (id_usuario, id_turno_disponible, fecha_asignacion)
-                    )
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-        conn.commit()
-        flash('✅ Turnos de la semana guardados exitosamente.', 'message')
-    except Exception as e:
-        conn.rollback()
-        flash(f'Error al guardar los turnos: {e}', 'error')
-        logger.error(f"Error en admin_asignar_turno_manual para usuario {id_usuario}: {e}")
-    finally:
-        cursor.close()
-        conn.close()
+        id_usuario = request.form.get('id_usuario')
+        dias_semana = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        
+        hoy = now_local().date()
+        inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
+
+        try:
+            # Primero, eliminamos los turnos de la semana para este usuario para evitar conflictos
+            cursor.execute(
+                "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion BETWEEN %s AND %s",
+                (id_usuario, inicio_semana, inicio_semana + datetime.timedelta(days=6))
+            )
+
+            # Ahora, insertamos los nuevos turnos
+            for i, dia_str in enumerate(dias_semana):
+                hora = request.form.get(f'turno_{dia_str}')
+                if hora: # Si se seleccionó una hora para ese día
+                    fecha_asignacion = inicio_semana + datetime.timedelta(days=i)
+                    
+                    # Obtener el id del turno disponible
+                    cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia_str, hora))
+                    turno_disponible_row = cursor.fetchone()
+                    
+                    if turno_disponible_row:
+                        id_turno_disponible = turno_disponible_row['id']
+                        
+                        # Insertar el nuevo turno asignado
+                        cursor.execute(
+                            "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
+                            (id_usuario, id_turno_disponible, fecha_asignacion)
+                        )
+            
+            conn.commit()
+            flash('✅ Turnos de la semana guardados exitosamente.', 'message')
+        except Exception as e:
+            conn.rollback()
+            flash(f'Error al guardar los turnos: {e}', 'error')
+            logger.error(f"Error en admin_asignar_turno_manual para usuario {id_usuario}: {e}")
+        finally:
+            cursor.close()
+            conn.close()
 
     return redirect(url_for('admin_asignar_turnos'))
 
@@ -2014,32 +2014,32 @@ def admin_limpiar_turno():
     
     form = EmptyForm() # Se añade para validación CSRF
     if form.validate_on_submit(): # Se valida el token CSRF
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    dia = request.form.get('dia')
-    hora = request.form.get('hora')
-    
-    if dia and hora:
-        cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, hora))
-        turno_disponible_id = cursor.fetchone()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-        if turno_disponible_id:
-            try:
-                cursor.execute(
-                    "DELETE FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
-                    (turno_disponible_id['id'], today_local_iso())
-                )
-                conn.commit()
-                flash('✅ Turno liberado', 'message')
-            except Exception as e:
-                flash(f'Error al liberar turno: {e}', 'error')
-                logger.error(f"Error admin_limpiar_turno: {e}")
-        else:
-            flash('Turno no encontrado', 'error')
-    
-    cursor.close()
-    conn.close()
+        dia = request.form.get('dia')
+        hora = request.form.get('hora')
+        
+        if dia and hora:
+            cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, hora))
+            turno_disponible_id = cursor.fetchone()
+            
+            if turno_disponible_id:
+                try:
+                    cursor.execute(
+                        "DELETE FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
+                        (turno_disponible_id['id'], today_local_iso())
+                    )
+                    conn.commit()
+                    flash('✅ Turno liberado', 'message')
+                except Exception as e:
+                    flash(f'Error al liberar turno: {e}', 'error')
+                    logger.error(f"Error admin_limpiar_turno: {e}")
+            else:
+                flash('Turno no encontrado', 'error')
+        
+        cursor.close()
+        conn.close()
     return redirect(url_for('admin_asignar_turnos'))
 
 # ✅ Panel de edición completa de usuario (Admin)
@@ -2050,10 +2050,10 @@ def admin_editar_completo(username):
         return redirect(url_for('home'))
     
     form = EmptyForm()
-    if form.validate_on_submit():
+    # La validación CSRF es implícita con el formulario, no se necesita un bloque `if` para un GET.
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     cursor.execute("SELECT id, username, nombre, cedula, cargo, correo, telefono, admin, bloqueado FROM usuarios WHERE username = %s", (username,))
     usuario_data = cursor.fetchone()
     
@@ -2084,7 +2084,8 @@ def admin_editar_completo(username):
     return render_template('admin_editar_completo.html',
                          usuario=username,
                          usuario_data=usuario_data,
-                         registros=registros)
+                         registros=registros,
+                         form=form)
 
 # ✅ Actualizar usuario completo (Admin)
 @app.route('/admin/actualizar_usuario_completo', methods=['POST'])
@@ -2093,46 +2094,48 @@ def admin_actualizar_usuario_completo():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    username = request.form.get('usuario')
-    
-    cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
-    user_id = cursor.fetchone()
-    
-    if user_id:
-        nombre = request.form.get('nombre')
-        cedula = request.form.get('cedula')
-        cargo = request.form.get('cargo')
-        correo = request.form.get('correo')
-        telefono = request.form.get('telefono', '')
-        is_admin = request.form.get('admin') == 'true'
+    form = EmptyForm()
+    if form.validate_on_submit():
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-        nueva_contrasena = request.form.get('contrasena')
+        username = request.form.get('usuario')
         
-        try:
-            if nueva_contrasena:
-                hashed_password = generate_password_hash(nueva_contrasena)
-                cursor.execute(
-                    "UPDATE usuarios SET nombre = %s, cedula = %s, cargo = %s, correo = %s, telefono = %s, admin = %s, contrasena = %s WHERE id = %s",
-                    (nombre, cedula, cargo, correo, telefono, is_admin, hashed_password, user_id['id'])
-                )
-            else:
-                cursor.execute(
-                    "UPDATE usuarios SET nombre = %s, cedula = %s, cargo = %s, correo = %s, telefono = %s, admin = %s WHERE id = %s",
-                    (nombre, cedula, cargo, correo, telefono, is_admin, user_id['id'])
-                )
-            conn.commit()
-            flash('✅ Usuario actualizado completamente', 'message')
-        except Exception as e:
-            flash(f'Error al actualizar usuario: {e}', 'error')
-            logger.error(f"Error admin_actualizar_usuario_completo para {username}: {e}")
-    else:
-        flash('Usuario no encontrado', 'error')
-    
-    cursor.close()
-    conn.close()
+        cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
+        user_id = cursor.fetchone()
+        
+        if user_id:
+            nombre = request.form.get('nombre')
+            cedula = request.form.get('cedula')
+            cargo = request.form.get('cargo')
+            correo = request.form.get('correo')
+            telefono = request.form.get('telefono', '')
+            is_admin = request.form.get('admin') == 'true'
+            
+            nueva_contrasena = request.form.get('contrasena')
+            
+            try:
+                if nueva_contrasena:
+                    hashed_password = generate_password_hash(nueva_contrasena)
+                    cursor.execute(
+                        "UPDATE usuarios SET nombre = %s, cedula = %s, cargo = %s, correo = %s, telefono = %s, admin = %s, contrasena = %s WHERE id = %s",
+                        (nombre, cedula, cargo, correo, telefono, is_admin, hashed_password, user_id['id'])
+                    )
+                else:
+                    cursor.execute(
+                        "UPDATE usuarios SET nombre = %s, cedula = %s, cargo = %s, correo = %s, telefono = %s, admin = %s WHERE id = %s",
+                        (nombre, cedula, cargo, correo, telefono, is_admin, user_id['id'])
+                    )
+                conn.commit()
+                flash('✅ Usuario actualizado completamente', 'message')
+            except Exception as e:
+                flash(f'Error al actualizar usuario: {e}', 'error')
+                logger.error(f"Error admin_actualizar_usuario_completo para {username}: {e}")
+        else:
+            flash('Usuario no encontrado', 'error')
+        
+        cursor.close()
+        conn.close()
     return redirect(url_for('admin_usuarios'))
 
 # ✅ Actualizar registro de asistencia (Admin - AJAX)
