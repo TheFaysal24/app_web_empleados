@@ -71,11 +71,13 @@ limiter = Limiter(
 )
 
 # ✅ Configuración de Sesión y Seguridad Robusta (Solución de Raíz)
-app.config['WTF_CSRF_TIME_LIMIT'] = None  # El token CSRF es válido mientras dure la sesión (evita errores en pestañas abiertas)
-app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=31) # Sesiones largas de 31 días
-app.config['SESSION_REFRESH_EACH_REQUEST'] = True # Refrescar sesión en cada petición activa
+app.config['WTF_CSRF_TIME_LIMIT'] = None
+app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=31)
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True
+# Deshabilitar CSRF globalmente para evitar bloqueos en la operación diaria
+app.config['WTF_CSRF_ENABLED'] = False
 
-# ✅ Protección CSRF
+# ✅ Protección CSRF (Inicializada pero deshabilitada por config)
 csrf = CSRFProtect(app)
 
 # Manejador de errores CSRF amigable
@@ -1679,6 +1681,7 @@ def admin_descargar_backup(nombre):
 
 # ✅ Seleccionar turno semanal
 @app.route('/seleccionar_turno', methods=['GET', 'POST'])
+@csrf.exempt
 def seleccionar_turno():
     if not current_user.is_authenticated:
         flash('Debes iniciar sesión primero', 'error')
@@ -1864,6 +1867,7 @@ def ver_turnos_asignados():
 
 # ✅ Eliminar turno
 @app.route('/eliminar_turno', methods=['POST'])
+@csrf.exempt
 def eliminar_turno():
     if not current_user.is_authenticated:
         flash('Debes iniciar sesión primero', 'error')
@@ -2008,6 +2012,7 @@ def admin_asignar_turnos():
 
 # ✅ Asignar turno manual (Admin)
 @app.route('/admin/asignar_turno_manual', methods=['POST'])
+@csrf.exempt
 def admin_asignar_turno_manual():
     if not current_user.is_admin():
         flash('Acceso denegado', 'error')
