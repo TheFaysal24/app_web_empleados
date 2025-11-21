@@ -1288,21 +1288,22 @@ def cambiar_contrasena():
         actual = request.form.get('actual', '')
         nueva = request.form.get('nueva', '')
 
-        if not current_user.is_admin():
-            if len(user_data['contrasena']) < 6:
-                flash('La contraseña debe tener al menos 6 caracteres', 'error')
-                return redirect(url_for('ajustes'))
-        # Admin puede poner cualquier contraseña si lo desea, o mantener la regla
-        if len(user_data['contrasena']) < 1 and current_user.is_admin():
-             flash('La contraseña no puede estar vacía', 'error')
-             return redirect(url_for('ajustes'))
-
         cursor.execute("SELECT contrasena FROM usuarios WHERE id = %s", (usuario_id,))
         user_data = cursor.fetchone()
 
         if user_data:
+            # Validar longitud de la nueva contraseña
+            if not nueva or len(nueva) < 1:
+                flash('La nueva contraseña no puede estar vacía.', 'error')
+                cursor.close()
+                conn.close()
+                return redirect(url_for('ajustes'))
+
             if check_password_hash(user_data['contrasena'], actual):
                 try:
+                    if len(nueva) < 6 and not current_user.is_admin():
+                        flash('La contraseña debe tener al menos 6 caracteres', 'error')
+                        return redirect(url_for('ajustes'))
                     cursor.execute(
                         "UPDATE usuarios SET contrasena = %s WHERE id = %s",
                         (generate_password_hash(nueva), usuario_id)
