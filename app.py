@@ -879,7 +879,7 @@ def dashboard():
     # Obtener fechas de la semana actual
     fechas_semana_actual = [(hoy_date - datetime.timedelta(days=hoy_date.weekday()) + datetime.timedelta(days=i)) for i in range(7)]
 
-    # ✅ AÑADIR FORMULARIO VACÍO PARA LOS BOTONES DE ASISTENCIA
+    # ✅ AÑADIR FORMULARIO VACÍO PARA LOS BOTONES DE ASISTENCIA (CSRF)
     form = EmptyForm()
 
     cursor.close()
