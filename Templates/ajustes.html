@@ -186,8 +186,8 @@
       <strong>💡 Consejo:</strong> Mantén tu información actualizada para que los registros sean precisos.
     </div>
 
-    <form method="POST" action="{{ url_for('actualizar_datos') }}">
-      {{ form.hidden_tag() }}
+    <form method="POST" action="{{ url_for('ajustes') }}">
+      {{ update_form.hidden_tag() }}
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="nombre">Nombre Completo</label>
@@ -210,7 +210,7 @@
         </div>
       </div>
 
-      <button type="submit" class="btn-guardar">
+      <button type="submit" name="submit_update" value="1" class="btn-guardar">
         <i class="fas fa-save"></i> Guardar Cambios
       </button>
     </form>
@@ -224,8 +224,8 @@
       <strong>🔒 Seguridad:</strong> Usa una contraseña fuerte con números, letras y caracteres especiales.
     </div>
 
-    <form method="POST" action="{{ url_for('cambiar_contrasena') }}">
-      {{ form.hidden_tag() }}
+    <form method="POST" action="{{ url_for('ajustes') }}">
+      {{ password_form.hidden_tag() }}
       <div class="form-group">
         <label class="form-label" for="actual">Contraseña Actual</label>
         <input type="password" class="form-control" id="actual" name="actual" placeholder="Ingresa tu contraseña actual" required>
@@ -241,7 +241,7 @@
         <input type="password" class="form-control" id="confirmar" name="confirmar" placeholder="Confirma tu nueva contraseña" required>
       </div>
 
-      <button type="submit" class="btn-guardar" onclick="return validarContrasenas()">
+      <button type="submit" name="submit_password" value="1" class="btn-guardar" onclick="return validarContrasenas()">
         <i class="fas fa-key"></i> Actualizar Contraseña
       </button>
     </form>
