@@ -974,10 +974,13 @@ def calcular_horas(inicio_iso, fin_iso):
         else:
             fin_dt = datetime.datetime.fromisoformat(fin_iso)
             
-        horas_totales = (fin_dt - inicio_dt).total_seconds() / 3600
-        horas_netas = max(0, horas_totales - 1)  # Descuento almuerzo
-        horas_extras = max(0, horas_netas - 8)
-        return round(horas_netas, 2), round(horas_extras, 2)
+        # Si la jornada es de más de 5 horas, se descuenta 1 hora de almuerzo.
+        horas_brutas = (fin_dt - inicio_dt).total_seconds() / 3600
+        horas_netas_trabajadas = horas_brutas - 1 if horas_brutas > 5 else horas_brutas
+        
+        horas_ordinarias = min(8, horas_netas_trabajadas)
+        horas_extras = max(0, horas_netas_trabajadas - 8)
+        return round(horas_ordinarias, 2), round(horas_extras, 2)
     except (ValueError, TypeError):
         # Captura errores si las fechas son inválidas o nulas
         return 0.0, 0.0
@@ -1006,15 +1009,15 @@ def marcar_salida():
 
         if registro_existente:
             inicio_iso = registro_existente['inicio']
-            horas_trabajadas_netas, horas_extras = calcular_horas(inicio_iso, ahora)
+            horas_ordinarias, horas_extras = calcular_horas(inicio_iso, ahora)
             
             try:
                 cursor.execute(
                     "UPDATE registros_asistencia SET salida = %s, horas_trabajadas = %s, horas_extras = %s WHERE id = %s",
-                    (ahora.isoformat(), horas_trabajadas_netas, horas_extras, registro_existente['id'])
+                    (ahora.isoformat(), horas_ordinarias, horas_extras, registro_existente['id'])
                 )
                 conn.commit()
-                flash(f'Salida registrada. Horas trabajadas: {horas_trabajadas_netas}h, Extras: {horas_extras}h', 'message')
+                flash(f'Salida registrada. Horas trabajadas: {horas_ordinarias}h, Extras: {horas_extras}h', 'message')
             except Exception as e:
                 flash(f'Error al registrar salida: {e}', 'error')
                 logger.error(f"Error al marcar salida para {current_user.username}: {e}")
@@ -1052,15 +1055,15 @@ def marcar_asistencia():
         if registro_pendiente:
             # Ya marcó entrada, ahora marcar salida
             inicio_iso = registro_pendiente['inicio']
-            horas_trabajadas_netas, horas_extras = calcular_horas(inicio_iso, ahora)
+            horas_ordinarias, horas_extras = calcular_horas(inicio_iso, ahora)
             
             try:
                 cursor.execute(
                     "UPDATE registros_asistencia SET salida = %s, horas_trabajadas = %s, horas_extras = %s WHERE id = %s",
-                    (ahora.isoformat(), horas_trabajadas_netas, horas_extras, registro_pendiente['id'])
+                    (ahora.isoformat(), horas_ordinarias, horas_extras, registro_pendiente['id'])
                 )
                 conn.commit()
-                flash(f'✅ Salida registrada. Horas trabajadas: {horas_trabajadas_netas}h, Extras: {horas_extras}h', 'message')
+                flash(f'✅ Salida registrada. Horas trabajadas: {horas_ordinarias}h, Extras: {horas_extras}h', 'message')
             except Exception as e:
                 flash(f'Error al registrar salida: {e}', 'error')
                 logger.error(f"Error al marcar asistencia (salida) para {current_user.username}: {e}")
@@ -1820,61 +1823,51 @@ def ver_turnos_asignados():
     admin = current_user.is_admin()
     
     assigned_shifts = {}
+    
+    # Construir la consulta base
+    query = """
+        SELECT 
+            ta.fecha_asignacion,
+            u.username, u.nombre, u.cedula, u.cargo,
+            td.dia_semana AS dia, td.hora
+        FROM turnos_asignados ta
+        JOIN usuarios u ON ta.id_usuario = u.id
+        JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+    """
+    params = []
 
-    if admin:
-        cursor.execute("""
-            SELECT 
-                u.username, u.nombre, u.cedula, u.cargo,
-                td.dia_semana AS dia, td.hora
-            FROM turnos_asignados ta
-            JOIN usuarios u ON ta.id_usuario = u.id
-            JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
-            WHERE ta.fecha_asignacion = %s
-            ORDER BY u.username, td.dia_semana, td.hora
-        """, (today_local_iso(),))
-        all_assigned_shifts = cursor.fetchall()
+    # Si no es admin, filtrar por su propio ID
+    if not admin:
+        query += " WHERE ta.id_usuario = %s"
+        params.append(usuario_id)
+
+    # Ordenar siempre por fecha (más reciente primero), luego por usuario
+    query += " ORDER BY ta.fecha_asignacion DESC, u.username, td.hora"
+
+    cursor.execute(query, tuple(params))
+    all_assigned_shifts = cursor.fetchall()
+    
+    # Agrupar los turnos por fecha
+    turnos_por_fecha = {}
+    for shift in all_assigned_shifts:
+        fecha = shift['fecha_asignacion'].isoformat()
+        if fecha not in turnos_por_fecha:
+            turnos_por_fecha[fecha] = []
         
-        for shift in all_assigned_shifts:
-            username = shift['username']
-            if username not in assigned_shifts:
-                assigned_shifts[username] = []
-            assigned_shifts[username].append({
-                'dia': shift['dia'],
-                'hora': shift['hora'],
-                'usuario': username,
-                'nombre': shift['nombre'],
-                'cedula': shift['cedula'],
-                'cargo': shift['cargo']
-            })
-    else:
-        cursor.execute("""
-            SELECT 
-                u.username, u.nombre, u.cedula, u.cargo,
-                td.dia_semana AS dia, td.hora
-            FROM turnos_asignados ta
-            JOIN usuarios u ON ta.id_usuario = u.id
-            JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
-            WHERE ta.id_usuario = %s AND ta.fecha_asignacion = %s
-            ORDER BY td.dia_semana, td.hora
-        """, (usuario_id, today_local_iso()))
-        user_assigned_shifts = cursor.fetchall()
-        
-        assigned_shifts[current_user.username] = []
-        for shift in user_assigned_shifts:
-            assigned_shifts[current_user.username].append({
-                'dia': shift['dia'],
-                'hora': shift['hora'],
-                'usuario': current_user.username,
-                'nombre': current_user.nombre,
-                'cedula': current_user.cedula,
-                'cargo': current_user.cargo
-            })
+        turnos_por_fecha[fecha].append({
+            'dia': shift['dia'],
+            'hora': shift['hora'],
+            'usuario': shift['username'],
+            'nombre': shift['nombre'],
+            'cedula': shift['cedula'],
+            'cargo': shift['cargo']
+        })
 
     cursor.close()
     conn.close()
     
     return render_template('ver_turnos_asignados.html',
-                         assigned_shifts=assigned_shifts,
+                         turnos_por_fecha=turnos_por_fecha,
                          admin=admin,
                          data={'usuarios': {}, 'turnos': {'shifts': {}}}, # Data ya no se carga de JSON
                          session=session)
