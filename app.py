@@ -3,7 +3,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf import FlaskForm
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import json
@@ -72,6 +72,12 @@ limiter = Limiter(
 
 # ✅ Protección CSRF
 csrf = CSRFProtect(app)
+
+# Manejador de errores CSRF amigable
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    flash('Tu sesión ha expirado o el token es inválido. Por favor, intenta de nuevo.', 'warning')
+    return redirect(request.referrer or url_for('login'))
 
 # Configuración de Flask-Login
 login_manager = LoginManager()
