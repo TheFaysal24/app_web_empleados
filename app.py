@@ -1191,9 +1191,11 @@ def ajustes():
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
 
-    form = EmptyForm() # ✅ Crear formulario para protección CSRF
+    # Crear formularios para cada acción en la página
+    form = EmptyForm() # Para cambiar contraseña
+    update_form = EmptyForm() # Para actualizar datos de admin
     es_admin = current_user.is_admin()
-    return render_template('ajustes.html', es_admin=es_admin, form=form)
+    return render_template('ajustes.html', es_admin=es_admin, form=form, update_form=update_form)
 
 @app.route('/actualizar_datos', methods=['POST'])
 def actualizar_datos():
@@ -1904,6 +1906,13 @@ def admin_asignar_turnos():
     cedulas_gestores = ["1070963486", "1067949514", "1140870406", "1068416077"]
     gestores = {}
     
+    # Diccionario para traducir los nombres de los días
+    dias_nombres = {
+        'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
+        'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado',
+        'sunday': 'Domingo'
+    }
+
     # Obtener todos los turnos disponibles para los menús desplegables
     cursor.execute("SELECT dia_semana, hora FROM turnos_disponibles ORDER BY hora")
     turnos_disponibles_db = cursor.fetchall()
@@ -1952,6 +1961,7 @@ def admin_asignar_turnos():
                          turnos_asignados=turnos_por_gestor,
                          gestores=gestores,
                          dias_semana=['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+                         dias_nombres=dias_nombres,
                          form=form)
 
 # ✅ Asignar turno manual (Admin)
