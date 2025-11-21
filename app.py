@@ -914,33 +914,33 @@ def marcar_inicio():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    usuario_id = current_user.id
-    hoy = today_local_iso()
-    ahora = now_local().isoformat()
+    form = EmptyForm()
+    if form.validate_on_submit():
 
-    cursor.execute(
-        "SELECT id FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL",
-        (usuario_id, hoy)
-    )
-    if cursor.fetchone():
-        flash('Ya registraste tu inicio hoy', 'error')
-        cursor.close()
-        conn.close()
-        return redirect(url_for('dashboard'))
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        usuario_id = current_user.id
+        hoy = today_local_iso()
+        ahora = now_local().isoformat()
 
-    try:
-        cursor.execute("INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING", (usuario_id, hoy, ahora))
-        conn.commit()
-        flash('Hora de inicio registrada.', 'message')
-    except Exception as e:
-        flash(f'Error al registrar inicio: {e}', 'error')
-        logger.error(f"Error al marcar inicio para {current_user.username}: {e}")
-    finally:
-        cursor.close()
-        conn.close()
+        cursor.execute(
+            "SELECT id FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL",
+            (usuario_id, hoy)
+        )
+        if cursor.fetchone():
+            flash('Ya registraste tu inicio hoy', 'error')
+        else:
+            try:
+                cursor.execute("INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING", (usuario_id, hoy, ahora))
+                conn.commit()
+                flash('Hora de inicio registrada.', 'message')
+            except Exception as e:
+                flash(f'Error al registrar inicio: {e}', 'error')
+                logger.error(f"Error al marcar inicio para {current_user.username}: {e}")
+        finally:
+            cursor.close()
+            conn.close()
 
     return redirect(url_for('dashboard'))
 
@@ -972,38 +972,41 @@ def marcar_salida():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    usuario_id = current_user.id
-    hoy = today_local_iso()
-    ahora = now_local()
-
-    cursor.execute(
-        "SELECT id, inicio FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL AND salida IS NULL",
-        (usuario_id, hoy)
-    )
-    registro_existente = cursor.fetchone()
-
-    if registro_existente:
-        inicio_iso = registro_existente['inicio']
-        horas_trabajadas_netas, horas_extras = calcular_horas(inicio_iso, ahora)
+    form = EmptyForm()
+    if form.validate_on_submit():
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-        try:
-            cursor.execute(
-                "UPDATE registros_asistencia SET salida = %s, horas_trabajadas = %s, horas_extras = %s WHERE id = %s",
-                (ahora.isoformat(), horas_trabajadas_netas, horas_extras, registro_existente['id'])
-            )
-            conn.commit()
-            flash(f'Salida registrada. Horas trabajadas: {horas_trabajadas_netas}h, Extras: {horas_extras}h', 'message')
-        except Exception as e:
-            flash(f'Error al registrar salida: {e}', 'error')
-            logger.error(f"Error al marcar salida para {current_user.username}: {e}")
-    else:
-        flash('No hay registro de inicio pendiente.', 'error')
-    
-    cursor.close()
-    conn.close()
+        usuario_id = current_user.id
+        hoy = today_local_iso()
+        ahora = now_local()
+
+        cursor.execute(
+            "SELECT id, inicio FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL AND salida IS NULL",
+            (usuario_id, hoy)
+        )
+        registro_existente = cursor.fetchone()
+
+        if registro_existente:
+            inicio_iso = registro_existente['inicio']
+            horas_trabajadas_netas, horas_extras = calcular_horas(inicio_iso, ahora)
+            
+            try:
+                cursor.execute(
+                    "UPDATE registros_asistencia SET salida = %s, horas_trabajadas = %s, horas_extras = %s WHERE id = %s",
+                    (ahora.isoformat(), horas_trabajadas_netas, horas_extras, registro_existente['id'])
+                )
+                conn.commit()
+                flash(f'Salida registrada. Horas trabajadas: {horas_trabajadas_netas}h, Extras: {horas_extras}h', 'message')
+            except Exception as e:
+                flash(f'Error al registrar salida: {e}', 'error')
+                logger.error(f"Error al marcar salida para {current_user.username}: {e}")
+        else:
+            flash('No hay registro de inicio pendiente.', 'error')
+        
+        cursor.close()
+        conn.close()
+
     return redirect(url_for('dashboard'))
 
 # ✅ Marcar asistencia (Entrada/Salida inteligente)
@@ -1013,57 +1016,60 @@ def marcar_asistencia():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    usuario_id = current_user.id
-    hoy = today_local_iso()
-    ahora = now_local()
-
-    # Verificar si ya marcó entrada hoy y no ha marcado salida
-    cursor.execute(
-        "SELECT id, inicio FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL AND salida IS NULL",
-        (usuario_id, hoy)
-    )
-    registro_pendiente = cursor.fetchone()
-
-    if registro_pendiente:
-        # Ya marcó entrada, ahora marcar salida
-        inicio_iso = registro_pendiente['inicio']
-        horas_trabajadas_netas, horas_extras = calcular_horas(inicio_iso, ahora)
+    form = EmptyForm()
+    if form.validate_on_submit():
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-        try:
-            cursor.execute(
-                "UPDATE registros_asistencia SET salida = %s, horas_trabajadas = %s, horas_extras = %s WHERE id = %s",
-                (ahora.isoformat(), horas_trabajadas_netas, horas_extras, registro_pendiente['id'])
-            )
-            conn.commit()
-            flash(f'✅ Salida registrada. Horas trabajadas: {horas_trabajadas_netas}h, Extras: {horas_extras}h', 'message')
-        except Exception as e:
-            flash(f'Error al registrar salida: {e}', 'error')
-            logger.error(f"Error al marcar asistencia (salida) para {current_user.username}: {e}")
-    else:
-        # No ha marcado entrada hoy, marcar entrada
+        usuario_id = current_user.id
+        hoy = today_local_iso()
+        ahora = now_local()
+
+        # Verificar si ya marcó entrada hoy y no ha marcado salida
         cursor.execute(
-            "SELECT id FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL",
+            "SELECT id, inicio FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL AND salida IS NULL",
             (usuario_id, hoy)
         )
-        if cursor.fetchone():
-            flash('Ya registraste tu inicio hoy', 'error')
-        else:
+        registro_pendiente = cursor.fetchone()
+
+        if registro_pendiente:
+            # Ya marcó entrada, ahora marcar salida
+            inicio_iso = registro_pendiente['inicio']
+            horas_trabajadas_netas, horas_extras = calcular_horas(inicio_iso, ahora)
+            
             try:
                 cursor.execute(
-                    "INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING",
-                    (usuario_id, hoy, ahora.isoformat())
+                    "UPDATE registros_asistencia SET salida = %s, horas_trabajadas = %s, horas_extras = %s WHERE id = %s",
+                    (ahora.isoformat(), horas_trabajadas_netas, horas_extras, registro_pendiente['id'])
                 )
                 conn.commit()
-                flash('✅ Hora de inicio registrada', 'message')
+                flash(f'✅ Salida registrada. Horas trabajadas: {horas_trabajadas_netas}h, Extras: {horas_extras}h', 'message')
             except Exception as e:
-                flash(f'Error al registrar inicio: {e}', 'error')
-                logger.error(f"Error al marcar asistencia (inicio) para {current_user.username}: {e}")
-    
-    cursor.close()
-    conn.close()
+                flash(f'Error al registrar salida: {e}', 'error')
+                logger.error(f"Error al marcar asistencia (salida) para {current_user.username}: {e}")
+        else:
+            # No ha marcado entrada hoy, marcar entrada
+            cursor.execute(
+                "SELECT id FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL",
+                (usuario_id, hoy)
+            )
+            if cursor.fetchone():
+                flash('Ya registraste tu inicio hoy', 'error')
+            else:
+                try:
+                    cursor.execute(
+                        "INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING",
+                        (usuario_id, hoy, ahora.isoformat())
+                    )
+                    conn.commit()
+                    flash('✅ Hora de inicio registrada', 'message')
+                except Exception as e:
+                    flash(f'Error al registrar inicio: {e}', 'error')
+                    logger.error(f"Error al marcar asistencia (inicio) para {current_user.username}: {e}")
+        
+        cursor.close()
+        conn.close()
+
     return redirect(url_for('dashboard'))
 
 # ✅ Exportar datos
@@ -1409,6 +1415,8 @@ def admin_desbloquear():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     username = request.form.get('usuario')
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -1438,6 +1446,8 @@ def admin_bloquear():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     username = request.form.get('usuario')
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -1467,6 +1477,8 @@ def admin_eliminar_registro():
         flash('Acceso denegado', 'error')
         return redirect(url_for('dashboard'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     username = request.form.get('usuario')
     fecha_str = request.form.get('fecha')
     
@@ -1507,6 +1519,8 @@ def admin_editar_registro():
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     if request.method == 'POST':
         username = request.form.get('usuario')
         fecha_str = request.form.get('fecha')
@@ -1738,8 +1752,8 @@ def ver_turnos_asignados():
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
 
-    form = EmptyForm()
-    if not form.validate_on_submit():
+    form = EmptyForm() # Se añade para validación CSRF
+    if form.validate_on_submit():
         return redirect(url_for('ver_turnos_asignados'))
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -1814,6 +1828,9 @@ def eliminar_turno():
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
 
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        return redirect(url_for('ver_turnos_asignados'))
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -1934,6 +1951,8 @@ def admin_asignar_turno_manual():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -1988,6 +2007,8 @@ def admin_limpiar_turno():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -2023,6 +2044,8 @@ def admin_editar_completo(username):
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -2065,6 +2088,8 @@ def admin_actualizar_usuario_completo():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
+    form = EmptyForm()
+    if form.validate_on_submit():
     conn = get_db_connection()
     cursor = conn.cursor()
     

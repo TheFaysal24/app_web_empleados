@@ -186,6 +186,7 @@
       <strong>💡 Consejo:</strong> Mantén tu información actualizada para que los registros sean precisos.
     </div>
 
+    <!-- Formulario para actualizar datos, ahora apunta a 'ajustes' -->
     <form method="POST" action="{{ url_for('ajustes') }}">
       {{ update_form.hidden_tag() }}
       <div class="form-row">
@@ -210,6 +211,7 @@
         </div>
       </div>
 
+      <!-- El 'name' y 'value' ayudan a identificar qué formulario se envió -->
       <button type="submit" name="submit_update" value="1" class="btn-guardar">
         <i class="fas fa-save"></i> Guardar Cambios
       </button>
@@ -224,6 +226,7 @@
       <strong>🔒 Seguridad:</strong> Usa una contraseña fuerte con números, letras y caracteres especiales.
     </div>
 
+    <!-- Formulario para cambiar contraseña, ahora apunta a 'ajustes' -->
     <form method="POST" action="{{ url_for('ajustes') }}">
       {{ password_form.hidden_tag() }}
       <div class="form-group">
@@ -241,6 +244,7 @@
         <input type="password" class="form-control" id="confirmar" name="confirmar" placeholder="Confirma tu nueva contraseña" required>
       </div>
 
+      <!-- El 'name' y 'value' ayudan a identificar qué formulario se envió -->
       <button type="submit" name="submit_password" value="1" class="btn-guardar" onclick="return validarContrasenas()">
         <i class="fas fa-key"></i> Actualizar Contraseña
       </button>
