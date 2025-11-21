@@ -16,6 +16,7 @@ import shutil
 import logging
 from functools import wraps
 import uuid
+from wtforms import StringField, PasswordField, SubmitField
 import re
 
 # Cargar variables de entorno
@@ -128,6 +129,7 @@ class RegisterForm(FlaskForm):
     telefono = StringField('Teléfono')
     usuario = StringField('Nombre de Usuario')
     contrasena = PasswordField('Contraseña')
+    submit = SubmitField('Registrarse')
 # Helper para parsear tiempos con am/pm a formato 24h
 def parse_time_am_pm(time_str):
     if not time_str:
@@ -510,13 +512,13 @@ def register():
 
     if form.validate_on_submit():
         # ✅ VALIDACIÓN DE INPUTS
-        nombre = sanitizar_string(request.form.get('nombre', ''), 100)
-        cedula = sanitizar_string(request.form.get('cedula', ''), 20)
-        cargo = sanitizar_string(request.form.get('cargo', ''), 100)
-        correo = sanitizar_string(request.form.get('correo', ''), 120)
-        telefono = sanitizar_string(request.form.get('telefono', ''), 20)
-        username = sanitizar_string(request.form.get('usuario', ''), 50)
-        contrasena = request.form.get('contrasena', '')
+        nombre = sanitizar_string(form.nombre.data, 100) if form.nombre.data else None
+        cedula = sanitizar_string(form.cedula.data, 20) if form.cedula.data else None
+        cargo = sanitizar_string(form.cargo.data, 100) if form.cargo.data else None
+        correo = sanitizar_string(form.correo.data, 120) if form.correo.data else None
+        telefono = sanitizar_string(form.telefono.data, 20) if form.telefono.data else None
+        username = sanitizar_string(form.usuario.data, 50) if form.usuario.data else None
+        contrasena = form.contrasena.data if form.contrasena.data else None
 
         # Validaciones específicas
         if not all([nombre, cedula, cargo, correo, username, contrasena]):
@@ -1706,6 +1708,8 @@ def seleccionar_turno():
 
     cursor.close()
     conn.close()
+
+    form = EmptyForm()
 
     return render_template('seleccionar_turno.html',
                          shifts=shifts,
