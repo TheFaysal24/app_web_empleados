@@ -1190,34 +1190,37 @@ def actualizar_datos():
     if not current_user.is_authenticated:
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
+
+    form = EmptyForm() # Se crea el formulario para la validación CSRF
+    if not form.validate_on_submit(): # Se valida el token CSRF
     
-    if not current_user.is_admin():
-        flash('Solo administradores pueden modificar datos personales', 'error')
-        return redirect(url_for('ajustes'))
+        if not current_user.is_admin():
+            flash('Solo administradores pueden modificar datos personales', 'error')
+            return redirect(url_for('ajustes'))
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    usuario_id = current_user.id
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        usuario_id = current_user.id
 
-    nombre = request.form.get('nombre')
-    cargo = request.form.get('cargo')
-    correo = request.form.get('correo')
-    telefono = request.form.get('telefono')
+        nombre = request.form.get('nombre')
+        cargo = request.form.get('cargo')
+        correo = request.form.get('correo')
+        telefono = request.form.get('telefono')
 
-    try:
-        cursor.execute(
-            "UPDATE usuarios SET nombre = %s, cargo = %s, correo = %s, telefono = %s WHERE id = %s",
-            (nombre, cargo, correo, telefono, usuario_id)
-        )
-        conn.commit()
-        flash('Datos actualizados correctamente', 'message')
-    except Exception as e:
-        flash(f'Error al actualizar datos: {e}', 'error')
-        logger.error(f"Error al actualizar datos para {current_user.username}: {e}")
-    finally:
-        cursor.close()
-        conn.close()
+        try:
+            cursor.execute(
+                "UPDATE usuarios SET nombre = %s, cargo = %s, correo = %s, telefono = %s WHERE id = %s",
+                (nombre, cargo, correo, telefono, usuario_id)
+            )
+            conn.commit()
+            flash('Datos actualizados correctamente', 'message')
+        except Exception as e:
+            flash(f'Error al actualizar datos: {e}', 'error')
+            logger.error(f"Error al actualizar datos para {current_user.username}: {e}")
+        finally:
+            cursor.close()
+            conn.close()
 
     return redirect(url_for('ajustes'))
 
@@ -1228,43 +1231,47 @@ def cambiar_contrasena():
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    usuario_id = current_user.id
+    form = EmptyForm()
+    if not form.validate_on_submit():
 
-    actual = request.form.get('actual', '')
-    nueva = request.form.get('nueva', '')
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        usuario_id = current_user.id
 
-    if len(nueva) < 6:
-        flash('La nueva contraseña debe tener al menos 6 caracteres', 'error')
+        actual = request.form.get('actual', '')
+        nueva = request.form.get('nueva', '')
+
+        if len(nueva) < 6:
+            flash('La nueva contraseña debe tener al menos 6 caracteres', 'error')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('ajustes'))
+
+        cursor.execute("SELECT contrasena FROM usuarios WHERE id = %s", (usuario_id,))
+        user_data = cursor.fetchone()
+
+        if user_data:
+            if check_password_hash(user_data['contrasena'], actual):
+                try:
+                    cursor.execute(
+                        "UPDATE usuarios SET contrasena = %s WHERE id = %s",
+                        (generate_password_hash(nueva), usuario_id)
+                    )
+                    conn.commit()
+                    logger.info(f"Contraseña cambiada para usuario: {current_user.username}")
+                    flash('Contraseña actualizada correctamente', 'message')
+                except Exception as e:
+                    flash(f'Error al actualizar contraseña: {e}', 'error')
+                    logger.error(f"Error al cambiar contraseña para {current_user.username}: {e}")
+            else:
+                flash('La contraseña actual no es correcta', 'error')
+        else:
+            flash('Usuario no encontrado', 'error')
+        
         cursor.close()
         conn.close()
-        return redirect(url_for('ajustes'))
-
-    cursor.execute("SELECT contrasena FROM usuarios WHERE id = %s", (usuario_id,))
-    user_data = cursor.fetchone()
-
-    if user_data:
-        if check_password_hash(user_data['contrasena'], actual):
-            try:
-                cursor.execute(
-                    "UPDATE usuarios SET contrasena = %s WHERE id = %s",
-                    (generate_password_hash(nueva), usuario_id)
-                )
-                conn.commit()
-                logger.info(f"Contraseña cambiada para usuario: {current_user.username}")
-                flash('Contraseña actualizada correctamente', 'message')
-            except Exception as e:
-                flash(f'Error al actualizar contraseña: {e}', 'error')
-                logger.error(f"Error al cambiar contraseña para {current_user.username}: {e}")
-        else:
-            flash('La contraseña actual no es correcta', 'error')
-    else:
-        flash('Usuario no encontrado', 'error')
     
-    cursor.close()
-    conn.close()
     return redirect(url_for('ajustes'))
 
 # ✅ Recuperar contraseña (genera nueva contraseña y envía notificación)
