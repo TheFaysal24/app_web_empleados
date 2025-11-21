@@ -369,7 +369,7 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")  # Máximo 20 intentos por minuto
 def login():
-    form = EmptyForm() # Usar el mismo formulario para CSRF
+    form = LoginForm()
 
     if form.validate_on_submit():
         username = request.form.get('usuario', '').strip()
@@ -492,7 +492,7 @@ def asignar_turnos_automaticos(cedula, id_usuario):
 @app.route('/register', methods=['GET', 'POST'])
 @limiter.limit("10 per hour")  # Máximo 10 registros por hora
 def register():
-    form = EmptyForm() # Crear una instancia del formulario
+    form = RegisterForm()
 
     if form.validate_on_submit():
         # ✅ VALIDACIÓN DE INPUTS
@@ -1697,6 +1697,7 @@ def seleccionar_turno():
                          shifts=shifts,
                          available_shifts=available_shifts,
                          turnos_usados_usuario={}, # Esto requeriría un historial más complejo en DB
+                         form=form,
                          session=session)
 
 # ✅ Ver turnos asignados
