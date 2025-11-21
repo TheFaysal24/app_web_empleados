@@ -1761,7 +1761,11 @@ def seleccionar_turno():
         return redirect(url_for('ver_turnos_asignados'))
 
     # Para el selector de fecha en el template
-    fecha_para_input = today_local_iso()
+    try:
+        fecha_para_input = today_local_iso()
+    except Exception:
+        # Fallback seguro si today_local_iso() falla por alguna razón
+        fecha_para_input = datetime.date.today().isoformat()
 
     # Preparar datos para el template
     shifts = {}
