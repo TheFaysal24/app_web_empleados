@@ -187,6 +187,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('actualizar_datos') }}">
+      {{ form.hidden_tag() }}
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="nombre">Nombre Completo</label>
@@ -224,6 +225,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('cambiar_contrasena') }}">
+      {{ form.hidden_tag() }}
       <div class="form-group">
         <label class="form-label" for="actual">Contraseña Actual</label>
         <input type="password" class="form-control" id="actual" name="actual" placeholder="Ingresa tu contraseña actual" required>
