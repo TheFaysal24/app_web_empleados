@@ -1180,9 +1180,10 @@ def ajustes():
     if not current_user.is_authenticated:
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
-    
+
+    form = EmptyForm() # ✅ Crear formulario para protección CSRF
     es_admin = current_user.is_admin()
-    return render_template('ajustes.html', es_admin=es_admin)
+    return render_template('ajustes.html', es_admin=es_admin, form=form)
 
 @app.route('/actualizar_datos', methods=['POST'])
 def actualizar_datos():
