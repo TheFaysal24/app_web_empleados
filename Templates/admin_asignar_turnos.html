@@ -92,6 +92,38 @@
     border-color: #667eea;
   }
  
+  .days-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+  }
+
+  .day-column {
+    flex: 1;
+    min-width: 70px;
+    text-align: center;
+  }
+
+  .day-column label {
+    display: block;
+    font-size: 0.8em;
+    font-weight: 700;
+    color: #666;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .form-select-sm {
+    width: 100%;
+    padding: 6px;
+    font-size: 0.85em;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    text-align: center;
+  }
+
   .btn-guardar-semana {
     background: linear-gradient(135deg, #10b981, #34d399);
     color: white;
@@ -248,26 +280,28 @@
       <form method="POST" action="{{ url_for('admin_asignar_turno_manual') }}">
         <input type="hidden" name="id_usuario" value="{{ info.id }}">
         
-        {% for dia_str in dias_semana %}
-        <div class="form-group">
-          <label for="turno_{{ info.id }}_{{ dia_str }}">
-            {{ dias_nombres.get(dia_str, dias_nombres_local.get(dia_str, dia_str)) }}
-          </label>
-          <select name="turno_{{ dia_str }}" id="turno_{{ info.id }}_{{ dia_str }}">
-            <option value="">-- Libre --</option>
-            {% if turnos_disponibles[dia_str] %}
-              {% for hora_disponible in turnos_disponibles[dia_str] %}
-                <option value="{{ hora_disponible }}"
-                  {% if turnos_asignados.get(info.id, {}).get(dia_str) == hora_disponible %}selected{% endif %}>
-                  {{ hora_disponible }}
-                </option>
-              {% endfor %}
-            {% endif %}
-          </select>
+        <div class="days-row">
+          {% for dia_str in dias_semana %}
+          <div class="day-column">
+            <label for="turno_{{ info.id }}_{{ dia_str }}">
+              {{ dias_nombres.get(dia_str, dias_nombres_local.get(dia_str, dia_str))[:3] }}
+            </label>
+            <select name="turno_{{ dia_str }}" id="turno_{{ info.id }}_{{ dia_str }}" class="form-select-sm">
+              <option value="">-</option>
+              {% if turnos_disponibles[dia_str] %}
+                {% for hora_disponible in turnos_disponibles[dia_str] %}
+                  <option value="{{ hora_disponible }}"
+                    {% if turnos_asignados.get(info.id, {}).get(dia_str) == hora_disponible %}selected{% endif %}>
+                    {{ hora_disponible }}
+                  </option>
+                {% endfor %}
+              {% endif %}
+            </select>
+          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
         <button type="submit" class="btn-guardar-semana">
-          <i class="fas fa-save"></i> Guardar Semana
+          <i class="fas fa-save"></i> Guardar
         </button>
       </form>
     </div>
