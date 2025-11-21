@@ -524,23 +524,23 @@ def register():
 
         # Validaciones específicas
         if not all([nombre, cedula, cargo, correo, username, contrasena]):
-            flash('Todos los campos son obligatorios y válidos', 'error')
+            flash('Todos los campos son obligatorios', 'error')
             return redirect(url_for('register'))
 
-        if not validar_username(username):
-            flash('Username inválido. Solo alfanuméricos, guiones y subguiones (3-50 caracteres)', 'error')
-            return redirect(url_for('register'))
+        # if not validar_username(username):
+        #     flash('Username inválido. Solo alfanuméricos, guiones y subguiones (3-50 caracteres)', 'error')
+        #     return redirect(url_for('register'))
 
-        if not validar_email(correo):
-            flash('Email inválido', 'error')
-            return redirect(url_for('register'))
+        # if not validar_email(correo):
+        #     flash('Email inválido', 'error')
+        #     return redirect(url_for('register'))
 
-        if not validar_cedula(cedula):
-            flash('Cédula inválida. Debe contener solo números (8-15 dígitos)', 'error')
-            return redirect(url_for('register'))
+        # if not validar_cedula(cedula):
+        #     flash('Cédula inválida. Debe contener solo números (8-15 dígitos)', 'error')
+        #     return redirect(url_for('register'))
 
-        if len(contrasena) < 6:
-            flash('La contraseña debe tener al menos 6 caracteres', 'error')
+        if len(contrasena) < 1:
+            flash('La contraseña no puede estar vacía', 'error')
             return redirect(url_for('register'))
 
         conn = get_db_connection()
@@ -1234,6 +1234,12 @@ def actualizar_datos():
             correo = request.form.get('correo')
             telefono = request.form.get('telefono')
 
+            # Verificar duplicidad de correo excluyendo al usuario actual
+            cursor.execute("SELECT id FROM usuarios WHERE correo = %s AND id != %s", (correo, usuario_id))
+            if cursor.fetchone():
+                flash('El correo ya está registrado por otro usuario.', 'error')
+                return redirect(url_for('ajustes'))
+
             cursor.execute(
                 "UPDATE usuarios SET nombre = %s, cargo = %s, correo = %s, telefono = %s WHERE id = %s",
                 (nombre, cargo, correo, telefono, usuario_id)
@@ -1266,11 +1272,14 @@ def cambiar_contrasena():
         actual = request.form.get('actual', '')
         nueva = request.form.get('nueva', '')
 
-        if len(nueva) < 6:
-            flash('La nueva contraseña debe tener al menos 6 caracteres', 'error')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('ajustes'))
+        if not current_user.is_admin():
+            if len(user_data['contrasena']) < 6:
+                flash('La contraseña debe tener al menos 6 caracteres', 'error')
+                return redirect(url_for('ajustes'))
+        # Admin puede poner cualquier contraseña si lo desea, o mantener la regla
+        if len(user_data['contrasena']) < 1 and current_user.is_admin():
+             flash('La contraseña no puede estar vacía', 'error')
+             return redirect(url_for('ajustes'))
 
         cursor.execute("SELECT contrasena FROM usuarios WHERE id = %s", (usuario_id,))
         user_data = cursor.fetchone()
@@ -1973,6 +1982,11 @@ def admin_asignar_turnos():
     cursor.close()
     conn.close()
     
+    dias_nombres = {
+        'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
+        'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'
+    }
+
     return render_template('admin_asignar_turnos.html',
                          turnos_disponibles=turnos_disponibles_por_dia,
                          turnos_asignados=turnos_por_gestor,
