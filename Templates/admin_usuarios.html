@@ -249,7 +249,8 @@
     <div class="user-header">
       <div class="user-info">
         <h3>
-          <i class="fas fa-user-circle"></i> {{ datos.nombre }}
+          <i class="fas fa-user-circle"></i> {{ usuario }} 
+          <span style="font-size: 0.6em; color: #666; font-weight: normal;">({{ datos.nombre }})</span>
           {% if datos.get('admin') %}
             <span class="user-badge badge-admin"><i class="fas fa-crown"></i> Admin</span>
           {% else %}
@@ -259,7 +260,6 @@
             <span class="user-badge badge-blocked"><i class="fas fa-lock"></i> Bloqueado</span>
           {% endif %}
         </h3>
-        <p><strong>Usuario:</strong> {{ usuario }}</p>
       </div>
     </div>
 

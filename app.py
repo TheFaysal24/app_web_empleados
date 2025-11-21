@@ -1092,7 +1092,7 @@ def exportar_datos():
     salario_minimo = 1384308
     valor_hora_ordinaria = salario_minimo / (30 * 8)
     
-    writer.writerow(['Usuario','Nombre','Cédula','Cargo','Correo','Fecha y Hora Inicio','Fecha y Hora Salida','Horas Trabajadas','Horas Extras','Costo Horas Extras'])
+    writer.writerow(['Usuario','Nombre','Cédula','Cargo','Correo','Fecha y Hora Inicio','Fecha y Hora Salida','Horas Trabajadas','Horas Extras','Costo Horas Ordinarias','Costo Horas Extras','Costo Total'])
 
     cursor.execute("""
         SELECT 
@@ -1105,21 +1105,27 @@ def exportar_datos():
     all_records = cursor.fetchall()
     
     for row in all_records:
+        horas_trabajadas = float(row['horas_trabajadas'])
         horas_extras = float(row['horas_extras'])
-        costo = 0
+        costo_extras = 0
+        costo_ordinarias = horas_trabajadas * valor_hora_ordinaria
+        
         try:
             fecha_obj = row['fecha']
             dia_semana = fecha_obj.weekday()
             multiplicador = 1.75 if dia_semana == 5 else (2.0 if dia_semana == 6 else 1.25)
-            costo = horas_extras * valor_hora_ordinaria * multiplicador
+            costo_extras = horas_extras * valor_hora_ordinaria * multiplicador
         except:
             pass
         
+        costo_total = costo_ordinarias + costo_extras
+
         writer.writerow([
             row['username'], row['nombre'], row['cedula'], row['cargo'], row['correo'],
             row['inicio'].isoformat() if row['inicio'] else '',
             row['salida'].isoformat() if row['salida'] else '',
-            float(row['horas_trabajadas']), horas_extras, round(costo, 2)
+            horas_trabajadas, horas_extras, 
+            round(costo_ordinarias, 2), round(costo_extras, 2), round(costo_total, 2)
         ])
 
     cursor.close()
@@ -1146,7 +1152,7 @@ def exportar_registros():
     salario_minimo = 1384308
     valor_hora_ordinaria = salario_minimo / (30 * 8)
     
-    writer.writerow(['Usuario','Nombre','Cédula','Cargo','Correo','Fecha y Hora Inicio','Fecha y Hora Salida','Horas Trabajadas','Horas Extras','Costo Horas Extras'])
+    writer.writerow(['Usuario','Nombre','Cédula','Cargo','Correo','Fecha y Hora Inicio','Fecha y Hora Salida','Horas Trabajadas','Horas Extras','Costo Horas Ordinarias','Costo Horas Extras','Costo Total'])
 
     cursor.execute("""
         SELECT 
@@ -1159,21 +1165,27 @@ def exportar_registros():
     all_records = cursor.fetchall()
     
     for row in all_records:
+        horas_trabajadas = float(row['horas_trabajadas'])
         horas_extras = float(row['horas_extras'])
-        costo = 0
+        costo_extras = 0
+        costo_ordinarias = horas_trabajadas * valor_hora_ordinaria
+        
         try:
             fecha_obj = row['fecha']
             dia_semana = fecha_obj.weekday()
             multiplicador = 1.75 if dia_semana == 5 else (2.0 if dia_semana == 6 else 1.25)
-            costo = horas_extras * valor_hora_ordinaria * multiplicador
+            costo_extras = horas_extras * valor_hora_ordinaria * multiplicador
         except:
             pass
         
+        costo_total = costo_ordinarias + costo_extras
+
         writer.writerow([
             row['username'], row['nombre'], row['cedula'], row['cargo'], row['correo'],
             row['inicio'].isoformat() if row['inicio'] else '',
             row['salida'].isoformat() if row['salida'] else '',
-            float(row['horas_trabajadas']), horas_extras, round(costo, 2)
+            horas_trabajadas, horas_extras, 
+            round(costo_ordinarias, 2), round(costo_extras, 2), round(costo_total, 2)
         ])
 
     cursor.close()
@@ -1192,10 +1204,10 @@ def ajustes():
         return redirect(url_for('login'))
 
     # Crear formularios para cada acción en la página
-    form = EmptyForm() # Para cambiar contraseña
+    password_form = EmptyForm() # Para cambiar contraseña
     update_form = EmptyForm() # Para actualizar datos de admin
     es_admin = current_user.is_admin()
-    return render_template('ajustes.html', es_admin=es_admin, form=form, update_form=update_form)
+    return render_template('ajustes.html', es_admin=es_admin, password_form=password_form, update_form=update_form)
 
 @app.route('/actualizar_datos', methods=['POST'])
 def actualizar_datos():
@@ -1846,12 +1858,17 @@ def eliminar_turno():
         username = current_user.username
         dia = request.form.get('dia')
         hora = request.form.get('hora')
-
+        fecha_str = request.form.get('fecha')
+        
         if not dia or not hora:
             flash('Datos de turno inválidos', 'error')
             cursor.close()
             conn.close()
             return redirect(url_for('ver_turnos_asignados'))
+            
+        fecha_asignacion = today_local_iso()
+        if fecha_str:
+            fecha_asignacion = fecha_str
 
         cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, hora))
         turno_disponible_id = cursor.fetchone()
@@ -1867,7 +1884,7 @@ def eliminar_turno():
         # Verificar que el turno pertenece al usuario o es admin
         cursor.execute(
             "SELECT id_usuario FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
-            (turno_disponible_id, today_local_iso())
+            (turno_disponible_id, fecha_asignacion)
         )
         assigned_user_id_db = cursor.fetchone()
         
@@ -1875,7 +1892,7 @@ def eliminar_turno():
             try:
                 cursor.execute(
                     "DELETE FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
-                    (turno_disponible_id, today_local_iso())
+                    (turno_disponible_id, fecha_asignacion)
                 )
                 conn.commit()
                 flash('✅ Turno eliminado correctamente y disponible para otros', 'message')
@@ -2604,22 +2621,28 @@ def turnos_mensual():
 
         turnos_usados_mes = []
         cursor.execute("""
-            SELECT ra.fecha, ra.inicio, td.dia_semana, td.hora
-            FROM registros_asistencia ra
-            JOIN turnos_asignados ta ON ra.id_usuario = ta.id_usuario AND ra.fecha = ta.fecha_asignacion
+            SELECT ta.fecha_asignacion, td.dia_semana, td.hora, ra.inicio, ra.horas_trabajadas
+            FROM turnos_asignados ta
             JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
-            WHERE ra.id_usuario = %s AND EXTRACT(YEAR FROM ra.fecha) = %s AND EXTRACT(MONTH FROM ra.fecha) = %s
-            ORDER BY ra.fecha, td.hora
+            LEFT JOIN registros_asistencia ra ON ta.id_usuario = ra.id_usuario AND ta.fecha_asignacion = ra.fecha
+            WHERE ta.id_usuario = %s AND EXTRACT(YEAR FROM ta.fecha_asignacion) = %s AND EXTRACT(MONTH FROM ta.fecha_asignacion) = %s
+            ORDER BY ta.fecha_asignacion, td.hora
         """, (user_id, ano, mes))
         user_shifts_and_records = cursor.fetchall()
 
         for record in user_shifts_and_records:
+            # Ahora iteramos sobre todos los turnos asignados
+            estado = "Pendiente"
             if record['inicio']:
-                turnos_usados_mes.append({
-                    'fecha': record['fecha'].isoformat(),
-                    'dia': record['dia_semana'],
-                    'hora': record['hora']
-                })
+                estado = "Asistió"
+            
+            turnos_usados_mes.append({
+                'fecha': record['fecha_asignacion'].isoformat(),
+                'dia': record['dia_semana'],
+                'hora': record['hora'],
+                'estado': estado,
+                'horas_trabajadas': float(record['horas_trabajadas']) if record['horas_trabajadas'] else 0
+            })
         
         patron = patrones_cedula[cedula]
         horas_usadas = [t['hora'] for t in turnos_usados_mes]
@@ -2654,14 +2677,15 @@ def turnos_mensual():
     historial_mes = []
     for gestor in gestores_data:
         for turno in gestor['turnos_usados']:
+            estado_class = 'success' if turno['estado'] == 'Asistió' else 'warning'
             historial_mes.append({
                 'fecha': turno['fecha'],
                 'dia_semana': turno['dia'],
                 'gestor': gestor['nombre'],
                 'hora': turno['hora'],
-                'estado': 'Completado',
-                'estado_class': 'success',
-                'horas_trabajadas': '8' # Esto debería venir de registros reales
+                'estado': turno['estado'],
+                'estado_class': estado_class,
+                'horas_trabajadas': turno['horas_trabajadas']
             })
     
     historial_mes.sort(key=lambda x: x['fecha'], reverse=True)

@@ -187,7 +187,7 @@
     </div>
 
     <!-- Formulario para actualizar datos, ahora apunta a 'ajustes' -->
-    <form method="POST" action="{{ url_for('ajustes') }}">
+    <form method="POST" action="{{ url_for('actualizar_datos') }}">
       {{ update_form.hidden_tag() }}
       <div class="form-row">
         <div class="form-group">
@@ -227,7 +227,7 @@
     </div>
 
     <!-- Formulario para cambiar contraseña, ahora apunta a 'ajustes' -->
-    <form method="POST" action="{{ url_for('ajustes') }}">
+    <form method="POST" action="{{ url_for('cambiar_contrasena') }}">
       {{ password_form.hidden_tag() }}
       <div class="form-group">
         <label class="form-label" for="actual">Contraseña Actual</label>

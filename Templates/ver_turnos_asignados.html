@@ -381,10 +381,15 @@
             <tr>
               {% if admin %}
               <td>
-                <span class="badge badge-usuario">
-                  <i class="fas fa-user-tie"></i>
-                  {{ turno.get('nombre', usuario) }}
-                </span>
+                <div style="display: flex; flex-direction: column;">
+                    <span class="badge badge-usuario" style="margin-bottom: 4px;">
+                      <i class="fas fa-user-circle"></i>
+                      {{ usuario }}
+                    </span>
+                    <span style="font-size: 0.85em; color: #666;">
+                        {{ turno.get('nombre', '') }}
+                    </span>
+                </div>
               </td>
               <td>{{ turno.get('cargo', 'Gestor Operativo') }}</td>
               {% endif %}
