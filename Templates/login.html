@@ -436,34 +436,18 @@
         <label class="form-label" for="usuario">
           <i class="fas fa-user"></i> Usuario
         </label>
-        <input 
-          type="text" 
-          id="usuario" 
-          name="usuario" 
-          class="form-control" 
-          placeholder="Ingresa tu usuario"
-          required
-          autocomplete="username"
-        >
+        {{ form.usuario(class="form-control", placeholder="Ingresa tu usuario", required=True, autocomplete="username") }}
       </div>
 
       <div class="form-group">
         <label class="form-label" for="contrasena">
           <i class="fas fa-lock"></i> Contraseña
         </label>
-        <input 
-          type="password" 
-          id="contrasena" 
-          name="contrasena" 
-          class="form-control" 
-          placeholder="Ingresa tu contraseña"
-          required
-          autocomplete="current-password"
-        >
+        {{ form.contrasena(class="form-control", placeholder="Ingresa tu contraseña", required=True, autocomplete="current-password") }}
       </div>
 
       <div class="remember-me">
-        <input type="checkbox" id="recordar" name="recordar">
+        {{ form.recordar(id="recordar") }}
         <label for="recordar">Mantener sesión iniciada</label>
       </div>
 

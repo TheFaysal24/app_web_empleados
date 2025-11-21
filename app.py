@@ -54,7 +54,13 @@ def today_local_iso():
         return datetime.date.today().isoformat()
 
 app = Flask(__name__, template_folder='Templates')
-app.secret_key = os.environ.get('SECRET_KEY', 'CHANGE_THIS_IN_PRODUCTION_' + os.urandom(24).hex())
+
+# Configuración de SECRET_KEY más segura
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY and os.environ.get('FLASK_ENV') == 'production':
+    raise ValueError("No se encontró la SECRET_KEY en las variables de entorno de producción.")
+app.secret_key = SECRET_KEY or 'una-clave-secreta-muy-segura-para-desarrollo'
+
 
 # Rate Limiting para proteger contra ataques de fuerza bruta
 limiter = Limiter(

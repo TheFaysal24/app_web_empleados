@@ -142,31 +142,31 @@
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label" for="nombre">Nombre Completo</label>
-        <input type="text" id="nombre" name="nombre" class="form-control" required>
+        {{ form.nombre(class="form-control", placeholder="Nombre Completo") }}
       </div>
       <div class="form-group">
         <label class="form-label" for="cedula">Cédula</label>
-        <input type="text" id="cedula" name="cedula" class="form-control" required>
+        {{ form.cedula(class="form-control", placeholder="Cédula") }}
       </div>
       <div class="form-group">
         <label class="form-label" for="cargo">Cargo</label>
-        <input type="text" id="cargo" name="cargo" class="form-control" required>
+        {{ form.cargo(class="form-control", placeholder="Ej: Gestor") }}
       </div>
       <div class="form-group">
         <label class="form-label" for="correo">Correo Electrónico</label>
-        <input type="email" id="correo" name="correo" class="form-control" required>
+        {{ form.correo(class="form-control", placeholder="tu@correo.com") }}
       </div>
       <div class="form-group">
         <label class="form-label" for="telefono">Teléfono</label>
-        <input type="tel" id="telefono" name="telefono" class="form-control">
+        {{ form.telefono(class="form-control", placeholder="Opcional") }}
       </div>
       <div class="form-group">
         <label class="form-label" for="usuario">Nombre de Usuario</label>
-        <input type="text" id="usuario" name="usuario" class="form-control" required autocomplete="username">
+        {{ form.usuario(class="form-control", placeholder="Elige un usuario", autocomplete="username") }}
       </div>
       <div class="form-group full-width">
         <label class="form-label" for="contrasena">Contraseña</label>
-        <input type="password" id="contrasena" name="contrasena" class="form-control" required autocomplete="new-password">
+        {{ form.contrasena(class="form-control", placeholder="Crea una contraseña segura", autocomplete="new-password", required=True) }}
       </div>
     </div>
     <div class="form-group full-width" style="margin-top: 20px;">

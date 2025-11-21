@@ -543,11 +543,13 @@
   <div class="nav-actions">
     {% if not admin %}
     <form method="POST" action="{{ url_for('marcar_inicio') }}" style="display: inline;">
+      {{ form.hidden_tag() }}
       <button type="submit" class="btn-action btn-inicio">
         <i class="fas fa-play-circle"></i> Inicio
       </button>
     </form>
     <form method="POST" action="{{ url_for('marcar_salida') }}" style="display: inline;">
+      {{ form.hidden_tag() }}
       <button type="submit" class="btn-action btn-salida">
         <i class="fas fa-stop-circle"></i> Salida
       </button>
@@ -912,21 +914,25 @@
       combinedData.sort((a, b) => b.inicios - a.inicios);
 
       // Tomar solo los top 5 para mejor visualización
-      const topData = combinedData.slice(0, 5);cios);
+      const topData = combinedData.slice(0, 5);
       const topPorcentajes = topData.map(d => d.porcentaje);
 
       new Chart(ctx2, {
         type: 'bar',
         data: {
-          label
-            lab
+          labels: topData.map(d => d.usuario),
+          datasets: [{
+            label: 'Inicios por usuario',
+            data: topData.map(d => d.inicios),
             backgroundColor: [
               '#667eea', // Azul
               '#764ba2', // Morado
             ],
-            borderRadius: 8,d: false,
+            borderRadius: 8,
+            borderSkipped: false,
             borderWidth: 0
           }]
+        },
         options: {
           responsive: true,
           maintainAspectRatio: true,
@@ -1008,7 +1014,8 @@
             borderSkipped: false,
             borderWidth: 0
           }]
-        },n
+        },
+        options: {
               display: false
             },
             tooltip: {
