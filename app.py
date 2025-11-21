@@ -1191,7 +1191,7 @@ def actualizar_datos():
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
 
-    form = EmptyForm()
+    form = EmptyForm() # Se crea el formulario para la validación CSRF
     if form.validate_on_submit(): # ✅ CORREGIDO: Se quita el 'not'
     
         if not current_user.is_admin():
@@ -1231,7 +1231,7 @@ def cambiar_contrasena():
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
 
-    form = EmptyForm() # Se crea el formulario para la validación CSRF
+    form = EmptyForm()
     if form.validate_on_submit(): # ✅ CORREGIDO: Se quita el 'not'
 
         conn = get_db_connection()
