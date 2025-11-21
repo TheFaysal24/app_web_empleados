@@ -16,7 +16,7 @@ import shutil
 import logging
 from functools import wraps
 import uuid
-from wtforms import StringField, PasswordField, SubmitField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField
 import re
 
 # Cargar variables de entorno
@@ -119,6 +119,7 @@ class EmptyForm(FlaskForm):
 class LoginForm(FlaskForm):
     usuario = StringField('Usuario')
     contrasena = PasswordField('Contraseña')
+    recordar = BooleanField('Recordar Sesión')
     submit = SubmitField('Iniciar Sesión')
 
 class RegisterForm(FlaskForm):
@@ -390,6 +391,7 @@ def login():
     if form.validate_on_submit():
         username = request.form.get('usuario', '').strip()
         contrasena = request.form.get('contrasena', '')
+        recordar = form.recordar.data
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -418,7 +420,7 @@ def login():
                     telefono=user_data['telefono'],
                     bloqueado=user_data['bloqueado']
                 )
-                login_user(user)
+                login_user(user, remember=recordar)
                 session['usuario'] = user.username
                 session['nombre'] = user.nombre
                 session['admin'] = user.admin
