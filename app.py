@@ -1635,8 +1635,9 @@ def seleccionar_turno():
     usuario_id = current_user.id
     username = current_user.username
     cedula = current_user.cedula
+    form = EmptyForm()
 
-    if request.method == 'POST':
+    if form.validate_on_submit():
         turno_key = request.form.get('turno')  # Formato: "dia_hora"
 
         if not turno_key:
@@ -1723,8 +1724,6 @@ def seleccionar_turno():
     cursor.close()
     conn.close()
 
-    form = EmptyForm()
-
     return render_template('seleccionar_turno.html',
                          shifts=shifts,
                          available_shifts=available_shifts,
@@ -1739,6 +1738,9 @@ def ver_turnos_asignados():
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
 
+    form = EmptyForm()
+    if not form.validate_on_submit():
+        return redirect(url_for('ver_turnos_asignados'))
     conn = get_db_connection()
     cursor = conn.cursor()
     
