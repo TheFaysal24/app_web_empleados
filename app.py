@@ -395,6 +395,11 @@ def inject_datetime():
 def home():
     return render_template('home.html')
 
+@app.route('/welcome', methods=['GET'])
+def welcome():
+    logger.info(f"Request received: {request.method} {request.path}")
+    return jsonify({'message': 'Welcome to the Flask API Service!'})
+
 # ✅ LOGIN con Flask-Login y hash de contraseñas
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20 per minute")  # Máximo 20 intentos por minuto
