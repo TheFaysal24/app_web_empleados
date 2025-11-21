@@ -2136,20 +2136,20 @@ def admin_actualizar_registro():
     return jsonify({'success': False, 'error': 'Registro no encontrado'}), 404
 
 # ✅ Eliminar usuario (Admin)
-@app.route('/admin/eliminar_usuario/<username>')
-def admin_eliminar_usuario(username):
+@app.route('/admin/eliminar_usuario/<usuario>')
+def admin_eliminar_usuario(usuario):
     if not current_user.is_admin():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
     
-    if username == current_user.username:
+    if usuario == current_user.username:
         flash('No puedes eliminar tu propio usuario', 'error')
         return redirect(url_for('admin_usuarios'))
 
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
+    cursor.execute("SELECT id FROM usuarios WHERE username = %s", (usuario,))
     user_id = cursor.fetchone()
     
     if user_id:
@@ -2163,10 +2163,10 @@ def admin_eliminar_usuario(username):
             # Finalmente, eliminar usuario
             cursor.execute("DELETE FROM usuarios WHERE id = %s", (user_id['id'],))
             conn.commit()
-            flash(f'✅ Usuario {username} eliminado completamente', 'message')
+            flash(f'✅ Usuario {usuario} eliminado completamente', 'message')
         except Exception as e:
             flash(f'Error al eliminar usuario: {e}', 'error')
-            logger.error(f"Error admin_eliminar_usuario para {username}: {e}")
+            logger.error(f"Error admin_eliminar_usuario para {usuario}: {e}")
     else:
         flash('Usuario no encontrado', 'error')
     
