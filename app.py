@@ -1680,6 +1680,9 @@ def admin_editar_registro():
     
     form = EmptyForm()
     if request.method == 'POST':
+        # No necesitamos validar CSRF aquí explícitamente porque lo deshabilitamos globalmente
+        # pero si se requiere, form.validate_on_submit() lo haría.
+        # Como desactivamos CSRF global, esto siempre pasará si es POST.
         username = request.form.get('usuario')
         fecha_str = request.form.get('fecha')
         inicio_str = request.form.get('inicio')

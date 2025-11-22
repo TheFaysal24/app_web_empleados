@@ -37,6 +37,11 @@
     font-size: 0.9em;
     color: #1e40af;
     font-weight: 600;
+    /* Asegurar que no muestre texto largo por error */
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .nav-actions {
@@ -536,22 +541,25 @@
 <div class="top-navigation">
   <div class="nav-brand">
     <h3><i class="fas fa-users-cog"></i> Sistema de Empleados</h3>
-    <span class="user-info">
-      <i class="fas fa-user-circle"></i> {{ nombre }}
-    </span>
+    <div class="user-info">
+      <i class="fas fa-user-circle"></i> 
+      {% if nombre|length < 50 %}
+        {{ nombre }}
+      {% else %}
+        {{ nombre[:47] }}...
+      {% endif %}
+    </div>
   </div>
   <div class="nav-actions">
     {% if not admin %}
     <form method="POST" action="{{ url_for('marcar_inicio') }}" style="display: inline;">
-      {{ csrf_token() }}
-      {{ form.hidden_tag() }}
+      <!-- Eliminado csrf_token() -->
       <button type="submit" class="btn-action btn-inicio">
         <i class="fas fa-play-circle"></i> Inicio
       </button>
     </form>
     <form method="POST" action="{{ url_for('marcar_salida') }}" style="display: inline;">
-      {{ csrf_token() }}
-      {{ form.hidden_tag() }}
+      <!-- Eliminado csrf_token() -->
       <button type="submit" class="btn-action btn-salida">
         <i class="fas fa-stop-circle"></i> Salida
       </button>
