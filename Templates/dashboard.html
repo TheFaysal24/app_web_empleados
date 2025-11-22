@@ -564,7 +564,36 @@
         </div>
       </button>
       <div class="dropdown-menu">
-        <div class="menu-section">CUENTA</div>
+        <div class="menu-section">PRINCIPAL</div>
+        <a href="{{ url_for('dashboard') }}" class="dropdown-item">
+          <i class="fas fa-home"></i> Dashboard
+        </a>
+        {% if not admin %}
+        <a href="{{ url_for('seleccionar_turno') }}" class="dropdown-item">
+          <i class="fas fa-calendar-clock"></i> Seleccionar Turno
+        </a>
+        <a href="{{ url_for('ver_turnos_asignados') }}" class="dropdown-item">
+          <i class="fas fa-calendar-check"></i> Ver Mis Turnos
+        </a>
+        {% endif %}
+
+        {% if admin %}
+        <div class="menu-section" style="margin-top: 8px;">ADMINISTRACIÓN</div>
+        <a href="{{ url_for('admin_gestion_tiempos') }}" class="dropdown-item">
+          <i class="fas fa-clock"></i> Gestión de Tiempos (Mensual)
+        </a>
+        <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item">
+          <i class="fas fa-user-cog"></i> Asignar Turnos (Semanal)
+        </a>
+        <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">
+          <i class="fas fa-users"></i> Gestionar Usuarios
+        </a>
+        <a href="{{ url_for('exportar_registros') }}" class="dropdown-item">
+          <i class="fas fa-file-download"></i> Exportar Reporte
+        </a>
+        {% endif %}
+
+        <div class="menu-section" style="margin-top: 8px;">CUENTA</div>
         <a href="{{ url_for('ajustes') }}" class="dropdown-item">
           <i class="fas fa-cog"></i> Ajustes
         </a>

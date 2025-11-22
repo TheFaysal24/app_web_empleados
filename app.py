@@ -2172,14 +2172,31 @@ def admin_asignar_turnos():
         return redirect(url_for('home'))
     
     form = EmptyForm() # Se añade para validación CSRF
-    # La validación CSRF es implícita con el formulario, no se necesita un bloque `if` para un GET.
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # Obtener fecha base desde argumentos (navegación) o usar hoy
+    fecha_base_str = request.args.get('fecha')
+    try:
+        if fecha_base_str:
+            fecha_base = datetime.datetime.strptime(fecha_base_str, '%Y-%m-%d').date()
+        else:
+            fecha_base = now_local().date()
+    except ValueError:
+        fecha_base = now_local().date()
+
+    # Calcular inicio de la semana seleccionada
+    inicio_semana = fecha_base - datetime.timedelta(days=fecha_base.weekday())
+    fin_semana = inicio_semana + datetime.timedelta(days=6)
+    
+    # Calcular fechas para navegación
+    semana_anterior = (inicio_semana - datetime.timedelta(days=7)).isoformat()
+    semana_siguiente = (inicio_semana + datetime.timedelta(days=7)).isoformat()
     
     # Inicializar gestores antes del bucle
     gestores = {}
 
-    # Obtener TODOS los usuarios activos para gestión de turnos (no solo gestores con cédula específica)
+    # Obtener TODOS los usuarios activos para gestión de turnos
     cursor.execute("SELECT id, username, nombre, cedula, cargo FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
     gestores_db = cursor.fetchall()
 
@@ -2198,20 +2215,17 @@ def admin_asignar_turnos():
         'sunday': 'Domingo'
     }
 
-    # Obtener todos los turnos disponibles para los menús desplegables
-    cursor.execute("SELECT dia_semana, hora FROM turnos_disponibles ORDER BY hora")
-    turnos_disponibles_db = cursor.fetchall()
-    turnos_disponibles_por_dia = {}
-    for turno in turnos_disponibles_db:
-        if turno['dia_semana'] not in turnos_disponibles_por_dia:
-            turnos_disponibles_por_dia[turno['dia_semana']] = []
-        turnos_disponibles_por_dia[turno['dia_semana']].append(turno['hora'])
+    # Generar horas disponibles (intervalos de 30min)
+    horas = []
+    start_time = datetime.datetime.strptime("05:00", "%H:%M")
+    end_time = datetime.datetime.strptime("22:00", "%H:%M")
+    while start_time <= end_time:
+        horas.append(start_time.strftime("%H:%M"))
+        start_time += datetime.timedelta(minutes=30)
+        
+    turnos_disponibles_por_dia = {dia: horas for dia in dias_nombres.keys()}
 
-    # Obtener turnos ya asignados para la semana actual
-    hoy = now_local().date()
-    inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
-    fin_semana = inicio_semana + datetime.timedelta(days=6)
-
+    # Obtener turnos ya asignados para la SEMANA SELECCIONADA
     cursor.execute("""
         SELECT ta.id_usuario, td.dia_semana, td.hora
         FROM turnos_asignados ta
@@ -2230,18 +2244,17 @@ def admin_asignar_turnos():
     cursor.close()
     conn.close()
     
-    dias_nombres = {
-        'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
-        'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'
-    }
-
     return render_template('admin_asignar_turnos.html',
-                        turnos_disponibles=turnos_disponibles_por_dia,
-                        turnos_asignados=turnos_por_gestor,
-                        gestores=gestores,
-                        dias_semana=['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
-                        dias_nombres=dias_nombres,
-                        form=form)
+                         turnos_disponibles=turnos_disponibles_por_dia,
+                         turnos_asignados=turnos_por_gestor,
+                         gestores=gestores,
+                         dias_semana=['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+                         dias_nombres=dias_nombres,
+                         inicio_semana=inicio_semana,
+                         fin_semana=fin_semana,
+                         semana_anterior=semana_anterior,
+                         semana_siguiente=semana_siguiente,
+                         form=form)
 
 # ✅ Asignar turno manual (Admin)
 @app.route('/admin/asignar_turno_manual', methods=['POST'])
