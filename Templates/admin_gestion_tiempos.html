@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Tiempos Mensual{% endblock %}
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .container-fluid {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+
+  .header-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #f3f4f6;
+    padding: 8px 15px;
+    border-radius: 12px;
+  }
+
+  .btn-nav {
+    background: white;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .btn-nav:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+  }
+
+  .fecha-card {
+    background: white;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  .fecha-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 15px 25px;
+    font-size: 1.2em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tiempos-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .tiempos-table th {
+    background: #f9fafb;
+    padding: 12px 15px;
+    text-align: left;
+    font-size: 0.9em;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .tiempos-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+  }
+
+  .input-time {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.95em;
+    width: 110px;
+    transition: border-color 0.2s;
+  }
+
+  .input-time:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .badge-horas {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9em;
+  }
+
+  .badge-extras {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9em;
+  }
+
+  .btn-save-row {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: transform 0.2s;
+  }
+
+  .btn-save-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+</style>
+
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="header-card">
+    <div style="display:flex; align-items:center; gap:15px;">
+      <a href="{{ url_for('dashboard') }}" class="btn-nav"><i class="fas fa-arrow-left"></i> Dashboard</a>
+      <h2 style="margin:0; color:#1e3a8a;"><i class="fas fa-clock"></i> Gestión de Tiempos Mensual</h2>
+    </div>
+
+    <div class="month-nav">
+      <a href="{{ url_for('admin_gestion_tiempos', mes=mes-1 if mes > 1 else 12, ano=ano if mes > 1 else ano-1) }}" class="btn-nav">
+        <i class="fas fa-chevron-left"></i>
+      </a>
+      <span style="font-size:1.2em; font-weight:700; color:#374151; min-width:150px; text-align:center;">
+        {{ meses_nombres[mes] }} {{ ano }}
+      </span>
+      <a href="{{ url_for('admin_gestion_tiempos', mes=mes+1 if mes < 12 else 1, ano=ano if mes < 12 else ano+1) }}" class="btn-nav">
+        <i class="fas fa-chevron-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Lista de Registros por Fecha -->
+  {% if registros_por_fecha %}
+    {% for fecha, registros in registros_por_fecha.items() %}
+    <div class="fecha-card">
+      <div class="fecha-header">
+        <i class="fas fa-calendar-day"></i> {{ fecha }}
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="tiempos-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Nombre</th>
+              <th>Hora Inicio</th>
+              <th>Hora Salida</th>
+              <th>Horas Calc.</th>
+              <th>Extras</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for reg in registros %}
+            <tr id="row-{{ reg.id }}">
+              <form method="POST" action="{{ url_for('admin_editar_registro') }}">
+                <input type="hidden" name="usuario" value="{{ reg.usuario }}">
+                <input type="hidden" name="fecha" value="{{ fecha }}">
+                
+                <td style="font-weight:600; color:#4b5563;">{{ reg.usuario }}</td>
+                <td>{{ reg.nombre }}</td>
+                <td>
+                  <input type="time" name="inicio" value="{{ reg.inicio }}" class="input-time" required>
+                </td>
+                <td>
+                  <input type="time" name="salida" value="{{ reg.salida }}" class="input-time">
+                </td>
+                <td>
+                  <span class="badge-horas">{{ reg.horas }}h</span>
+                </td>
+                <td>
+                  <span class="badge-extras">{{ reg.extras }}h</span>
+                </td>
+                <td>
+                  <button type="submit" class="btn-save-row">
+                    <i class="fas fa-save"></i> Guardar
+                  </button>
+                </td>
+              </form>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="text-align:center; padding:50px; background:white; border-radius:15px; color:#9ca3af;">
+      <i class="fas fa-calendar-times" style="font-size:4em; margin-bottom:20px; opacity:0.5;"></i>
+      <h3>No hay registros de asistencia para este mes</h3>
+      <p>Los empleados aún no han marcado sus horas.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

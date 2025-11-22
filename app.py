@@ -1992,6 +1992,67 @@ def ver_turnos_asignados():
                         data={'usuarios': {}, 'turnos': {'shifts': {}}}, # Data ya no se carga de JSON
                         session=session)
 
+# ✅ Gestión de Tiempos Mensual (Admin)
+@app.route('/admin/gestion_tiempos')
+def admin_gestion_tiempos():
+    if not current_user.is_admin():
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('home'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Obtener mes y año de los parámetros o usar el actual
+    try:
+        mes = int(request.args.get('mes', now_local().month))
+        ano = int(request.args.get('ano', now_local().year))
+    except ValueError:
+        mes = now_local().month
+        ano = now_local().year
+
+    # Consulta maestra: Usuarios + Registros de Asistencia del mes seleccionado
+    # Left join para traer usuarios incluso si no tienen registros ese día (opcional, aquí traemos registros existentes)
+    cursor.execute("""
+        SELECT 
+            ra.id, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas, ra.horas_extras,
+            u.username, u.nombre, u.cedula
+        FROM registros_asistencia ra
+        JOIN usuarios u ON ra.id_usuario = u.id
+        WHERE EXTRACT(MONTH FROM ra.fecha) = %s AND EXTRACT(YEAR FROM ra.fecha) = %s
+        ORDER BY ra.fecha DESC, u.nombre ASC
+    """, (mes, ano))
+    
+    registros = cursor.fetchall()
+    
+    # Agrupar por fechas para visualización
+    registros_por_fecha = {}
+    for reg in registros:
+        fecha_str = reg['fecha'].isoformat()
+        if fecha_str not in registros_por_fecha:
+            registros_por_fecha[fecha_str] = []
+        
+        # Formatear horas para input time (HH:MM)
+        inicio_time = reg['inicio'].strftime('%H:%M') if reg['inicio'] else ''
+        salida_time = reg['salida'].strftime('%H:%M') if reg['salida'] else ''
+        
+        registros_por_fecha[fecha_str].append({
+            'id': reg['id'],
+            'usuario': reg['username'],
+            'nombre': reg['nombre'],
+            'inicio': inicio_time,
+            'salida': salida_time,
+            'horas': float(reg['horas_trabajadas']),
+            'extras': float(reg['horas_extras'])
+        })
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin_gestion_tiempos.html', 
+                         registros_por_fecha=registros_por_fecha,
+                         mes=mes, ano=ano,
+                         meses_nombres={1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'})
+
 # ✅ Eliminar turno
 @app.route('/eliminar_turno', methods=['POST'])
 @csrf.exempt

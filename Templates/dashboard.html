@@ -657,6 +657,10 @@
     <i class="fas fa-tools"></i> Centro de Control Administrativo
   </h3>
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+    <a href="{{ url_for('admin_gestion_tiempos') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
+      <i class="fas fa-clock" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
+      Gestión de Tiempos
+    </a>
     <a href="{{ url_for('admin_asignar_turnos') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
       <i class="fas fa-user-cog" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
       Asignar Turnos
@@ -760,11 +764,6 @@
 <div class="table-card">
   <h3 class="section-title">
     <i class="fas fa-calendar-week"></i> Resumen Semanal - Turnos por Gestor
-    {% if admin %}
-    <a href="{{ url_for('admin_asignar_turnos') }}" style="float: right; background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 0.85em; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-      <i class="fas fa-user-cog"></i> Asignar Turnos
-    </a>
-    {% endif %}
   </h3>
   <div style="overflow-x: auto;">
     <table style="width: 100%; border-collapse: collapse;">
@@ -773,7 +772,10 @@
           <th style="padding: 12px; text-align: left;">Gestor</th>
           {% set dias_semana_map = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'} %}
           {% for fecha in fechas_semana_actual %}
-            <th style="padding: 12px; text-align: center;">{{ dias_semana_map.get(fecha.strftime('%A').lower(), '') }}<br><small style="font-weight: normal; opacity: 0.8;">{{ fecha.strftime('%d/%m') }}</small></th>
+            <th style="padding: 12px; text-align: center;">
+              {{ dias_semana_map.get(fecha.strftime('%A').lower(), '') }}<br>
+              <small style="font-weight: normal; opacity: 0.8;">{{ fecha.strftime('%d/%m') }}</small>
+            </th>
           {% endfor %}
         </tr>
       </thead>
