@@ -249,8 +249,15 @@ def init_db():
             UNIQUE (dia_semana, hora)
         )
     """)
-    dias = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] # Añadido 'sunday'
-    horas = ['06:30', '07:00', '08:00', '08:30', '09:00', '10:00', '11:00', '11:30'] # Añadidas nuevas horas
+    dias = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    # Generar horas cada 30 minutos desde las 05:00 hasta las 22:00
+    horas = []
+    start_time = datetime.datetime.strptime("05:00", "%H:%M")
+    end_time = datetime.datetime.strptime("22:00", "%H:%M")
+    while start_time <= end_time:
+        horas.append(start_time.strftime("%H:%M"))
+        start_time += datetime.timedelta(minutes=30)
+    
     for dia in dias:
         for hora in horas:
             try:

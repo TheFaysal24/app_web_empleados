@@ -193,33 +193,47 @@
  
   .gestor-summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Ancho mínimo razonable */
+    gap: 20px;
   }
- 
+
   .gestor-box {
     background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
     border-left: 5px solid #667eea;
     padding: 15px;
     border-radius: 10px;
+    /* Evitar desbordamiento */
+    overflow: hidden; 
+    word-wrap: break-word;
   }
- 
+
   .gestor-box strong {
+    display: block;
     color: #667eea;
     font-size: 1.1em;
-    white-space: normal; /* Permite que el texto se ajuste */
-    overflow-wrap: break-word; /* Rompe palabras largas */
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+    padding-bottom: 5px;
   }
- 
+
+  .turno-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
   .turno-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     background: white;
-    padding: 4px 10px;
-    border-radius: 5px;
-    margin: 3px;
-    font-size: 0.85em;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8em;
     font-weight: 600;
-    color: #667eea;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    white-space: nowrap; /* Evitar que el badge se parta */
   }
 
   @media (max-width: 768px) {
@@ -248,7 +262,7 @@
       {% for username, info in gestores.items() %}
         <div class="gestor-box">
           <strong>{{ info.nombre }}</strong>
-          <div>
+          <div class="turno-badges-container">
             {% set turnos_del_gestor = turnos_asignados.get(info.id, {}) %}
             {% if turnos_del_gestor %}
               {% for dia, hora in turnos_del_gestor.items() %}
@@ -257,7 +271,7 @@
                 </span>
               {% endfor %}
             {% else %}
-              <span style="color: #999; font-style: italic;">Sin turnos asignados para la semana.</span>
+              <span style="color: #999; font-style: italic; font-size: 0.9em;">Sin turnos asignados.</span>
             {% endif %}
           </div>
         </div>
