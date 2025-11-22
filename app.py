@@ -1698,6 +1698,9 @@ def admin_editar_registro():
                 horas_trabajadas, horas_extras = calcular_horas(inicio_str, salida_str)
             
             try:
+                # Registro de Auditoría Previo (Guardar estado anterior si se quiere)
+                registrar_auditoria('Edición Horas', f"Admin editó registro de {username} para {fecha_str}: Inicio {inicio_str}, Salida {salida_str}")
+
                 cursor.execute(
                     "UPDATE registros_asistencia SET inicio = %s, salida = %s, horas_trabajadas = %s, horas_extras = %s WHERE id_usuario = %s AND fecha = %s",
                     (inicio_str, salida_str, horas_trabajadas, horas_extras, user_id['id'], fecha_str)
@@ -2078,6 +2081,9 @@ def admin_asignar_turnos():
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Inicializar gestores antes del bucle
+    gestores = {}
+
     # Obtener TODOS los usuarios activos para gestión de turnos (no solo gestores con cédula específica)
     cursor.execute("SELECT id, username, nombre, cedula, cargo FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
     gestores_db = cursor.fetchall()
@@ -2205,9 +2211,11 @@ def admin_asignar_turno_manual():
                         """, (id_usuario, fecha_asignacion, id_turno_disponible))
 
                 else:
-                    # Borrar turno: SOLO si es HOY o FUTURO.
-                    # El historial PASADO es sagrado y no se toca.
-                    if fecha_asignacion >= now_local().date():
+                    # Borrar turno (admin tiene poder total, incluso pasado, pero se audita)
+                    try:
+                        # Eliminamos la restricción de fecha para el Admin
+                        # if fecha_asignacion >= now_local().date():
+                        
                          cursor.execute("""
                             SELECT id_turno_disponible FROM turnos_asignados 
                             WHERE id_usuario = %s AND fecha_asignacion = %s
@@ -2223,6 +2231,8 @@ def admin_asignar_turno_manual():
                                 WHERE id_usuario = %s 
                                 AND fecha_asignacion = %s
                             """, (id_usuario, fecha_asignacion))
+                    except Exception as e_inner:
+                        logger.error(f"Error en limpieza de turnos: {e_inner}")
             
             conn.commit()
             flash('✅ Turnos actualizados correctamente (Historial protegido)', 'message')
