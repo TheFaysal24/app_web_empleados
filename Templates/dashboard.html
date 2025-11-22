@@ -735,7 +735,39 @@
 </div>
 {% endif %}
 
-<!-- Acciones Rápidas Admin ELIMINADAS - Todo está en el menú desplegable -->
+<!-- Acciones Rápidas Admin -->
+{% if admin %}
+<div class="table-card">
+  <h3 class="section-title">
+    <i class="fas fa-tools"></i> Centro de Control Administrativo
+  </h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+    
+    <!-- Botón Principal: Asignar Turnos -->
+    <a href="{{ url_for('admin_asignar_turnos') }}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-decoration: none; font-weight: 700; text-align: center; transition: all 0.3s ease; box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); display:flex; flex-direction:column; align-items:center; gap:10px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 15px 30px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 20px rgba(102, 126, 234, 0.3)'">
+      <i class="fas fa-calendar-plus" style="font-size: 2.5em;"></i>
+      <span style="font-size: 1.1em;">Asignar Turnos</span>
+      <span style="font-size: 0.85em; opacity: 0.9; font-weight: normal;">Programar semana</span>
+    </a>
+
+    <a href="{{ url_for('admin_gestion_tiempos') }}" style="background: white; color: #4b5563; border: 1px solid #e5e7eb; padding: 25px; border-radius: 15px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; align-items:center; gap:10px;" onmouseover="this.style.borderColor='#667eea'; this.style.color='#667eea'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.color='#4b5563'; this.style.transform='translateY(0)'">
+      <i class="fas fa-clock" style="font-size: 2em; color: #10b981;"></i>
+      <span>Gestión Tiempos</span>
+    </a>
+
+    <a href="{{ url_for('admin_usuarios') }}" style="background: white; color: #4b5563; border: 1px solid #e5e7eb; padding: 25px; border-radius: 15px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; align-items:center; gap:10px;" onmouseover="this.style.borderColor='#667eea'; this.style.color='#667eea'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.color='#4b5563'; this.style.transform='translateY(0)'">
+      <i class="fas fa-users-cog" style="font-size: 2em; color: #f59e0b;"></i>
+      <span>Usuarios</span>
+    </a>
+
+    <a href="{{ url_for('exportar_registros') }}" style="background: white; color: #4b5563; border: 1px solid #e5e7eb; padding: 25px; border-radius: 15px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; align-items:center; gap:10px;" onmouseover="this.style.borderColor='#667eea'; this.style.color='#667eea'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.color='#4b5563'; this.style.transform='translateY(0)'">
+      <i class="fas fa-file-csv" style="font-size: 2em; color: #3b82f6;"></i>
+      <span>Exportar</span>
+    </a>
+
+  </div>
+</div>
+{% endif %}
 
 <!-- Tarjetas de estadísticas -->
 <div class="stat-cards-grid">
