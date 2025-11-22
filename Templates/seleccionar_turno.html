@@ -363,11 +363,10 @@
   </div>
 
   <!-- Grid de Turnos -->
-  <form method="POST">
-    {{ csrf_token() }}
+  <form method="POST" action="{{ url_for('seleccionar_turno') }}">
     <div class="turnos-grid">
-      {% set dias_nombres = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado'} %}
-      {% set dias_iconos = {'monday': '🌅', 'tuesday': '🌄', 'wednesday': '🌞', 'thursday': '☀️', 'friday': '🌤️', 'saturday': '🌈'} %}
+      {% set dias_nombres = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'} %}
+      {% set dias_iconos = {'monday': '🌅', 'tuesday': '🌄', 'wednesday': '🌞', 'thursday': '☀️', 'friday': '🌤️', 'saturday': '🌈', 'sunday': '😌'} %}
       
       {% for dia, nombre in dias_nombres.items() %}
       <div class="dia-card">
@@ -377,91 +376,54 @@
         </div>
 
         <div class="turno-selector">
-          {% if dia in shifts %}
-            {% for hora, usuario in shifts[dia].items() %}
-            <div class="turno-option">
-              {% set esta_disponible = available_shifts.get(dia, {}).get(hora, False) %}
-              {% set ya_usado = hora in turnos_usados_usuario.get(dia, []) %}
-              {% set ocupado = usuario != None %}
-              
-              <input 
-                type="radio" 
-                id="{{ dia }}_{{ hora }}" 
-                name="turno" 
-                value="{{ dia }}_{{ hora }}"
-                {% if not esta_disponible or ya_usado or ocupado %}disabled{% endif %}
-              >
-              <label for="{{ dia }}_{{ hora }}" class="turno-label">
-                <div class="turno-hora">
-                  <i class="fas fa-clock"></i>
-                  {{ hora }}
-                </div>
-                <div class="turno-estado 
-                  {% if ya_usado %}estado-usado
-                  {% elif ocupado %}estado-ocupado
-                  {% elif esta_disponible %}estado-disponible
-                  {% else %}estado-ocupado{% endif %}">
-                  {% if ya_usado %}
-                    <i class="fas fa-check-circle"></i> Ya Usado
-                  {% elif ocupado %}
-                    <i class="fas fa-user-check"></i> Ocupado
-                  {% elif esta_disponible %}
-                    <i class="fas fa-circle-check"></i> Disponible
-                  {% else %}
-                    <i class="fas fa-ban"></i> No Disponible
-                  {% endif %}
-                </div>
-              </label>
-            </div>
+          <label class="form-label" style="display:block; margin-bottom:10px; font-weight:600; color:#666;">Seleccionar Horario:</label>
+          <select name="turno_{{ dia }}" class="form-select-modern">
+            <option value="">- Libre / Sin Asignar -</option>
+            <!-- Generamos opciones de horas cada 30 min -->
+            {% set horas_lista = ['05:00', '05:30', '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00'] %}
+            
+            {% for hora in horas_lista %}
+              {% set ya_asignado = turnos_asignados_usuario.get(dia) == hora %}
+              <option value="{{ hora }}" {% if ya_asignado %}selected{% endif %}>
+                {{ hora }}
+              </option>
             {% endfor %}
-          {% endif %}
+          </select>
         </div>
       </div>
       {% endfor %}
     </div>
 
-    <div class="header-card" style="text-align: center;">
+    <div class="header-card" style="text-align: center; position: sticky; bottom: 20px; z-index: 100;">
       <button type="submit" class="btn-submit">
-        <i class="fas fa-check-circle"></i> Confirmar Selección de Turno
+        <i class="fas fa-save"></i> Guardar Semana Completa
       </button>
     </div>
   </form>
 </div>
 
-<script>
-  // Animación de selección
-  document.querySelectorAll('input[type="radio"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-      const label = this.nextElementSibling;
-      
-      // Crear efecto de confetti
-      for(let i = 0; i < 10; i++) {
-        const particle = document.createElement('div');
-        particle.style.cssText = `
-          position: fixed;
-          width: 5px;
-          height: 5px;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          border-radius: 50%;
-          pointer-events: none;
-          animation: confetti 1s ease-out forwards;
-        `;
-        particle.style.left = label.getBoundingClientRect().left + Math.random() * label.offsetWidth + 'px';
-        particle.style.top = label.getBoundingClientRect().top + 'px';
-        document.body.appendChild(particle);
-        
-        setTimeout(() => particle.remove(), 1000);
-      }
-    });
-  });
-</script>
-
 <style>
-  @keyframes confetti {
-    to {
-      transform: translateY(-100px) rotate(360deg);
-      opacity: 0;
-    }
+  .form-select-modern {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1em;
+    color: #4a5568;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+  }
+
+  .form-select-modern:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
   }
 </style>
 
