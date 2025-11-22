@@ -1816,118 +1816,87 @@ def seleccionar_turno():
     cedula = current_user.cedula
     form = EmptyForm()
 
-    if form.validate_on_submit():
-        turno_key = request.form.get('turno')  # Formato: "dia_hora" o "fecha_dia_hora"
-        fecha_seleccionada_str = request.form.get('fecha_seleccionada') # NUEVO: Recibir fecha del form
+    # PROCESAR FORMULARIO DE SEMANA COMPLETA (POST)
+    if request.method == 'POST':
+        dias_semana = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        hoy = now_local().date()
+        inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
 
-        if not turno_key:
-            flash('Selecciona un turno válido', 'error')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('seleccionar_turno'))
-        
-        # Determinar la fecha de asignación
         try:
-            # Si se proporciona una fecha, usarla. Si no, usar hoy.
-            fecha_asignacion = datetime.datetime.strptime(fecha_seleccionada_str, '%Y-%m-%d').date() if fecha_seleccionada_str else today_local_iso()
-        except ValueError:
-            flash('Formato de fecha inválido. Usa YYYY-MM-DD.', 'error')
-            return redirect(url_for('seleccionar_turno'))
+            for i, dia_str in enumerate(dias_semana):
+                hora = request.form.get(f'turno_{dia_str}')
+                fecha_asignacion = inicio_semana + datetime.timedelta(days=i)
+                
+                if hora:
+                    # Upsert lógica segura para historial
+                    cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia_str, hora))
+                    turno_disponible_row = cursor.fetchone()
+                    
+                    if turno_disponible_row:
+                        id_turno_disponible = turno_disponible_row['id']
+                        
+                        # Insertar nuevo turno
+                        cursor.execute("""
+                            INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) 
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING
+                        """, (usuario_id, id_turno_disponible, fecha_asignacion))
+                        
+                        # Registrar auditoría
+                        registrar_auditoria('Selección Turno', f"Usuario {username}: Seleccionó turno {hora} para {fecha_asignacion}", usuario=username)
 
-        partes_turno = turno_key.split('_')
-        dia, hora = partes_turno[0], partes_turno[1]
-        
-        cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, hora))
-        turno_disponible_id = cursor.fetchone()
-        
-        if not turno_disponible_id:
-            flash('Turno no válido', 'error')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('seleccionar_turno'))
-        
-        turno_disponible_id = turno_disponible_id['id']
+                        # Limpiar otros turnos del mismo día
+                        cursor.execute("""
+                            DELETE FROM turnos_asignados 
+                            WHERE id_usuario = %s 
+                            AND fecha_asignacion = %s 
+                            AND id_turno_disponible != %s
+                        """, (usuario_id, fecha_asignacion, id_turno_disponible))
+                
+                else:
+                    # Si el usuario deja en blanco, borrar turno (solo futuro)
+                    if fecha_asignacion >= hoy:
+                        cursor.execute("""
+                            DELETE FROM turnos_asignados 
+                            WHERE id_usuario = %s AND fecha_asignacion = %s
+                        """, (usuario_id, fecha_asignacion))
 
-        # Validar que el turno esté disponible (no asignado a otro para hoy)
-        cursor.execute(
-            "SELECT u.username FROM turnos_asignados ta JOIN usuarios u ON ta.id_usuario = u.id WHERE ta.id_turno_disponible = %s AND ta.fecha_asignacion = %s",
-            (turno_disponible_id, fecha_asignacion)
-        )
-        assigned_user = cursor.fetchone()
-
-        if assigned_user and assigned_user['username'] != username:
-            flash('Este turno ya está ocupado por otro usuario', 'error')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('seleccionar_turno'))
-
-        # Asignar turno
-        try:
-            logger.info(f"Inserting turno asignado: id_usuario={usuario_id}, turno_id={turno_disponible_id}, fecha={fecha_asignacion}")
-            cursor.execute(
-                "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
-                (usuario_id, turno_disponible_id, fecha_asignacion)
-            )
             conn.commit()
-            flash(f'✅ Turno seleccionado para el {fecha_asignacion.strftime("%d/%m/%Y")} exitosamente', 'message')
+            flash('✅ Semana de turnos guardada exitosamente', 'message')
         except Exception as e:
-            flash(f'Error al seleccionar turno: {e}', 'error')
-            logger.error(f"Error seleccionar_turno para {username}: {e}")
+            conn.rollback()
+            flash(f'Error al guardar turnos: {e}', 'error')
+            logger.error(f"Error seleccionar_turno POST para {username}: {e}")
         
         cursor.close()
         conn.close()
         return redirect(url_for('ver_turnos_asignados'))
 
-    # Para el selector de fecha en el template
-    try:
-        fecha_para_input = today_local_iso()
-    except Exception:
-        # Fallback seguro si today_local_iso() falla por alguna razón
-        fecha_para_input = datetime.date.today().isoformat()
+    # GET: Cargar datos para el formulario
+    # Obtener turnos ya asignados al usuario para la semana actual
+    hoy = now_local().date()
+    inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
+    fin_semana = inicio_semana + datetime.timedelta(days=6)
 
-    # Preparar datos para el template
-    shifts = {}
-    available_shifts = {}
+    cursor.execute("""
+        SELECT td.dia_semana, td.hora
+        FROM turnos_asignados ta
+        JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+        WHERE ta.id_usuario = %s AND ta.fecha_asignacion BETWEEN %s AND %s
+    """, (usuario_id, inicio_semana, fin_semana))
     
-    # PostgreSQL-compatible ordering for days of the week
-    order_clause = """
-        ORDER BY CASE dia_semana
-            WHEN 'monday' THEN 1 WHEN 'tuesday' THEN 2 WHEN 'wednesday' THEN 3
-            WHEN 'thursday' THEN 4 WHEN 'friday' THEN 5 WHEN 'saturday' THEN 6 ELSE 7
-        END, hora
-    """
-    cursor.execute(f"SELECT id, dia_semana, hora FROM turnos_disponibles {order_clause}")
-    all_shifts_db = cursor.fetchall()
-
-    for s_info in all_shifts_db:
-        dia = s_info['dia_semana']
-        hora = s_info['hora']
-        if dia not in shifts:
-            shifts[dia] = {}
-            available_shifts[dia] = {}
-        
-        # Verificar si el turno está asignado para hoy
-        cursor.execute(
-            "SELECT u.username FROM turnos_asignados ta JOIN usuarios u ON ta.id_usuario = u.id WHERE ta.id_turno_disponible = %s AND ta.fecha_asignacion = %s", # Se podría hacer dinámico con la fecha seleccionada
-            (s_info['id'], fecha_para_input)
-        )
-        assigned_user_data = cursor.fetchone()
-        
-        shifts[dia][hora] = assigned_user_data['username'] if assigned_user_data else None
-        
-        # Disponible si no está ocupado por otro usuario
-        available_shifts[dia][hora] = (assigned_user_data is None) or (assigned_user_data['username'] == username)
+    mis_turnos_db = cursor.fetchall()
+    turnos_asignados_usuario = {t['dia_semana']: t['hora'] for t in mis_turnos_db}
 
     cursor.close()
     conn.close()
 
     return render_template('seleccionar_turno.html',
-                        shifts=shifts,
-                        available_shifts=available_shifts,
-                        turnos_usados_usuario={}, # Esto requeriría un historial más complejo en DB
-                        fecha_para_input=fecha_para_input, # NUEVO: Pasar fecha para el input
-                        form=form,
-                        session=session)
+                         turnos_asignados_usuario=turnos_asignados_usuario,
+                         form=form,
+                         session=session)
+
+
 
 # ✅ Ver turnos asignados
 @app.route('/ver_turnos_asignados')
