@@ -2151,7 +2151,17 @@ def admin_asignar_turno_manual():
                         # Registrar en bitácora
                         registrar_auditoria('Asignación Turno', f"Usuario ID {id_usuario}: Asignado turno {hora} para {fecha_asignacion}")
                         
-                        # 3. Limpieza: Borrar otros turnos del mismo día (regla de negocio)
+                        # 3. Limpieza con respaldo: Antes de borrar, guardar en historial si existe
+                        cursor.execute("""
+                            SELECT id_turno_disponible FROM turnos_asignados 
+                            WHERE id_usuario = %s AND fecha_asignacion = %s AND id_turno_disponible != %s
+                        """, (id_usuario, fecha_asignacion, id_turno_disponible))
+                        turnos_viejos = cursor.fetchall()
+                        
+                        for tv in turnos_viejos:
+                            # Registrar en bitácora el cambio explícito
+                            registrar_auditoria('Cambio Turno', f"ID {id_usuario}: Turno ID {tv['id_turno_disponible']} reemplazado por {id_turno_disponible} el {fecha_asignacion}")
+
                         cursor.execute("""
                             DELETE FROM turnos_asignados 
                             WHERE id_usuario = %s 
@@ -2161,14 +2171,22 @@ def admin_asignar_turno_manual():
 
                 else:
                     # Borrar turno (solo futuros/hoy)
+                    # Pero incluso si borramos, ¡REGISTRAMOS LO QUE BORRAMOS!
                     if fecha_asignacion >= now_local().date():
+                         cursor.execute("""
+                            SELECT id_turno_disponible FROM turnos_asignados 
+                            WHERE id_usuario = %s AND fecha_asignacion = %s
+                        """, (id_usuario, fecha_asignacion))
+                         turnos_a_borrar = cursor.fetchall()
+                         
+                         for tb in turnos_a_borrar:
+                             registrar_auditoria('Eliminación Turno', f"ID {id_usuario}: Eliminado turno ID {tb['id_turno_disponible']} para {fecha_asignacion}")
+
                          cursor.execute("""
                             DELETE FROM turnos_asignados 
                             WHERE id_usuario = %s 
                             AND fecha_asignacion = %s
                         """, (id_usuario, fecha_asignacion))
-                         # Registrar en bitácora
-                         registrar_auditoria('Eliminación Turno', f"Usuario ID {id_usuario}: Eliminado turno para {fecha_asignacion}")
             
             conn.commit()
             flash('✅ Turnos actualizados correctamente (Historial protegido)', 'message')
