@@ -336,7 +336,7 @@
             </a>
             <form method="POST" action="{{ url_for('admin_eliminar_registro') }}"
                   onsubmit="return confirm('¿Eliminar este registro?')" style="display: inline;">
-              {{ csrf_token() }}
+              <!-- Eliminado csrf_token() innecesario -->
               <input type="hidden" name="usuario" value="{{ usuario }}">
               <input type="hidden" name="fecha" value="{{ fecha }}">
               <button type="submit" class="btn btn-danger btn-sm">

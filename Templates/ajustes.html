@@ -188,7 +188,7 @@
 
     <!-- Formulario para actualizar datos, ahora apunta a 'ajustes' -->
     <form method="POST" action="{{ url_for('actualizar_datos') }}">
-      {{ csrf_token() }}
+      <!-- Eliminado csrf_token() innecesario -->
       {{ update_form.hidden_tag() }}
       <div class="form-row">
         <div class="form-group">
