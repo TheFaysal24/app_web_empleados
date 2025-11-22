@@ -254,6 +254,7 @@ def init_db():
     for dia in dias:
         for hora in horas:
             try:
+                logger.info(f"Inserting turno disponible: dia={dia}, hora={hora}")
                 # ON CONFLICT DO NOTHING es la sintaxis de PostgreSQL para evitar duplicados
                 cursor.execute("INSERT INTO turnos_disponibles (dia_semana, hora) VALUES (%s, %s) ON CONFLICT (dia_semana, hora) DO NOTHING", (dia, hora))
             except psycopg2.Error as err:
@@ -341,6 +342,7 @@ def init_db():
         cursor.execute("SELECT id FROM usuarios WHERE username = 'admin'")
         if not cursor.fetchone():
             hashed_password = generate_password_hash('1234')
+            logger.info(f"Inserting admin user: username=admin")
             cursor.execute(
                 "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (username) DO NOTHING",
                 ('admin', hashed_password, True, 'Administrador', 'N/A', 'COORDINADOR', 'admin@empresa.com', '')
@@ -422,9 +424,9 @@ def login():
 
         if user_data:
             if user_data.get('bloqueado'):
-                 logger.warning(f"Intento de login en cuenta bloqueada: {username}")
-                 flash('Tu cuenta está bloqueada. Contacta al administrador.', 'error')
-                 return redirect(url_for('login'))
+                logger.warning(f"Intento de login en cuenta bloqueada: {username}")
+                flash('Tu cuenta está bloqueada. Contacta al administrador.', 'error')
+                return redirect(url_for('login'))
 
             if check_password_hash(user_data['contrasena'], contrasena):
                 user = User(
@@ -513,8 +515,9 @@ def asignar_turnos_automaticos(cedula, id_usuario):
             )
             if not cursor.fetchone():
                 try:
+                    logger.info(f"Inserting turno asignado automatico: id_usuario={id_usuario}, turno_id={turno_disponible_id}, fecha={today_local_iso()}")
                     cursor.execute("INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
-                                   (id_usuario, turno_disponible_id, today_local_iso()))
+                                (id_usuario, turno_disponible_id, today_local_iso()))
                     conn.commit()
                 except psycopg2.Error as err:
                     if err.pgcode == '23505': # unique_violation
@@ -596,6 +599,7 @@ def register():
             # 3. Si ni el usuario ni la cédula existen, creamos un nuevo usuario
             try:
                 hashed_password = generate_password_hash(contrasena)
+                logger.info(f"Inserting new user: username={username}, cedula={cedula}")
                 cursor.execute(
                     "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (username, hashed_password, False, nombre, cedula, cargo, correo, telefono)
@@ -697,17 +701,17 @@ def user_dashboard():
     conn.close()
 
     return render_template('user_dashboard.html',
-                         registros=registros_limpios,
-                         admin=admin,
-                         nombre=nombre,
-                         year=year,
-                         fechas=fechas_ordenadas,
-                         horas_fechas=horas_fechas,
-                         attendance_status=attendance_status,
-                         contador_inicios=contador_inicios,
-                         costo_horas_extras=round(costo_horas_extras, 2),
-                         valor_hora_ordinaria=round(valor_hora_ordinaria, 2),
-                         session=session)
+                        registros=registros_limpios,
+                        admin=admin,
+                        nombre=nombre,
+                        year=year,
+                        fechas=fechas_ordenadas,
+                        horas_fechas=horas_fechas,
+                        attendance_status=attendance_status,
+                        contador_inicios=contador_inicios,
+                        costo_horas_extras=round(costo_horas_extras, 2),
+                        valor_hora_ordinaria=round(valor_hora_ordinaria, 2),
+                        session=session)
 
 # ✅ Dashboard - Usuarios normales ven solo su info, admins ven todo
 @app.route('/dashboard')
@@ -951,6 +955,7 @@ def marcar_inicio():
             if cursor.fetchone():
                 flash('Ya registraste tu inicio hoy', 'error')
             else:
+                logger.info(f"Inserting registro asistencia inicio: id_usuario={usuario_id}, fecha={hoy}")
                 cursor.execute("INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING", (usuario_id, hoy, ahora))
                 conn.commit()
                 flash('Hora de inicio registrada.', 'message')
@@ -1082,6 +1087,7 @@ def marcar_asistencia():
                 flash('Ya registraste tu inicio hoy', 'error')
             else:
                 try:
+                    logger.info(f"Inserting registro asistencia asistencia: id_usuario={usuario_id}, fecha={hoy}")
                     cursor.execute(
                         "INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING",
                         (usuario_id, hoy, ahora.isoformat())
@@ -1154,8 +1160,8 @@ def exportar_datos():
     
     output.seek(0)
     return send_file(io.BytesIO(output.getvalue().encode('utf-8')),
-                      mimetype='text/csv', as_attachment=True,
-                      download_name='datos_empleados.csv')
+                    mimetype='text/csv', as_attachment=True,
+                    download_name='datos_empleados.csv')
 
 # ✅ Exportar registros desde dashboard
 @app.route('/exportar_registros')
@@ -1214,8 +1220,8 @@ def exportar_registros():
     
     output.seek(0)
     return send_file(io.BytesIO(output.getvalue().encode('utf-8')),
-                      mimetype='text/csv', as_attachment=True,
-                      download_name='registros_' + now_local().strftime('%Y%m%d_%H%M%S') + '.csv')
+                    mimetype='text/csv', as_attachment=True,
+                    download_name='registros_' + now_local().strftime('%Y%m%d_%H%M%S') + '.csv')
 
 # ✅ Ajustes de cuenta - Usuarios normales solo pueden cambiar su contraseña
 @app.route('/ajustes')
@@ -1346,9 +1352,10 @@ def recuperar_contrasena():
             expira = now_local() + datetime.timedelta(minutes=60)
             
             try:
-                cursor.execute(
-                    "INSERT INTO reset_tokens (token, id_usuario, expira) VALUES (%s, %s, %s) ON CONFLICT (token) DO NOTHING", 
-                    (token, user_data['id'], expira.isoformat())
+            logger.info(f"Inserting reset token: id_usuario={user_data['id']}")
+            cursor.execute(
+                "INSERT INTO reset_tokens (token, id_usuario, expira) VALUES (%s, %s, %s) ON CONFLICT (token) DO NOTHING",
+                (token, user_data['id'], expira.isoformat())
                 )
                 conn.commit()
                 flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.', 'message')
@@ -1751,9 +1758,10 @@ def seleccionar_turno():
 
         # Asignar turno
         try:
-            cursor.execute(
-                "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
-                (usuario_id, turno_disponible_id, fecha_asignacion)
+                logger.info(f"Inserting turno asignado: id_usuario={usuario_id}, turno_id={turno_disponible_id}, fecha={fecha_asignacion}")
+                cursor.execute(
+                    "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
+                    (usuario_id, turno_disponible_id, fecha_asignacion)
             )
             conn.commit()
             flash(f'✅ Turno seleccionado para el {fecha_asignacion.strftime("%d/%m/%Y")} exitosamente', 'message')
@@ -1809,12 +1817,12 @@ def seleccionar_turno():
     conn.close()
 
     return render_template('seleccionar_turno.html',
-                         shifts=shifts,
-                         available_shifts=available_shifts,
-                         turnos_usados_usuario={}, # Esto requeriría un historial más complejo en DB
-                         fecha_para_input=fecha_para_input, # NUEVO: Pasar fecha para el input
-                         form=form,
-                         session=session)
+                        shifts=shifts,
+                        available_shifts=available_shifts,
+                        turnos_usados_usuario={}, # Esto requeriría un historial más complejo en DB
+                        fecha_para_input=fecha_para_input, # NUEVO: Pasar fecha para el input
+                        form=form,
+                        session=session)
 
 # ✅ Ver turnos asignados
 @app.route('/ver_turnos_asignados')
@@ -1877,10 +1885,10 @@ def ver_turnos_asignados():
     conn.close()
     
     return render_template('ver_turnos_asignados.html',
-                         turnos_por_fecha=turnos_por_fecha,
-                         admin=admin,
-                         data={'usuarios': {}, 'turnos': {'shifts': {}}}, # Data ya no se carga de JSON
-                         session=session)
+                        turnos_por_fecha=turnos_por_fecha,
+                        admin=admin,
+                        data={'usuarios': {}, 'turnos': {'shifts': {}}}, # Data ya no se carga de JSON
+                        session=session)
 
 # ✅ Eliminar turno
 @app.route('/eliminar_turno', methods=['POST'])
@@ -2028,12 +2036,12 @@ def admin_asignar_turnos():
     }
 
     return render_template('admin_asignar_turnos.html',
-                         turnos_disponibles=turnos_disponibles_por_dia,
-                         turnos_asignados=turnos_por_gestor,
-                         gestores=gestores,
-                         dias_semana=['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
-                         dias_nombres=dias_nombres,
-                         form=form)
+                        turnos_disponibles=turnos_disponibles_por_dia,
+                        turnos_asignados=turnos_por_gestor,
+                        gestores=gestores,
+                        dias_semana=['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+                        dias_nombres=dias_nombres,
+                        form=form)
 
 # ✅ Asignar turno manual (Admin)
 @app.route('/admin/asignar_turno_manual', methods=['POST'])
@@ -2075,6 +2083,7 @@ def admin_asignar_turno_manual():
                         id_turno_disponible = turno_disponible_row['id']
                         
                         # Insertar el nuevo turno asignado
+                        logger.info(f"Inserting turno asignado manual: id_usuario={id_usuario}, turno_id={id_turno_disponible}, fecha={fecha_asignacion}")
                         cursor.execute(
                             "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
                             (id_usuario, id_turno_disponible, fecha_asignacion)
@@ -2169,10 +2178,10 @@ def admin_editar_completo(username):
     conn.close()
     
     return render_template('admin_editar_completo.html',
-                         usuario=username,
-                         usuario_data=usuario_data,
-                         registros=registros,
-                         form=form)
+                        usuario=username,
+                        usuario_data=usuario_data,
+                        registros=registros,
+                        form=form)
 
 # ✅ Actualizar usuario completo (Admin)
 @app.route('/admin/actualizar_usuario_completo', methods=['POST'])
@@ -2443,15 +2452,15 @@ def modulo_turnos():
     conn.close()
     
     return render_template('modulo_turnos.html',
-                         semana_actual=semana_actual,
-                         fecha_inicio_semana=inicio_semana.strftime('%d/%m/%Y'),
-                         fecha_fin_semana=fin_semana.strftime('%d/%m/%Y'),
-                         fechas_semana=fechas_semana,
-                         turnos_semana=shifts,
-                         historial_turnos=historial_turnos,
-                         usuarios_turnos=usuarios_turnos,
-                         stats=stats,
-                         data={'usuarios': {}}) # Data ya no se carga de JSON
+                        semana_actual=semana_actual,
+                        fecha_inicio_semana=inicio_semana.strftime('%d/%m/%Y'),
+                        fecha_fin_semana=fin_semana.strftime('%d/%m/%Y'),
+                        fechas_semana=fechas_semana,
+                        turnos_semana=shifts,
+                        historial_turnos=historial_turnos,
+                        usuarios_turnos=usuarios_turnos,
+                        stats=stats,
+                        data={'usuarios': {}}) # Data ya no se carga de JSON
 
 def generar_historial_turnos(fecha_base):
     fecha_base = fecha_base.replace(tzinfo=TZ) # Asegurar que la fecha base sea aware
@@ -2749,13 +2758,13 @@ def turnos_mensual():
     conn.close()
     
     return render_template('turnos_mensual.html',
-                         mes_nombre=meses_nombres[mes],
-                         ano_actual=ano,
-                         mes_actual=mes,
-                         gestores_data=gestores_data,
-                         stats=stats,
-                         historial_mes=historial_mes,
-                         session=session)
+                        mes_nombre=meses_nombres[mes],
+                        ano_actual=ano,
+                        mes_actual=mes,
+                        gestores_data=gestores_data,
+                        stats=stats,
+                        historial_mes=historial_mes,
+                        session=session)
 
 # ✅ NUEVA RUTA: Importar Turnos Históricos (Admin)
 @app.route('/admin/importar_turnos_historicos')
@@ -2856,6 +2865,7 @@ def importar_turnos_historicos():
                 inicio_dt_tz = TZ.localize(inicio_dt) if TZ and hasattr(TZ, 'localize') else inicio_dt
 
                 # Insertar en registros_asistencia, si no existe ya un registro para ese día
+                logger.info(f"Inserting registro asistencia historico: id_usuario={id_usuario}, fecha={fecha_asignacion}")
                 cursor.execute(
                     "INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING",
                     (id_usuario, fecha_asignacion, inicio_dt_tz.isoformat())
