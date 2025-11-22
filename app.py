@@ -96,13 +96,25 @@ login_manager.login_message_category = 'error'
 # Protección centralizada de rutas administrativas
 @app.before_request
 def _proteger_rutas_admin():
+    # Saltamos la protección para archivos estáticos y rutas públicas
+    if request.endpoint and ('static' in request.endpoint or 'login' in request.endpoint):
+        return
+
     try:
-        endpoint = request.endpoint or ''
+        endpoint = request.endpoint
         if endpoint and endpoint.startswith('admin_'):
-            if not current_user.is_authenticated or not getattr(current_user, 'admin', False):
+            # Verificación segura de autenticación
+            if not current_user or not current_user.is_authenticated:
+                flash('Debes iniciar sesión primero', 'error')
+                return redirect(url_for('login'))
+            
+            # Verificación segura de atributo admin
+            if not getattr(current_user, 'admin', False):
                 flash('Acceso denegado', 'error')
-                return redirect(url_for('home'))
-    except Exception:
+                return redirect(url_for('dashboard'))
+    except Exception as e:
+        # Log del error pero NO romper la petición si no es necesario
+        logger.error(f"Error en _proteger_rutas_admin: {e}")
         pass
 
 # Clase User para Flask-Login
@@ -425,24 +437,30 @@ def init_db():
 # -------------------
 @login_manager.user_loader
 def load_user(user_id):
-    conn = get_db_connection()
-    cursor = conn.cursor() # Ya es DictCursor por la conexión
-    cursor.execute("SELECT * FROM usuarios WHERE id = %s", (user_id,))
-    user_data = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    if user_data:
-        return User(
-            id=user_data['id'],
-            username=user_data['username'],
-            admin=user_data['admin'],
-            nombre=user_data['nombre'],
-            cedula=user_data['cedula'],
-            cargo=user_data['cargo'],
-            correo=user_data['correo'],
-            telefono=user_data['telefono'],
-            bloqueado=user_data['bloqueado']
-        )
+    if not user_id:
+        return None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor() # Ya es DictCursor por la conexión
+        cursor.execute("SELECT * FROM usuarios WHERE id = %s", (user_id,))
+        user_data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if user_data:
+            return User(
+                id=user_data['id'],
+                username=user_data['username'],
+                admin=user_data['admin'],
+                nombre=user_data['nombre'],
+                cedula=user_data['cedula'],
+                cargo=user_data['cargo'],
+                correo=user_data['correo'],
+                telefono=user_data['telefono'],
+                bloqueado=user_data.get('bloqueado', False)
+            )
+    except Exception as e:
+        logger.error(f"Error critico en load_user: {e}")
+        return None
     return None
 
 # -------------------
