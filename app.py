@@ -1352,10 +1352,10 @@ def recuperar_contrasena():
             expira = now_local() + datetime.timedelta(minutes=60)
             
             try:
-            logger.info(f"Inserting reset token: id_usuario={user_data['id']}")
-            cursor.execute(
-                "INSERT INTO reset_tokens (token, id_usuario, expira) VALUES (%s, %s, %s) ON CONFLICT (token) DO NOTHING",
-                (token, user_data['id'], expira.isoformat())
+                logger.info(f"Inserting reset token: id_usuario={user_data['id']}")
+                cursor.execute(
+                    "INSERT INTO reset_tokens (token, id_usuario, expira) VALUES (%s, %s, %s) ON CONFLICT (token) DO NOTHING",
+                    (token, user_data['id'], expira.isoformat())
                 )
                 conn.commit()
                 flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.', 'message')
@@ -1758,10 +1758,10 @@ def seleccionar_turno():
 
         # Asignar turno
         try:
-                logger.info(f"Inserting turno asignado: id_usuario={usuario_id}, turno_id={turno_disponible_id}, fecha={fecha_asignacion}")
-                cursor.execute(
-                    "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
-                    (usuario_id, turno_disponible_id, fecha_asignacion)
+            logger.info(f"Inserting turno asignado: id_usuario={usuario_id}, turno_id={turno_disponible_id}, fecha={fecha_asignacion}")
+            cursor.execute(
+                "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
+                (usuario_id, turno_disponible_id, fecha_asignacion)
             )
             conn.commit()
             flash(f'✅ Turno seleccionado para el {fecha_asignacion.strftime("%d/%m/%Y")} exitosamente', 'message')
@@ -2063,34 +2063,49 @@ def admin_asignar_turno_manual():
         inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
 
         try:
-            # Primero, eliminamos los turnos de la semana para este usuario para evitar conflictos
-            cursor.execute(
-                "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion BETWEEN %s AND %s",
-                (id_usuario, inicio_semana, inicio_semana + datetime.timedelta(days=6))
-            )
-
-            # Ahora, insertamos los nuevos turnos
+            # Lógica mejorada para NO borrar historial indiscriminadamente
+            # Recorremos cada día de la semana y actualizamos individualmente
             for i, dia_str in enumerate(dias_semana):
                 hora = request.form.get(f'turno_{dia_str}')
-                if hora: # Si se seleccionó una hora para ese día
-                    fecha_asignacion = inicio_semana + datetime.timedelta(days=i)
-                    
-                    # Obtener el id del turno disponible
+                fecha_asignacion = inicio_semana + datetime.timedelta(days=i)
+                
+                if hora: 
+                    # 1. Obtener ID del turno disponible
                     cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia_str, hora))
                     turno_disponible_row = cursor.fetchone()
                     
                     if turno_disponible_row:
                         id_turno_disponible = turno_disponible_row['id']
                         
-                        # Insertar el nuevo turno asignado
-                        logger.info(f"Inserting turno asignado manual: id_usuario={id_usuario}, turno_id={id_turno_disponible}, fecha={fecha_asignacion}")
-                        cursor.execute(
-                            "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
-                            (id_usuario, id_turno_disponible, fecha_asignacion)
-                        )
+                        # 2. Insertar el nuevo turno. Si ya existe esa combinación exacta, no hacer nada.
+                        # (Esto evita errores de clave duplicada)
+                        cursor.execute("""
+                            INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) 
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING
+                        """, (id_usuario, id_turno_disponible, fecha_asignacion))
+                        
+                        # 3. Limpieza: Si el usuario tenía OTRO turno diferente ese mismo día, lo borramos
+                        # para que no tenga dos horas asignadas el mismo día (regla de negocio: 1 turno por día)
+                        cursor.execute("""
+                            DELETE FROM turnos_asignados 
+                            WHERE id_usuario = %s 
+                            AND fecha_asignacion = %s 
+                            AND id_turno_disponible != %s
+                        """, (id_usuario, fecha_asignacion, id_turno_disponible))
+
+                else:
+                    # Si el campo viene vacío, significa que el admin quiere "Quitar" el turno.
+                    # Solo permitimos borrar turnos futuros o de hoy para no afectar estadísticas pasadas.
+                    if fecha_asignacion >= now_local().date():
+                         cursor.execute("""
+                            DELETE FROM turnos_asignados 
+                            WHERE id_usuario = %s 
+                            AND fecha_asignacion = %s
+                        """, (id_usuario, fecha_asignacion))
             
             conn.commit()
-            flash('✅ Turnos de la semana guardados exitosamente.', 'message')
+            flash('✅ Turnos actualizados correctamente (Historial protegido)', 'message')
         except Exception as e:
             conn.rollback()
             flash(f'Error al guardar los turnos: {e}', 'error')
