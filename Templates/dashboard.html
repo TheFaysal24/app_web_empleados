@@ -554,6 +554,13 @@
       {% endif %}
     </div>
 
+    {% if admin %}
+    <!-- Botón Gestión Turnos -->
+    <a href="{{ url_for('admin_gestion_tiempos') }}" class="btn-action btn-admin">
+      <i class="fas fa-clock"></i> Gestión Tiempos
+    </a>
+    {% endif %}
+
     <!-- Menú Desplegable Elegante -->
     <div class="dropdown">
       <button class="dropdown-toggle">
@@ -566,36 +573,39 @@
       <div class="dropdown-menu">
         <div class="menu-section">PRINCIPAL</div>
         <a href="{{ url_for('dashboard') }}" class="dropdown-item">
-          <i class="fas fa-home"></i> Dashboard
+          <i class="fas fa-home" style="color: #6366f1;"></i> Dashboard
         </a>
         {% if not admin %}
         <a href="{{ url_for('seleccionar_turno') }}" class="dropdown-item">
-          <i class="fas fa-calendar-clock"></i> Seleccionar Turno
+          <i class="fas fa-calendar-plus" style="color: #8b5cf6;"></i> Seleccionar Turno
         </a>
         <a href="{{ url_for('ver_turnos_asignados') }}" class="dropdown-item">
-          <i class="fas fa-calendar-check"></i> Ver Mis Turnos
+          <i class="fas fa-calendar-check" style="color: #10b981;"></i> Ver Mis Turnos
         </a>
         {% endif %}
 
         {% if admin %}
         <div class="menu-section" style="margin-top: 8px;">ADMINISTRACIÓN</div>
         <a href="{{ url_for('admin_gestion_tiempos') }}" class="dropdown-item">
-          <i class="fas fa-clock"></i> Gestión de Tiempos (Mensual)
+          <i class="fas fa-clock" style="color: #10b981;"></i> Gestión de Tiempos
         </a>
         <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item">
-          <i class="fas fa-user-cog"></i> Asignar Turnos (Semanal)
+          <i class="fas fa-calendar-plus" style="color: #8b5cf6;"></i> Asignar Turnos
         </a>
         <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">
-          <i class="fas fa-users"></i> Gestionar Usuarios
+          <i class="fas fa-users" style="color: #f59e0b;"></i> Gestionar Usuarios
+        </a>
+        <a href="{{ url_for('admin_backups') }}" class="dropdown-item">
+          <i class="fas fa-database" style="color: #6b7280;"></i> Backups
         </a>
         <a href="{{ url_for('exportar_registros') }}" class="dropdown-item">
-          <i class="fas fa-file-download"></i> Exportar Reporte
+          <i class="fas fa-file-csv" style="color: #3b82f6;"></i> Exportar Reporte
         </a>
         {% endif %}
 
         <div class="menu-section" style="margin-top: 8px;">CUENTA</div>
         <a href="{{ url_for('ajustes') }}" class="dropdown-item">
-          <i class="fas fa-cog"></i> Ajustes
+          <i class="fas fa-cog" style="color: #6366f1;"></i> Ajustes
         </a>
         <div style="border-top: 1px solid #eee; margin: 5px 0;"></div>
         <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ef4444;">
