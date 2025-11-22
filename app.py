@@ -94,26 +94,26 @@ login_manager.login_message_category = 'error'
 # Protección centralizada de rutas administrativas
 @app.before_request
 def _proteger_rutas_admin():
-    pass # Desactivado temporalmente por debug 500
-    # if request.endpoint and ('static' in request.endpoint or 'login' in request.endpoint):
-    #     return
+    # Saltamos la protección para archivos estáticos y rutas públicas
+    if request.endpoint and ('static' in request.endpoint or 'login' in request.endpoint):
+        return
 
-    # try:
-    #     endpoint = request.endpoint
-    #     if endpoint and endpoint.startswith('admin_'):
-    #         # Verificación segura de autenticación
-    #         if not current_user or not current_user.is_authenticated:
-    #             flash('Debes iniciar sesión primero', 'error')
-    #             return redirect(url_for('login'))
-    #         
-    #         # Verificación segura de atributo admin
-    #         if not getattr(current_user, 'admin', False):
-    #             flash('Acceso denegado', 'error')
-    #             return redirect(url_for('dashboard'))
-    # except Exception as e:
-    #     # Log del error pero NO romper la petición si no es necesario
-    #     logger.error(f"Error en _proteger_rutas_admin: {e}")
-    #     pass
+    try:
+        endpoint = request.endpoint
+        if endpoint and endpoint.startswith('admin_'):
+            # Verificación segura de autenticación
+            if not current_user or not current_user.is_authenticated:
+                flash('Debes iniciar sesión primero', 'error')
+                return redirect(url_for('login'))
+            
+            # Verificación segura de atributo admin
+            if not getattr(current_user, 'admin', False):
+                flash('Acceso denegado', 'error')
+                return redirect(url_for('dashboard'))
+    except Exception as e:
+        # Log del error pero NO romper la petición si no es necesario
+        logger.error(f"Error en _proteger_rutas_admin: {e}")
+        pass
 
 # Clase User para Flask-Login
 class User(UserMixin):
@@ -2205,28 +2205,24 @@ def admin_asignar_turno_manual():
                         """, (id_usuario, fecha_asignacion, id_turno_disponible))
 
                 else:
-                    # Borrar turno (solo futuros/hoy)
-                    # Pero incluso si borramos, ¡REGISTRAMOS LO QUE BORRAMOS!
-                    try:
-                        hoy_date = now_local().date()
-                        if fecha_asignacion >= hoy_date:
-                             cursor.execute("""
-                                SELECT id_turno_disponible FROM turnos_asignados 
-                                WHERE id_usuario = %s AND fecha_asignacion = %s
-                            """, (id_usuario, fecha_asignacion))
-                             turnos_a_borrar = cursor.fetchall()
-                             
-                             if turnos_a_borrar:
-                                 for tb in turnos_a_borrar:
-                                     registrar_auditoria('Eliminación Turno', f"ID {id_usuario}: Eliminado turno ID {tb['id_turno_disponible']} para {fecha_asignacion}")
+                    # Borrar turno: SOLO si es HOY o FUTURO.
+                    # El historial PASADO es sagrado y no se toca.
+                    if fecha_asignacion >= now_local().date():
+                         cursor.execute("""
+                            SELECT id_turno_disponible FROM turnos_asignados 
+                            WHERE id_usuario = %s AND fecha_asignacion = %s
+                        """, (id_usuario, fecha_asignacion))
+                         turnos_a_borrar = cursor.fetchall()
+                         
+                         if turnos_a_borrar:
+                             for tb in turnos_a_borrar:
+                                 registrar_auditoria('Eliminación Turno', f"ID {id_usuario}: Eliminado turno ID {tb['id_turno_disponible']} para {fecha_asignacion}")
 
                              cursor.execute("""
                                 DELETE FROM turnos_asignados 
                                 WHERE id_usuario = %s 
                                 AND fecha_asignacion = %s
                             """, (id_usuario, fecha_asignacion))
-                    except Exception as e_inner:
-                        logger.error(f"Error en limpieza de turnos: {e_inner}")
             
             conn.commit()
             flash('✅ Turnos actualizados correctamente (Historial protegido)', 'message')
