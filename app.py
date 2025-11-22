@@ -2078,10 +2078,18 @@ def admin_asignar_turnos():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Obtener solo gestores (usuarios con cédula en el sistema de turnos)
-    cedulas_gestores = ["1070963486", "1067949514", "1140870406", "1068416077"]
-    gestores = {}
-    
+    # Obtener TODOS los usuarios activos para gestión de turnos (no solo gestores con cédula específica)
+    cursor.execute("SELECT id, username, nombre, cedula, cargo FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
+    gestores_db = cursor.fetchall()
+
+    for usr_info in gestores_db:
+        gestores[usr_info['username']] = {
+            'id': usr_info['id'],
+            'nombre': usr_info['nombre'],
+            'cedula': usr_info['cedula'],
+            'cargo': usr_info['cargo']
+        }
+
     # Diccionario para traducir los nombres de los días
     dias_nombres = {
         'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
@@ -2097,17 +2105,6 @@ def admin_asignar_turnos():
         if turno['dia_semana'] not in turnos_disponibles_por_dia:
             turnos_disponibles_por_dia[turno['dia_semana']] = []
         turnos_disponibles_por_dia[turno['dia_semana']].append(turno['hora'])
-
-    cursor.execute("SELECT id, username, nombre, cedula, cargo FROM usuarios WHERE cedula = ANY(%s)", (cedulas_gestores,))
-    gestores_db = cursor.fetchall()
-
-    for usr_info in gestores_db:
-        gestores[usr_info['username']] = {
-            'id': usr_info['id'],
-            'nombre': usr_info['nombre'],
-            'cedula': usr_info['cedula'],
-            'cargo': usr_info['cargo']
-        }
 
     # Obtener turnos ya asignados para la semana actual
     hoy = now_local().date()
