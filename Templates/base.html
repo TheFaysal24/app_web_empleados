@@ -97,10 +97,13 @@
     {% if messages %}
       <div class="flash-messages">
         {% for category, message in messages %}
-          <div class="alert alert-{{ 'success' if category == 'message' else 'danger' }}">
-            <i class="fas fa-{{ 'check-circle' if category == 'message' else 'exclamation-circle' }}"></i>
-            {{ message|safe }}
-          </div>
+          <!-- Filtrar mensajes técnicos largos -->
+          {% if message|length < 200 %}
+            <div class="alert alert-{{ 'success' if category == 'message' else 'danger' }}">
+              <i class="fas fa-{{ 'check-circle' if category == 'message' else 'exclamation-circle' }}"></i>
+              {{ message|safe }}
+            </div>
+          {% endif %}
         {% endfor %}
       </div>
     {% endif %}
