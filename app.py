@@ -459,7 +459,7 @@ def inject_datetime():
 def home():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    return render_template('login.html', form=LoginForm())
+    return redirect(url_for('login'))
 
 @app.route('/welcome', methods=['GET'])
 def welcome():
