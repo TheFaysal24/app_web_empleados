@@ -735,36 +735,7 @@
 </div>
 {% endif %}
 
-<!-- Acciones Rápidas Admin -->
-{% if admin %}
-<div class="table-card">
-  <h3 class="section-title">
-    <i class="fas fa-tools"></i> Centro de Control Administrativo
-  </h3>
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-    <a href="{{ url_for('admin_gestion_tiempos') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
-      <i class="fas fa-clock" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
-      Gestión de Tiempos
-    </a>
-    <a href="{{ url_for('admin_asignar_turnos') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
-      <i class="fas fa-user-cog" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
-      Asignar Turnos
-    </a>
-    <a href="{{ url_for('admin_usuarios') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
-      <i class="fas fa-users" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
-      Gestionar Usuarios
-    </a>
-    <a href="{{ url_for('admin_backups') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
-      <i class="fas fa-database" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
-      Backups
-    </a>
-    <a href="{{ url_for('exportar_registros') }}" style="background-color: #0d6efd; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: 600; text-align: center; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);" onmouseover="this.style.backgroundColor='#0b5ed7'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 18px rgba(13, 110, 253, 0.4)'" onmouseout="this.style.backgroundColor='#0d6efd'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(13, 110, 253, 0.3)'">
-      <i class="fas fa-file-download" style="font-size: 1.8em; display: block; margin-bottom: 10px;"></i>
-      Exportar CSV
-    </a>
-  </div>
-</div>
-{% endif %}
+<!-- Acciones Rápidas Admin ELIMINADAS - Todo está en el menú desplegable -->
 
 <!-- Tarjetas de estadísticas -->
 <div class="stat-cards-grid">
