@@ -196,17 +196,36 @@
   .btn-action {
     border: none;
     color: white;
-    padding: 10px 20px;
-    border-radius: 10px;
+    padding: 8px 16px; /* Más pequeño y compacto */
+    border-radius: 8px;
     font-weight: 600;
-    font-size: 0.9em;
+    font-size: 0.85em; /* Fuente más pequeña */
     cursor: pointer;
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     text-decoration: none;
+  }
+
+  .btn-turnos {
+    background: linear-gradient(to right, #2563eb, #3b82f6) !important; /* Azul Real */
+  }
+  .btn-turnos:hover {
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+    transform: translateY(-2px);
+  }
+
+  /* Colores específicos para botones pequeños de navegación */
+  .btn-nav-small {
+    background: white;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+  }
+  .btn-nav-small:hover {
+    background: #f9fafb;
+    color: #1f2937;
   }
 
   .btn-inicio {
@@ -555,8 +574,8 @@
     </div>
 
     {% if admin %}
-    <a href="{{ url_for('modulo_turnos') }}" class="btn-action" style="background: linear-gradient(135deg, #3b82f6, #2563eb); margin-right: 10px;">
-      <i class="fas fa-people-group"></i> Gestión de Turnos
+    <a href="{{ url_for('admin_gestion_tiempos') }}" class="btn-action btn-turnos">
+      <i class="fas fa-clock"></i> Gestión Turnos (Todos)
     </a>
     {% endif %}
 
