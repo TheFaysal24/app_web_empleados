@@ -357,78 +357,81 @@
       {% if admin %}Turnos de Todos los Gestores Operativos{% else %}Mis Turnos Programados{% endif %}
     </div>
 
-    {% if assigned_shifts is not none and assigned_shifts|length > 0 %}
-    <div style="overflow-x: auto;">
-      <table class="turnos-table">
-        <thead>
-          <tr>
-            {% if admin %}
-            <th><i class="fas fa-user"></i> Gestor</th>
-            <th><i class="fas fa-briefcase"></i> Cargo</th>
-            {% endif %}
-            <th><i class="fas fa-calendar"></i> Día</th>
-            <th><i class="fas fa-clock"></i> Hora</th>
-            <th><i class="fas fa-check-circle"></i> Estado</th>
-            <th><i class="fas fa-cog"></i> Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% if assigned_shifts %}
-          {% for usuario, turnos_list in assigned_shifts.items() %}
-            {% if turnos_list %}
-            {% for turno in turnos_list %}
-              {% if turno %}
-            <tr>
-              {% if admin %}
-              <td>
-                <div style="display: flex; flex-direction: column;">
-                    <span class="badge badge-usuario" style="margin-bottom: 4px;">
-                      <i class="fas fa-user-circle"></i>
-                      {{ usuario }}
-                    </span>
-                    <span style="font-size: 0.85em; color: #666;">
-                        {{ turno.get('nombre', '') }}
-                    </span>
-                </div>
-              </td>
-              <td>{{ turno.get('cargo', 'Gestor Operativo') }}</td>
-              {% endif %}
-              <td>
-                <span class="badge badge-dia">
-                  <i class="fas fa-calendar-day"></i>
-                  {% set dias = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado'} %}
-                  {{ dias.get(turno.get('dia', 'monday'), 'N/A') }}
-                </span>
-              </td>
-              <td>
-                <span class="badge badge-hora">
-                  <i class="fas fa-clock"></i>
-                  {{ turno.get('hora', 'N/A') }}
-                </span>
-              </td>
-              <td>
-                <span class="badge badge-estado">
-                  <i class="fas fa-check-circle"></i>
-                  Asignado
-                </span>
-              </td>
-              <td>
-                <form method="POST" action="{{ url_for('eliminar_turno') }}" style="display: inline;">
-                  <input type="hidden" name="dia" value="{{ turno.get('dia', '') }}">
-                  <input type="hidden" name="hora" value="{{ turno.get('hora', '') }}">
-                  <button type="submit" style="background: linear-gradient(135deg, #ef4444, #f87171); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 18px rgba(239, 68, 68, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)'">
-                    <i class="fas fa-trash-alt"></i> Eliminar
-                  </button>
-                </form>
-              </td>
-            </tr>
-              {% endif %}
-            {% endfor %}
-            {% endif %}
-          {% endfor %}
-          {% endif %}
-        </tbody>
-      </table>
+    {% if turnos_por_fecha %}
+    <div style="display: flex; flex-direction: column; gap: 30px;">
+      {% for fecha, turnos in turnos_por_fecha.items() %}
+      <div style="background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #e5e7eb;">
+        <!-- Encabezado de Fecha -->
+        <div style="background: linear-gradient(135deg, #f3f4f6, #e5e7eb); padding: 15px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #e5e7eb;">
+          <i class="fas fa-calendar-day" style="color: #667eea; font-size: 1.2em;"></i>
+          <h3 style="margin: 0; color: #374151; font-size: 1.1em;">{{ fecha }}</h3>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="turnos-table" style="margin: 0;">
+            <thead>
+              <tr>
+                {% if admin %}
+                <th><i class="fas fa-user"></i> Gestor</th>
+                <th><i class="fas fa-briefcase"></i> Cargo</th>
+                {% endif %}
+                <th><i class="fas fa-calendar-week"></i> Día</th>
+                <th><i class="fas fa-clock"></i> Hora</th>
+                <th><i class="fas fa-check-circle"></i> Estado</th>
+                <th><i class="fas fa-cog"></i> Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for turno in turnos %}
+              <tr>
+                {% if admin %}
+                <td>
+                  <div style="display: flex; flex-direction: column;">
+                      <span class="badge badge-usuario" style="margin-bottom: 4px;">
+                        <i class="fas fa-user-circle"></i>
+                        {{ turno.usuario }}
+                      </span>
+                      <span style="font-size: 0.85em; color: #666;">
+                          {{ turno.nombre }}
+                      </span>
+                  </div>
+                </td>
+                <td>{{ turno.cargo }}</td>
+                {% endif %}
+                <td>
+                  <span class="badge badge-dia">
+                    {% set dias_map = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'} %}
+                    {{ dias_map.get(turno.dia, turno.dia|title) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-hora">
+                    <i class="fas fa-clock"></i> {{ turno.hora }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-estado">
+                    <i class="fas fa-check-circle"></i> Asignado
+                  </span>
+                </td>
+                <td>
+                  <form method="POST" action="{{ url_for('eliminar_turno') }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar este turno?');">
+                    <input type="hidden" name="dia" value="{{ turno.dia }}">
+                    <input type="hidden" name="hora" value="{{ turno.hora }}">
+                    <input type="hidden" name="fecha" value="{{ fecha }}"> <!-- Importante para borrar el turno exacto -->
+                    <input type="hidden" name="usuario_a_eliminar" value="{{ turno.usuario }}">
+                    <button type="submit" style="background: linear-gradient(135deg, #ef4444, #f87171); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 18px rgba(239, 68, 68, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)'">
+                      <i class="fas fa-trash-alt"></i> Eliminar
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
     </div>
     {% else %}
     <div class="empty-state">
