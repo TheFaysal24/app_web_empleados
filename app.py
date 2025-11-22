@@ -923,11 +923,12 @@ def dashboard():
             fechas_horas_filtradas[reg['fecha'].isoformat()] = float(reg['horas_trabajadas'])
         fechas_ordenadas = sorted(fechas_horas_filtradas.keys())[-7:]
         horas_fechas = [fechas_horas_filtradas.get(fecha, 0) for fecha in fechas_ordenadas]
-
-        # 🔒 OCULTAR COSTOS PARA USUARIOS NORMALES
-        costo_horas_extras = {}
-        costo_total_empresa = 0
-        valor_hora_ordinaria = 0
+        
+        # --- Ocultar costos para usuarios normales ---
+        costo_horas_extras = {} # Vacío para no mostrar nada
+        costo_total_empresa = 0 # Cero para no mostrar nada
+        valor_hora_ordinaria = 0 # Cero para no mostrar nada
+        # --- Fin de la ocultación ---
         
         # ✅ NUEVO: Obtener turnos seleccionados del usuario
         cursor.execute("""
@@ -1243,7 +1244,12 @@ def exportar_registros():
     salario_minimo = 1384308
     valor_hora_ordinaria = salario_minimo / (30 * 8)
     
-    writer.writerow(['Usuario','Nombre','Cédula','Cargo','Correo','Fecha y Hora Inicio','Fecha y Hora Salida','Horas Trabajadas','Horas Extras','Costo Horas Ordinarias','Costo Horas Extras','Costo Total'])
+    # --- Ocultar costos para usuarios normales ---
+    headers = ['Usuario','Nombre','Cédula','Cargo','Correo','Fecha y Hora Inicio','Fecha y Hora Salida','Horas Trabajadas','Horas Extras']
+    if current_user.is_admin():
+        headers.extend(['Costo Horas Ordinarias','Costo Horas Extras','Costo Total'])
+    writer.writerow(headers)
+    # --- Fin de la ocultación ---
 
     cursor.execute("""
         SELECT 
@@ -1256,28 +1262,31 @@ def exportar_registros():
     all_records = cursor.fetchall()
     
     for row in all_records:
-        horas_trabajadas = float(row['horas_trabajadas'])
-        horas_extras = float(row['horas_extras'])
-        costo_extras = 0
-        costo_ordinarias = horas_trabajadas * valor_hora_ordinaria
-        
-        try:
-            fecha_obj = row['fecha']
-            dia_semana = fecha_obj.weekday()
-            multiplicador = 1.75 if dia_semana == 5 else (2.0 if dia_semana == 6 else 1.25)
-            costo_extras = horas_extras * valor_hora_ordinaria * multiplicador
-        except:
-            pass
-        
-        costo_total = costo_ordinarias + costo_extras
-
-        writer.writerow([
+        base_row = [
             row['username'], row['nombre'], row['cedula'], row['cargo'], row['correo'],
             row['inicio'].isoformat() if row['inicio'] else '',
             row['salida'].isoformat() if row['salida'] else '',
-            horas_trabajadas, horas_extras, 
-            round(costo_ordinarias, 2), round(costo_extras, 2), round(costo_total, 2)
-        ])
+            float(row['horas_trabajadas']), float(row['horas_extras'])
+        ]
+
+        # --- Ocultar costos para usuarios normales ---
+        if current_user.is_admin():
+            horas_trabajadas = float(row['horas_trabajadas'])
+            horas_extras = float(row['horas_extras'])
+            costo_ordinarias = horas_trabajadas * valor_hora_ordinaria
+            costo_extras = 0
+            try:
+                fecha_obj = row['fecha']
+                dia_semana = fecha_obj.weekday()
+                multiplicador = 1.75 if dia_semana == 5 else (2.0 if dia_semana == 6 else 1.25)
+                costo_extras = horas_extras * valor_hora_ordinaria * multiplicador
+            except:
+                pass
+            costo_total = costo_ordinarias + costo_extras
+            base_row.extend([round(costo_ordinarias, 2), round(costo_extras, 2), round(costo_total, 2)])
+        # --- Fin de la ocultación ---
+
+        writer.writerow(base_row)
 
     cursor.close()
     conn.close()
