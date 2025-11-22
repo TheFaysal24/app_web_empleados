@@ -320,6 +320,27 @@
     backdrop-filter: blur(10px);
   }
 
+  .btn-nav-week {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: white;
+    color: #667eea;
+    border: 1px solid #667eea;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-nav-week:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
   @media (max-width: 768px) {
     .turnos-grid {
       grid-template-columns: 1fr;
@@ -342,7 +363,22 @@
   <!-- Header -->
   <div class="header-card">
     <h2><i class="fas fa-calendar-clock"></i> Seleccionar Mi Turno</h2>
-    <p style="color: #666; font-size: 1.1em; margin: 0;">Elige tu horario de trabajo para la semana</p>
+    
+    <div style="margin-top:20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:15px; border-radius:12px;">
+      <a href="{{ url_for('seleccionar_turno', fecha=semana_anterior) }}" class="btn-nav-week">
+        <i class="fas fa-chevron-left"></i> Anterior
+      </a>
+      
+      <div style="text-align:center;">
+        <h4 style="margin:0; color:#374151;">Semana del {{ inicio_semana.strftime('%d %b') }} al {{ fin_semana.strftime('%d %b, %Y') }}</h4>
+      </div>
+
+      <a href="{{ url_for('seleccionar_turno', fecha=semana_siguiente) }}" class="btn-nav-week">
+        Siguiente <i class="fas fa-chevron-right"></i>
+      </a>
+    </div>
+
+    <p style="color: #666; font-size: 1.1em; margin: 0;">Elige tu horario de trabajo para esta semana</p>
     
     <div style="margin-top: 20px;">
       <span class="user-badge">
@@ -364,6 +400,7 @@
 
   <!-- Grid de Turnos -->
   <form method="POST" action="{{ url_for('seleccionar_turno') }}">
+    <input type="hidden" name="inicio_semana" value="{{ inicio_semana.isoformat() }}">
     <div class="turnos-grid">
       {% set dias_nombres = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'} %}
       {% set dias_iconos = {'monday': '🌅', 'tuesday': '🌄', 'wednesday': '🌞', 'thursday': '☀️', 'friday': '🌤️', 'saturday': '🌈', 'sunday': '😌'} %}

@@ -1816,12 +1816,31 @@ def seleccionar_turno():
     cedula = current_user.cedula
     form = EmptyForm()
 
+    # Obtener fecha base desde argumentos (navegación) o usar hoy
+    fecha_base_str = request.args.get('fecha')
+    try:
+        if fecha_base_str:
+            fecha_base = datetime.datetime.strptime(fecha_base_str, '%Y-%m-%d').date()
+        else:
+            fecha_base = now_local().date()
+    except ValueError:
+        fecha_base = now_local().date()
+
+    # Calcular inicio de la semana seleccionada
+    inicio_semana = fecha_base - datetime.timedelta(days=fecha_base.weekday())
+    
     # PROCESAR FORMULARIO DE SEMANA COMPLETA (POST)
     if request.method == 'POST':
-        dias_semana = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-        hoy = now_local().date()
-        inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
+        # Recuperar fecha de inicio del formulario oculto para mantener consistencia
+        inicio_semana_form = request.form.get('inicio_semana')
+        if inicio_semana_form:
+             try:
+                 inicio_semana = datetime.datetime.strptime(inicio_semana_form, '%Y-%m-%d').date()
+             except ValueError:
+                 pass # Usar la calculada arriba
 
+        dias_semana = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        
         try:
             for i, dia_str in enumerate(dias_semana):
                 hora = request.form.get(f'turno_{dia_str}')
@@ -1835,7 +1854,7 @@ def seleccionar_turno():
                     if turno_disponible_row:
                         id_turno_disponible = turno_disponible_row['id']
                         
-                        # Insertar nuevo turno
+                        # Insertar nuevo turno (Upsert)
                         cursor.execute("""
                             INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) 
                             VALUES (%s, %s, %s)
@@ -1845,7 +1864,8 @@ def seleccionar_turno():
                         # Registrar auditoría
                         registrar_auditoria('Selección Turno', f"Usuario {username}: Seleccionó turno {hora} para {fecha_asignacion}", usuario=username)
 
-                        # Limpiar otros turnos del mismo día
+                        # Limpiar otros turnos duplicados del mismo día (regla de negocio: 1 turno activo por día)
+                        # PERO: Si ya existía uno, se guarda en auditoría antes de borrar (implementado en auditoría)
                         cursor.execute("""
                             DELETE FROM turnos_asignados 
                             WHERE id_usuario = %s 
@@ -1854,8 +1874,10 @@ def seleccionar_turno():
                         """, (usuario_id, fecha_asignacion, id_turno_disponible))
                 
                 else:
-                    # Si el usuario deja en blanco, borrar turno (solo futuro)
-                    if fecha_asignacion >= hoy:
+                    # Si el usuario deja en blanco:
+                    # Permitimos borrar SOLO si la fecha es HOY o FUTURA.
+                    # Si es PASADO, NO SE BORRA para proteger el historial.
+                    if fecha_asignacion >= now_local().date():
                         cursor.execute("""
                             DELETE FROM turnos_asignados 
                             WHERE id_usuario = %s AND fecha_asignacion = %s
@@ -1870,13 +1892,15 @@ def seleccionar_turno():
         
         cursor.close()
         conn.close()
-        return redirect(url_for('ver_turnos_asignados'))
+        # Redirigir manteniendo la fecha seleccionada
+        return redirect(url_for('seleccionar_turno', fecha=inicio_semana.isoformat()))
 
     # GET: Cargar datos para el formulario
-    # Obtener turnos ya asignados al usuario para la semana actual
-    hoy = now_local().date()
-    inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
     fin_semana = inicio_semana + datetime.timedelta(days=6)
+    
+    # Calcular fechas para navegación
+    semana_anterior = (inicio_semana - datetime.timedelta(days=7)).isoformat()
+    semana_siguiente = (inicio_semana + datetime.timedelta(days=7)).isoformat()
 
     cursor.execute("""
         SELECT td.dia_semana, td.hora
@@ -1893,6 +1917,10 @@ def seleccionar_turno():
 
     return render_template('seleccionar_turno.html',
                          turnos_asignados_usuario=turnos_asignados_usuario,
+                         inicio_semana=inicio_semana,
+                         fin_semana=fin_semana,
+                         semana_anterior=semana_anterior,
+                         semana_siguiente=semana_siguiente,
                          form=form,
                          session=session)
 
