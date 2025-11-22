@@ -1698,24 +1698,34 @@ def admin_editar_registro():
                 horas_trabajadas, horas_extras = calcular_horas(inicio_str, salida_str)
             
             try:
-                # Registro de Auditoría Previo (Guardar estado anterior si se quiere)
+                # Registro de Auditoría Previo
                 registrar_auditoria('Edición Horas', f"Admin editó registro de {username} para {fecha_str}: Inicio {inicio_str}, Salida {salida_str}")
 
-                cursor.execute(
-                    "UPDATE registros_asistencia SET inicio = %s, salida = %s, horas_trabajadas = %s, horas_extras = %s WHERE id_usuario = %s AND fecha = %s",
-                    (inicio_str, salida_str, horas_trabajadas, horas_extras, user_id['id'], fecha_str)
-                )
+                # Upsert lógico: INSERT si no existe, UPDATE si existe
+                # Como la tabla tiene UNIQUE(id_usuario, fecha), podemos usar ON CONFLICT
+                cursor.execute("""
+                    INSERT INTO registros_asistencia (id_usuario, fecha, inicio, salida, horas_trabajadas, horas_extras)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id_usuario, fecha) 
+                    DO UPDATE SET 
+                        inicio = EXCLUDED.inicio,
+                        salida = EXCLUDED.salida,
+                        horas_trabajadas = EXCLUDED.horas_trabajadas,
+                        horas_extras = EXCLUDED.horas_extras
+                """, (user_id['id'], fecha_str, inicio_str, salida_str, horas_trabajadas, horas_extras))
+                
                 conn.commit()
-                flash('Registro actualizado correctamente', 'message')
+                flash('Registro guardado correctamente', 'message')
             except Exception as e:
-                flash(f'Error al actualizar registro: {e}', 'error')
+                flash(f'Error al guardar registro: {e}', 'error')
                 logger.error(f"Error admin_editar_registro (POST) para {username} en {fecha_str}: {e}")
         else:
             flash('Usuario no encontrado', 'error')
         
         cursor.close()
         conn.close()
-        return redirect(url_for('admin_usuarios'))
+        # Redirigir al nuevo panel de gestión de tiempos para mantener el flujo
+        return redirect(url_for('admin_gestion_tiempos', mes=datetime.datetime.strptime(fecha_str, '%Y-%m-%d').month, ano=datetime.datetime.strptime(fecha_str, '%Y-%m-%d').year))
     
     username = request.args.get('usuario')
     fecha_str = request.args.get('fecha')
@@ -2010,46 +2020,73 @@ def admin_gestion_tiempos():
         mes = now_local().month
         ano = now_local().year
 
-    # Consulta maestra: Usuarios + Registros de Asistencia del mes seleccionado
-    # Left join para traer usuarios incluso si no tienen registros ese día (opcional, aquí traemos registros existentes)
-    cursor.execute("""
-        SELECT 
-            ra.id, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas, ra.horas_extras,
-            u.username, u.nombre, u.cedula
-        FROM registros_asistencia ra
-        JOIN usuarios u ON ra.id_usuario = u.id
-        WHERE EXTRACT(MONTH FROM ra.fecha) = %s AND EXTRACT(YEAR FROM ra.fecha) = %s
-        ORDER BY ra.fecha DESC, u.nombre ASC
-    """, (mes, ano))
-    
-    registros = cursor.fetchall()
-    
-    # Agrupar por fechas para visualización
-    registros_por_fecha = {}
-    for reg in registros:
-        fecha_str = reg['fecha'].isoformat()
-        if fecha_str not in registros_por_fecha:
-            registros_por_fecha[fecha_str] = []
+    # Obtener TODOS los usuarios activos
+    cursor.execute("SELECT id, username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
+    usuarios_activos = cursor.fetchall()
+
+    # Generar todas las fechas del mes
+    num_dias = (datetime.date(ano, mes % 12 + 1, 1) - datetime.timedelta(days=1)).day if mes < 12 else 31
+    fechas_mes = [datetime.date(ano, mes, d) for d in range(1, num_dias + 1)]
+
+    # Estructura de datos completa: Fecha -> Usuario -> {Planificado, Real}
+    calendario_completo = {}
+
+    for fecha in fechas_mes:
+        fecha_str = fecha.isoformat()
+        calendario_completo[fecha_str] = []
         
-        # Formatear horas para input time (HH:MM)
-        inicio_time = reg['inicio'].strftime('%H:%M') if reg['inicio'] else ''
-        salida_time = reg['salida'].strftime('%H:%M') if reg['salida'] else ''
-        
-        registros_por_fecha[fecha_str].append({
-            'id': reg['id'],
-            'usuario': reg['username'],
-            'nombre': reg['nombre'],
-            'inicio': inicio_time,
-            'salida': salida_time,
-            'horas': float(reg['horas_trabajadas']),
-            'extras': float(reg['horas_extras'])
-        })
+        for usuario in usuarios_activos:
+            user_id = usuario['id']
+            
+            # 1. Buscar turno planificado
+            cursor.execute("""
+                SELECT td.hora 
+                FROM turnos_asignados ta
+                JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+                WHERE ta.id_usuario = %s AND ta.fecha_asignacion = %s
+            """, (user_id, fecha))
+            planificado_row = cursor.fetchone()
+            hora_planificada = planificado_row['hora'] if planificado_row else '-'
+
+            # 2. Buscar registro real (asistencia)
+            cursor.execute("""
+                SELECT id, inicio, salida, horas_trabajadas, horas_extras
+                FROM registros_asistencia
+                WHERE id_usuario = %s AND fecha = %s
+            """, (user_id, fecha))
+            real_row = cursor.fetchone()
+
+            inicio_time = ''
+            salida_time = ''
+            horas = 0.0
+            extras = 0.0
+            reg_id = None
+
+            if real_row:
+                reg_id = real_row['id']
+                inicio_time = real_row['inicio'].strftime('%H:%M') if real_row['inicio'] else ''
+                salida_time = real_row['salida'].strftime('%H:%M') if real_row['salida'] else ''
+                horas = float(real_row['horas_trabajadas'])
+                extras = float(real_row['horas_extras'])
+
+            calendario_completo[fecha_str].append({
+                'usuario_id': user_id,
+                'usuario': usuario['username'],
+                'nombre': usuario['nombre'],
+                'planificado': hora_planificada,
+                'reg_id': reg_id,
+                'inicio': inicio_time,
+                'salida': salida_time,
+                'horas': horas,
+                'extras': extras,
+                'tiene_registro': real_row is not None
+            })
 
     cursor.close()
     conn.close()
 
     return render_template('admin_gestion_tiempos.html', 
-                         registros_por_fecha=registros_por_fecha,
+                         calendario_completo=calendario_completo,
                          mes=mes, ano=ano,
                          meses_nombres={1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'})
 

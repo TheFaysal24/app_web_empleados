@@ -169,18 +169,18 @@
   </div>
 
   <!-- Lista de Registros por Fecha -->
-  {% if registros_por_fecha %}
-    {% for fecha, registros in registros_por_fecha.items() %}
+  {% if calendario_completo %}
+    {% for fecha_str, datos_usuarios in calendario_completo.items() %}
     <div class="fecha-card">
       <div class="fecha-header">
-        <i class="fas fa-calendar-day"></i> {{ fecha }}
+        <i class="fas fa-calendar-day"></i> {{ fecha_str }}
       </div>
       <div style="overflow-x: auto;">
         <table class="tiempos-table">
           <thead>
             <tr>
               <th>Usuario</th>
-              <th>Nombre</th>
+              <th>Turno Planificado</th>
               <th>Hora Inicio</th>
               <th>Hora Salida</th>
               <th>Horas Calc.</th>
@@ -189,29 +189,37 @@
             </tr>
           </thead>
           <tbody>
-            {% for reg in registros %}
-            <tr id="row-{{ reg.id }}">
+            {% for data in datos_usuarios %}
+            <tr id="row-{{ data.usuario_id }}-{{ fecha_str }}" style="{{ 'background-color: #fff7ed;' if not data.tiene_registro else '' }}">
               <form method="POST" action="{{ url_for('admin_editar_registro') }}">
-                <input type="hidden" name="usuario" value="{{ reg.usuario }}">
-                <input type="hidden" name="fecha" value="{{ fecha }}">
+                <input type="hidden" name="usuario" value="{{ data.usuario }}">
+                <input type="hidden" name="fecha" value="{{ fecha_str }}">
                 
-                <td style="font-weight:600; color:#4b5563;">{{ reg.usuario }}</td>
-                <td>{{ reg.nombre }}</td>
                 <td>
-                  <input type="time" name="inicio" value="{{ reg.inicio }}" class="input-time" required>
+                  <div style="font-weight:600; color:#4b5563;">{{ data.nombre }}</div>
+                  <div style="font-size:0.8em; color:#9ca3af;">{{ data.usuario }}</div>
                 </td>
                 <td>
-                  <input type="time" name="salida" value="{{ reg.salida }}" class="input-time">
+                  <span class="badge-horas" style="background:#f3f4f6; color:#4b5563;">
+                    {{ data.planificado }}
+                  </span>
                 </td>
                 <td>
-                  <span class="badge-horas">{{ reg.horas }}h</span>
+                  <input type="time" name="inicio" value="{{ data.inicio }}" class="input-time" {% if not data.tiene_registro %}placeholder="--:--"{% endif %}>
                 </td>
                 <td>
-                  <span class="badge-extras">{{ reg.extras }}h</span>
+                  <input type="time" name="salida" value="{{ data.salida }}" class="input-time">
                 </td>
                 <td>
-                  <button type="submit" class="btn-save-row">
-                    <i class="fas fa-save"></i> Guardar
+                  <span class="badge-horas">{{ data.horas }}h</span>
+                </td>
+                <td>
+                  <span class="badge-extras">{{ data.extras }}h</span>
+                </td>
+                <td>
+                  <button type="submit" class="btn-save-row" title="{{ 'Crear registro' if not data.tiene_registro else 'Actualizar registro' }}">
+                    <i class="fas fa-{{ 'plus-circle' if not data.tiene_registro else 'save' }}"></i> 
+                    {{ 'Crear' if not data.tiene_registro else 'Guardar' }}
                   </button>
                 </td>
               </form>
@@ -225,8 +233,7 @@
   {% else %}
     <div style="text-align:center; padding:50px; background:white; border-radius:15px; color:#9ca3af;">
       <i class="fas fa-calendar-times" style="font-size:4em; margin-bottom:20px; opacity:0.5;"></i>
-      <h3>No hay registros de asistencia para este mes</h3>
-      <p>Los empleados aún no han marcado sus horas.</p>
+      <h3>No se encontraron datos para este mes</h3>
     </div>
   {% endif %}
 
