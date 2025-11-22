@@ -327,6 +327,61 @@ def init_db():
             UNIQUE (id_usuario, fecha)
         )
     """)
+    
+    # ✅ Tabla Bitácora Auditoría
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS bitacora_auditoria (
+            id SERIAL PRIMARY KEY,
+            fecha_hora TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+            usuario_responsable VARCHAR(100),
+            accion VARCHAR(100),
+            detalle TEXT,
+            ip_origen VARCHAR(50)
+        )
+    """)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# ✅ Función para registrar en bitácora
+def registrar_auditoria(accion, detalle, usuario=None):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Determinar usuario responsable de forma segura
+        resp = 'Sistema/Anónimo'
+        if usuario:
+            resp = usuario
+        else:
+            try:
+                if current_user.is_authenticated:
+                    resp = current_user.username
+            except:
+                pass
+            
+        ip = 'Local'
+        try:
+            if request:
+                ip = request.remote_addr
+        except:
+            pass
+        
+        cursor.execute(
+            "INSERT INTO bitacora_auditoria (usuario_responsable, accion, detalle, ip_origen) VALUES (%s, %s, %s, %s)",
+            (resp, accion, detalle, ip)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error al registrar auditoría: {e}")
+
+# ✅ Inicializar DB y crear usuario admin por defecto
+def init_db():
+    conn = get_db_connection()
+    cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS historial_anual (
             id SERIAL PRIMARY KEY,
@@ -1278,6 +1333,7 @@ def actualizar_datos():
                 "UPDATE usuarios SET nombre = %s, cargo = %s, correo = %s, telefono = %s WHERE id = %s",
                 (nombre, cargo, correo, telefono, usuario_id)
             )
+            registrar_auditoria('Actualización Datos', f"Usuario {current_user.username} actualizó sus datos personales")
             conn.commit()
             flash('Datos actualizados correctamente', 'message')
         except Exception as e:
@@ -1326,6 +1382,7 @@ def cambiar_contrasena():
                         "UPDATE usuarios SET contrasena = %s WHERE id = %s",
                         (generate_password_hash(nueva), usuario_id)
                     )
+                    registrar_auditoria('Cambio Contraseña', f"Usuario {current_user.username} cambió su contraseña")
                     conn.commit()
                     logger.info(f"Contraseña cambiada para usuario: {current_user.username}")
                     flash('Contraseña actualizada correctamente', 'message')
@@ -2084,16 +2141,17 @@ def admin_asignar_turno_manual():
                     if turno_disponible_row:
                         id_turno_disponible = turno_disponible_row['id']
                         
-                        # 2. Insertar el nuevo turno. Si ya existe esa combinación exacta, no hacer nada.
-                        # (Esto evita errores de clave duplicada)
+                        # 2. Insertar el nuevo turno.
                         cursor.execute("""
                             INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) 
                             VALUES (%s, %s, %s)
                             ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING
                         """, (id_usuario, id_turno_disponible, fecha_asignacion))
                         
-                        # 3. Limpieza: Si el usuario tenía OTRO turno diferente ese mismo día, lo borramos
-                        # para que no tenga dos horas asignadas el mismo día (regla de negocio: 1 turno por día)
+                        # Registrar en bitácora
+                        registrar_auditoria('Asignación Turno', f"Usuario ID {id_usuario}: Asignado turno {hora} para {fecha_asignacion}")
+                        
+                        # 3. Limpieza: Borrar otros turnos del mismo día (regla de negocio)
                         cursor.execute("""
                             DELETE FROM turnos_asignados 
                             WHERE id_usuario = %s 
@@ -2102,14 +2160,15 @@ def admin_asignar_turno_manual():
                         """, (id_usuario, fecha_asignacion, id_turno_disponible))
 
                 else:
-                    # Si el campo viene vacío, significa que el admin quiere "Quitar" el turno.
-                    # Solo permitimos borrar turnos futuros o de hoy para no afectar estadísticas pasadas.
+                    # Borrar turno (solo futuros/hoy)
                     if fecha_asignacion >= now_local().date():
                          cursor.execute("""
                             DELETE FROM turnos_asignados 
                             WHERE id_usuario = %s 
                             AND fecha_asignacion = %s
                         """, (id_usuario, fecha_asignacion))
+                         # Registrar en bitácora
+                         registrar_auditoria('Eliminación Turno', f"Usuario ID {id_usuario}: Eliminado turno para {fecha_asignacion}")
             
             conn.commit()
             flash('✅ Turnos actualizados correctamente (Historial protegido)', 'message')
