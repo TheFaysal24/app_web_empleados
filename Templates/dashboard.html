@@ -541,7 +541,11 @@
 <div class="top-navigation">
   <div class="nav-brand">
     <h3><i class="fas fa-users-cog"></i> Sistema de Empleados</h3>
-    <div class="user-info">
+  </div>
+  
+  <div class="nav-actions">
+    <!-- Nombre de usuario a la derecha -->
+    <div class="user-info" style="margin-right: 15px;">
       <i class="fas fa-user-circle"></i> 
       {% if nombre|length < 50 %}
         {{ nombre }}
@@ -549,27 +553,7 @@
         {{ nombre[:47] }}...
       {% endif %}
     </div>
-  </div>
-  <div class="nav-actions">
-    {% if not admin %}
-    <form method="POST" action="{{ url_for('marcar_inicio') }}" style="display: inline;">
-      <!-- Eliminado csrf_token() -->
-      <button type="submit" class="btn-action btn-inicio">
-        <i class="fas fa-play-circle"></i> Inicio
-      </button>
-    </form>
-    <form method="POST" action="{{ url_for('marcar_salida') }}" style="display: inline;">
-      <!-- Eliminado csrf_token() -->
-      <button type="submit" class="btn-action btn-salida">
-        <i class="fas fa-stop-circle"></i> Salida
-      </button>
-    </form>
-    {% endif %}
-    
-    <a href="{{ url_for('logout') }}" class="btn-action btn-logout">
-      <i class="fas fa-right-from-bracket"></i> Salir
-    </a>
-    
+
     <!-- Menú Desplegable Elegante -->
     <div class="dropdown">
       <button class="dropdown-toggle">
@@ -580,22 +564,94 @@
         </div>
       </button>
       <div class="dropdown-menu">
-        <div class="menu-section">PRINCIPAL</div>
-        <a href="{{ url_for('dashboard') }}" class="dropdown-item">
-          <i class="fas fa-home"></i> Dashboard
-        </a>
-        <a href="{{ url_for('modulo_turnos') }}" class="dropdown-item">
-          <i class="fas fa-people-group"></i> Gestión de Turnos
-        </a>
+        <div class="menu-section">CUENTA</div>
         <a href="{{ url_for('ajustes') }}" class="dropdown-item">
           <i class="fas fa-cog"></i> Ajustes
         </a>
-        <a href="{{ url_for('seleccionar_turno') }}" class="dropdown-item">
-          <i class="fas fa-calendar-clock"></i> Seleccionar Turno
+        <div style="border-top: 1px solid #eee; margin: 5px 0;"></div>
+        <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ef4444;">
+          <i class="fas fa-sign-out-alt"></i> Salir
         </a>
-        <a href="{{ url_for('ver_turnos_asignados') }}" class="dropdown-item">
-          <i class="fas fa-calendar-check"></i> Ver Mis Turnos
-        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Panel de Control de Asistencia (Centrado y Grande) -->
+{% if not admin %}
+<div style="display: flex; justify-content: center; gap: 30px; margin: 40px 0;">
+  <form method="POST" action="{{ url_for('marcar_inicio') }}">
+    <button type="submit" class="btn-asistencia btn-inicio-grande" {% if attendance_status == 'active' %}disabled{% endif %}>
+      <div class="icon-container"><i class="fas fa-fingerprint"></i></div>
+      <span>Registrar Entrada</span>
+    </button>
+  </form>
+  
+  <form method="POST" action="{{ url_for('marcar_salida') }}">
+    <button type="submit" class="btn-asistencia btn-salida-grande" {% if attendance_status != 'active' %}disabled{% endif %}>
+      <div class="icon-container"><i class="fas fa-running"></i></div>
+      <span>Registrar Salida</span>
+    </button>
+  </form>
+</div>
+
+<style>
+  .btn-asistencia {
+    border: none;
+    background: white;
+    border-radius: 20px;
+    padding: 20px 40px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    width: 200px;
+  }
+
+  .btn-asistencia:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  }
+
+  .btn-asistencia:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    filter: grayscale(1);
+  }
+
+  .icon-container {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    color: white;
+    margin-bottom: 5px;
+  }
+
+  .btn-inicio-grande .icon-container {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-salida-grande .icon-container {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+  }
+
+  .btn-asistencia span {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #374151;
+  }
+</style>
+{% endif %}
 
         {% if admin %}
         <div class="menu-section" style="margin-top: 8px;">ADMINISTRACIÓN</div>
