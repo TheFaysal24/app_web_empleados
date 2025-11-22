@@ -2172,21 +2172,26 @@ def admin_asignar_turno_manual():
                 else:
                     # Borrar turno (solo futuros/hoy)
                     # Pero incluso si borramos, ¡REGISTRAMOS LO QUE BORRAMOS!
-                    if fecha_asignacion >= now_local().date():
-                         cursor.execute("""
-                            SELECT id_turno_disponible FROM turnos_asignados 
-                            WHERE id_usuario = %s AND fecha_asignacion = %s
-                        """, (id_usuario, fecha_asignacion))
-                         turnos_a_borrar = cursor.fetchall()
-                         
-                         for tb in turnos_a_borrar:
-                             registrar_auditoria('Eliminación Turno', f"ID {id_usuario}: Eliminado turno ID {tb['id_turno_disponible']} para {fecha_asignacion}")
+                    try:
+                        hoy_date = now_local().date()
+                        if fecha_asignacion >= hoy_date:
+                             cursor.execute("""
+                                SELECT id_turno_disponible FROM turnos_asignados 
+                                WHERE id_usuario = %s AND fecha_asignacion = %s
+                            """, (id_usuario, fecha_asignacion))
+                             turnos_a_borrar = cursor.fetchall()
+                             
+                             if turnos_a_borrar:
+                                 for tb in turnos_a_borrar:
+                                     registrar_auditoria('Eliminación Turno', f"ID {id_usuario}: Eliminado turno ID {tb['id_turno_disponible']} para {fecha_asignacion}")
 
-                         cursor.execute("""
-                            DELETE FROM turnos_asignados 
-                            WHERE id_usuario = %s 
-                            AND fecha_asignacion = %s
-                        """, (id_usuario, fecha_asignacion))
+                             cursor.execute("""
+                                DELETE FROM turnos_asignados 
+                                WHERE id_usuario = %s 
+                                AND fecha_asignacion = %s
+                            """, (id_usuario, fecha_asignacion))
+                    except Exception as e_inner:
+                        logger.error(f"Error en limpieza de turnos: {e_inner}")
             
             conn.commit()
             flash('✅ Turnos actualizados correctamente (Historial protegido)', 'message')
