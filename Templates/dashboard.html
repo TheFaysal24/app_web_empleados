@@ -932,7 +932,7 @@
     horas: {{ horas_fechas|default([])|tojson|safe }},
     contadores: {{ contador_inicios|default({})|tojson|safe }}
     {% if admin %},
-    costos: {{ costo_horas_extras|default({})|tojson|safe }},
+    costos: {{ costos_por_usuario|default({})|tojson|safe }},
     usuarios: {{ data.get('usuarios', {})|tojson|safe }}
     {% endif %}
   };
@@ -1159,12 +1159,21 @@
           }]
         },
         options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
               display: false
             },
             tooltip: {
               callbacks: {
                 label: function(context) {
-                  return '$' + context.parsed.y.toLocaleString();
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  label += '$' + context.parsed.y.toLocaleString();
+                  return label;
                 }
               }
             }

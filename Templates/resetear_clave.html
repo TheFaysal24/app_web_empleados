@@ -1,0 +1,54 @@
+{% extends "base_auth.html" %}
+{% block title %}Establecer Nueva Contraseña{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-header">
+        <i class="fas fa-shield-alt auth-icon"></i>
+        <h2>Crea tu Nueva Contraseña</h2>
+        <p class="text-muted">Por favor, ingresa una nueva contraseña segura.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('resetear_clave', token=token) }}">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            {{ form.password.label(class="form-label") }}
+            {% if form.password.errors %}
+                {{ form.password(class="form-control is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.password.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.password(class="form-control", placeholder="Mínimo 6 caracteres") }}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.password2.label(class="form-label") }}
+            {% if form.password2.errors %}
+                {{ form.password2(class="form-control is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.password2.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.password2(class="form-control", placeholder="Confirma la nueva contraseña") }}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary btn-block") }}
+        </div>
+    </form>
+
+    <div class="auth-footer">
+        <a href="{{ url_for('login') }}">
+            <i class="fas fa-arrow-left"></i> Volver al inicio de sesión
+        </a>
+    </div>
+</div>
+{% endblock %}

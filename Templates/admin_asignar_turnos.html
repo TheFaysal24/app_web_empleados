@@ -11,26 +11,37 @@
 
   <!-- Navegación Superior -->
   <div class="top-nav">
-    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
       <i class="fas fa-arrow-left"></i> Volver al Dashboard
     </a>
     <h2 class="page-title">Asignación de Turnos</h2>
-    <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">
-      <i class="fas fa-sign-out-alt"></i> Salir
-    </a>
+    <!-- Navegación de Semanas -->
+    <div class="week-nav">
+      <a href="{{ url_for('admin_asignar_turnos', semana_offset=semana_offset-1) }}" class="btn btn-info btn-sm">
+        <i class="fas fa-chevron-left"></i> Semana Anterior
+      </a>
+      <span class="current-week">
+        Semana del {{ inicio_semana.strftime('%d de %b') }} al {{ fin_semana.strftime('%d de %b, %Y') }}
+      </span>
+      <a href="{{ url_for('admin_asignar_turnos', semana_offset=semana_offset+1) }}" class="btn btn-info btn-sm">
+        Semana Siguiente <i class="fas fa-chevron-right"></i>
+      </a>
+    </div>
   </div>
 
   <!-- Formulario principal -->
-  <form method="POST">
+  <form method="POST" action="{{ url_for('admin_asignar_turnos') }}">
     {{ form.hidden_tag() }}
+    <!-- Campo oculto para saber qué semana estamos guardando -->
+    <input type="hidden" name="semana_offset" value="{{ semana_offset }}">
 
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">
+        <h3 class="card-title text-gradient">
           <i class="fas fa-calendar-plus"></i> Planificación Semanal
         </h3>
         <p class="card-subtitle">
-          Selecciona el turno para cada gestor y día. Los cambios se aplicarán para la semana actual.
+          Asigna, edita o corrige los turnos para cada usuario.
         </p>
       </div>
 
@@ -38,30 +49,35 @@
         <table class="table table-turnos">
           <thead>
             <tr>
-              <th>Usuario</th>
-              <th>Lunes</th>
-              <th>Martes</th>
-              <th>Miércoles</th>
-              <th>Jueves</th>
-              <th>Viernes</th>
-              <th>Sábado</th>
-              <th>Domingo</th>
+              <th class="user-header">Usuario</th>
+              {% for fecha in fechas_semana %}
+                <th class="day-header">
+                  {{ fecha.strftime('%A')|capitalize }}<br>
+                  <small>{{ fecha.strftime('%d/%m') }}</small>
+                </th>
+              {% endfor %}
             </tr>
           </thead>
           <tbody>
-            {% for usuario, turnos in usuarios_turnos.items() %}
+            {% for usuario in usuarios %}
             <tr>
               <td class="user-cell">
-                <i class="fas fa-user"></i> {{ usuario }}
+                <div class="user-info-cell">
+                  <i class="fas fa-user-circle"></i>
+                  <span>{{ usuario.nombre }}</span>
+                  <small>{{ usuario.cargo }}</small>
+                </div>
               </td>
-              {% for dia in ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] %}
+              {% for fecha in fechas_semana %}
               <td>
                 <div class="form-group-table">
-                  <select name="{{ usuario }}_{{ dia }}" class="form-control form-control-sm">
-                    {% set turno_actual = turnos.get(dia, 'Descanso') %}
-                    {% for opcion in form.opciones_turno %}
-                      <option value="{{ opcion }}" {% if opcion == turno_actual %}selected{% endif %}>
-                        {{ opcion }}
+                  <!-- El nombre del campo es `id_usuario-fecha` -->
+                  <select name="{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm">
+                    <option value="">-- Descanso --</option>
+                    {% set turno_actual = turnos_asignados.get(usuario.id, {}).get(fecha.isoformat()) %}
+                    {% for turno_disponible in turnos_disponibles %}
+                      <option value="{{ turno_disponible.id }}" {% if turno_actual and turno_actual == turno_disponible.id %}selected{% endif %}>
+                        {{ turno_disponible.hora }}
                       </option>
                     {% endfor %}
                   </select>
@@ -69,13 +85,17 @@
               </td>
               {% endfor %}
             </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" class="text-center p-3">No hay usuarios para mostrar.</td>
+            </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Botón de Guardar -->
+    <!-- Botón de Guardar Fijo -->
     <div class="submit-container">
       <button type="submit" class="btn btn-primary btn-lg">
         <i class="fas fa-save"></i> Guardar Cambios

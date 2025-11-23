@@ -7,21 +7,13 @@
 {% endblock %}
 
 {% block content %}
-<!-- Navegación Superior -->
-<div class="top-nav">
-  <a href="{{ url_for('dashboard') }}" class="btn btn-info">
-    <i class="fas fa-arrow-left"></i> Volver al Dashboard
-  </a>
-  <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">
-    <i class="fas fa-sign-out-alt"></i> Salir
-  </a>
-</div>
-
 <div class="ajustes-container">
   <!-- Header -->
   <div class="ajustes-header">
-    <h2>⚙️ Ajustes de Cuenta</h2>
-    <p>Administra tu información personal y seguridad</p>
+    <h2><i class="fas fa-cog"></i> Ajustes de Cuenta</h2>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> Volver al Dashboard
+    </a>
   </div>
 
   <!-- Actualizar datos personales -->
@@ -37,23 +29,23 @@
       {{ update_form.hidden_tag() }}
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label" for="nombre">Nombre Completo</label>
-          <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Tu nombre completo" required>
+          <label class="form-label" for="nombre">Nombre</label>
+          {{ update_form.nombre(class="form-control", placeholder="Tu nombre", value=current_user.nombre) }}
         </div>
         <div class="form-group">
-          <label class="form-label" for="cargo">Cargo</label>
-          <input type="text" class="form-control" id="cargo" name="cargo" placeholder="Tu cargo en la empresa" required>
+          <label class="form-label" for="apellido">Apellido</label>
+          {{ update_form.apellido(class="form-control", placeholder="Tu apellido", value=current_user.apellido) }}
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="correo">Correo Electrónico</label>
-          <input type="email" class="form-control" id="correo" name="correo" placeholder="tu.correo@empresa.com" required>
+          {{ update_form.correo(class="form-control", placeholder="tu.correo@empresa.com", value=current_user.correo) }}
         </div>
         <div class="form-group">
-          <label class="form-label" for="telefono">📱 WhatsApp/Teléfono</label>
-          <input type="text" class="form-control" id="telefono" name="telefono" placeholder="+57 300 123 4567">
+          <label class="form-label" for="telefono">Teléfono</label>
+          {{ update_form.telefono(class="form-control", placeholder="+57 300 123 4567", value=current_user.telefono) }}
         </div>
       </div>
 
@@ -77,20 +69,20 @@
       {{ password_form.hidden_tag() }}
       <div class="form-group">
         <label class="form-label" for="actual">Contraseña Actual</label>
-        <input type="password" class="form-control" id="actual" name="actual" placeholder="Ingresa tu contraseña actual" required>
+        {{ password_form.actual(class="form-control", placeholder="Ingresa tu contraseña actual") }}
       </div>
 
       <div class="form-group">
         <label class="form-label" for="nueva">Nueva Contraseña</label>
-        <input type="password" class="form-control" id="nueva" name="nueva" placeholder="Ingresa tu nueva contraseña" required>
+        {{ password_form.nueva(class="form-control", placeholder="Mínimo 6 caracteres") }}
       </div>
 
       <div class="form-group">
         <label class="form-label" for="confirmar">Confirmar Contraseña</label>
-        <input type="password" class="form-control" id="confirmar" name="confirmar" placeholder="Confirma tu nueva contraseña" required>
+        {{ password_form.confirmar(class="form-control", placeholder="Repite la nueva contraseña") }}
       </div>
 
-      <!-- El 'name' y 'value' ayudan a identificar qué formulario se envió -->
+      <!-- El 'name' y 'value' ayudan a identificar qué formulario se envió en el backend -->
       <button type="submit" name="submit_password" value="1" class="btn btn-primary" onclick="return validarContrasenas()">
         <i class="fas fa-key"></i> Actualizar Contraseña
       </button>
@@ -100,20 +92,23 @@
   <!-- Información de cuenta -->
   <div class="settings-section">
     <h4><i class="fas fa-info-circle"></i> Información de tu Cuenta</h4>
-
-    <div class="form-row">
+    <div class="form-row account-info">
       <div>
-        <p><strong>Usuario:</strong> {{ session['usuario'] }}</p>
+        <p><strong>Usuario:</strong> {{ current_user.username }}</p>
       </div>
       <div>
-        <p><strong>Nombre:</strong> {{ session['nombre'] }}</p>
+        <p><strong>Rol:</strong> <span class="badge bg-primary">{{ current_user.rol.capitalize() }}</span></p>
       </div>
     </div>
 
     <div class="account-footer">
-      <p style="color: #999; font-size: 0.9em;">
-        <i class="fas fa-clock"></i> Última sesión: <strong>Hoy</strong>
+      <p>
+        <i class="fas fa-clock"></i> Miembro desde: <strong>{{ current_user.fecha_creacion.strftime('%d de %B de %Y') }}</strong>
       </p>
+    </div>
+
+    <div class="mt-4 text-center">
+      <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
     </div>
   </div>
 
@@ -121,8 +116,8 @@
 
 <script>
   function validarContrasenas() {
-    const nueva = document.getElementById('nueva').value;
-    const confirmar = document.getElementById('confirmar').value;
+    const nueva = document.getElementById('nueva_contrasena').value;
+    const confirmar = document.getElementById('confirmar_contrasena').value;
 
     if (nueva !== confirmar) {
       alert('Las contraseñas no coinciden. Por favor, verifica.');
