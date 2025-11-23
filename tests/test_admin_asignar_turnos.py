@@ -30,12 +30,26 @@ class AdminAsignarTurnosTest(TestCase):
             class DummyUser:
                 def __init__(self):
                     self.admin = False
+                    self._id = "dummy_user_id"
+                    self._username = "dummy_username"
+                    self._nombre = "Dummy User"
                 def is_active(self):
                     return True
                 def is_authenticated(self):
                     return True
                 def get_id(self):
-                    return "dummy_user_id"
+                    return self._id
+                def is_admin(self):
+                    return False
+                @property
+                def id(self):
+                    return self._id
+                @property
+                def username(self):
+                    return self._username
+                @property
+                def nombre(self):
+                    return self._nombre
 
 
             login_user(DummyUser())
@@ -53,12 +67,26 @@ class AdminAsignarTurnosTest(TestCase):
             class DummyAdminUser:
                 def __init__(self):
                     self.admin = True
+                    self._id = "dummy_admin_user_id"
+                    self._username = "dummy_admin_username"
+                    self._nombre = "Dummy Admin"
                 def is_active(self):
                     return True
                 def is_authenticated(self):
                     return True
                 def get_id(self):
-                    return "dummy_admin_user_id"
+                    return self._id
+                def is_admin(self):
+                    return True
+                @property
+                def id(self):
+                    return self._id
+                @property
+                def username(self):
+                    return self._username
+                @property
+                def nombre(self):
+                    return self._nombre
 
             login_user(DummyAdminUser())
             response = self.client.get('/admin/asignar_turnos')
@@ -74,13 +102,16 @@ class AdminAsignarTurnosTest(TestCase):
             class DummyAdminUser:
                 def __init__(self):
                     self.admin = True
+                    self._username = "dummy_admin_username"
                 def is_active(self):
                     return True
                 def is_authenticated(self):
                     return True
                 def get_id(self):
                     return "dummy_admin_user_id"
-
+                @property
+                def username(self):
+                    return self._username
 
             login_user(DummyAdminUser())
             response = self.client.get('/admin/asignar_turnos?mes=1&ano=2024')

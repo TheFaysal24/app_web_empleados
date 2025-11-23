@@ -58,7 +58,7 @@ app = Flask(__name__, template_folder='Templates')
 
 # Configuración de SECRET_KEY robusta (Fallback seguro)
 SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback_secret_key_para_emergencias')
-app.secret_key = SECRET_KEY
+app.config['SECRET_KEY'] = SECRET_KEY
 
 # Registrar filtro Jinja2 para convertir string a datetime
 import datetime as dtclass
@@ -70,6 +70,15 @@ def todatetime(value, format="%Y-%m-%d"):
         return None
 
 app.jinja_env.filters['todatetime'] = todatetime
+
+def jinja2_strftime(value, format="%Y-%m-%d"):
+    """Jinja2 filter para dar formato a date/datetime usando strftime"""
+    if hasattr(value, 'strftime'):
+        return value.strftime(format)
+    return value
+
+app.jinja_env.filters['strftime'] = jinja2_strftime
+
 
 
 # Rate Limiting para proteger contra ataques de fuerza bruta
@@ -1819,7 +1828,6 @@ def admin_descargar_backup(nombre):
 
 # ✅ Seleccionar turno semanal
 @app.route('/seleccionar_turno', methods=['GET', 'POST'])
-@csrf.exempt
 def seleccionar_turno():
     if not current_user.is_authenticated:
         flash('Debes iniciar sesión primero', 'error')
@@ -2407,7 +2415,6 @@ def admin_asignar_turnos():
 
 # ✅ Asignar turno manual (Admin)
 @app.route('/admin/asignar_turno_manual', methods=['POST'])
-@csrf.exempt
 def admin_asignar_turno_manual():
     if not current_user.is_admin():
         flash('Acceso denegado', 'error')

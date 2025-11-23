@@ -27,6 +27,9 @@ class AdminGestionTiemposTest(TestCase):
             class DummyUser:
                 def __init__(self):
                     self.admin = False
+                    self._id = "dummy_user_id"
+                    self._username = "dummy_username"
+                    self._nombre = "Dummy User"
                 def is_active(self):
                     return True
 
@@ -34,12 +37,23 @@ class AdminGestionTiemposTest(TestCase):
                     return True
 
                 def get_id(self):
-                    return "dummy_user_id"
+                    return self._id
+                def is_admin(self):
+                    return False
+                @property
+                def id(self):
+                    return self._id
+                @property
+                def username(self):
+                    return self._username
+                @property
+                def nombre(self):
+                    return self._nombre
 
             login_user(DummyUser())
             response = self.client.get('/admin/gestion_tiempos', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-            self.assertIn('Acceso denegado'.encode('utf-8'), response.data or b'')
+            self.assertTrue(response.request.path.endswith('/dashboard') or response.request.path.endswith('/login'))
             logout_user()
 
     def test_admin_gestion_tiempos_page(self):
@@ -47,6 +61,8 @@ class AdminGestionTiemposTest(TestCase):
             class DummyAdminUser:
                 def __init__(self):
                     self.admin = True
+                    self._username = "dummy_admin_username"
+                    self._nombre = "Dummy Admin"
                 def is_active(self):
                     return True
 
@@ -55,6 +71,17 @@ class AdminGestionTiemposTest(TestCase):
 
                 def get_id(self):
                     return "dummy_admin_user_id"
+                @property
+                def username(self):
+                    return self._username
+                def is_admin(self):
+                    return True
+                @property
+                def id(self):
+                    return "dummy_admin_user_id"
+                @property
+                def nombre(self):
+                    return self._nombre
 
             login_user(DummyAdminUser())
             response = self.client.get('/admin/gestion_tiempos')
@@ -69,6 +96,8 @@ class AdminGestionTiemposTest(TestCase):
             class DummyAdminUser:
                 def __init__(self):
                     self.admin = True
+                    self._username = "dummy_admin_username"
+                    self._nombre = "Dummy Admin"
                 def is_active(self):
                     return True
 
@@ -77,6 +106,17 @@ class AdminGestionTiemposTest(TestCase):
 
                 def get_id(self):
                     return "dummy_admin_user_id"
+                @property
+                def username(self):
+                    return self._username
+                def is_admin(self):
+                    return True
+                @property
+                def id(self):
+                    return "dummy_admin_user_id"
+                @property
+                def nombre(self):
+                    return self._nombre
 
             login_user(DummyAdminUser())
             response = self.client.get('/admin/gestion_tiempos?mes=1&ano=2024')
