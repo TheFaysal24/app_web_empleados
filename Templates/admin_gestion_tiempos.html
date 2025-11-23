@@ -7,74 +7,86 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="fas fa-calendar-alt"></i> Gestión de Tiempos - {{ meses_nombres[mes] }} {{ ano }}</h2>
         <div>
-            <a href="{{ url_for('admin_gestion_tiempos', mes=mes-1 if mes > 1 else 12, ano=ano if mes > 1 else ano-1) }}" class="btn btn-outline-primary">
+            <a href="{{ url_for('admin_gestion_tiempos', mes=mes-1 if mes > 1 else 12, ano=ano if mes > 1 else ano-1) }}" class="btn btn-outline-primary btn-smaller btn-action">
                 <i class="fas fa-chevron-left"></i> Anterior
             </a>
-            <a href="{{ url_for('admin_gestion_tiempos', mes=mes+1 if mes < 12 else 1, ano=ano if mes < 12 else ano+1) }}" class="btn btn-outline-primary">
+            <a href="{{ url_for('admin_gestion_tiempos', mes=mes+1 if mes < 12 else 1, ano=ano if mes < 12 else ano+1) }}" class="btn btn-outline-primary btn-smaller btn-action">
                 Siguiente <i class="fas fa-chevron-right"></i>
             </a>
         </div>
     </div>
 
-    <!-- Acordeón de Semanas -->
-    <div class="accordion" id="accordionSemanas">
-        {% for nombre_semana, dias in calendario_semanal.items() %}
+    <div class="accordion" id="accordionMeses">
+        {# Aquí podría agregar soporte para múltiples meses si se provee un dict de meses #}
         <div class="accordion-item mb-3 border rounded shadow-sm">
-            <h2 class="accordion-header" id="heading{{ loop.index }}">
-                <button class="accordion-button collapsed p-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}" style="background: linear-gradient(to right, #f8f9fa, #e9ecef); color: #495057;">
-                    <i class="fas fa-calendar-week me-2 text-primary"></i> {{ nombre_semana }}
+            <h2 class="accordion-header" id="headingMes1">
+                <button class="accordion-button p-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMes1" aria-expanded="true" aria-controls="collapseMes1" style="background: linear-gradient(to right, #dee9ff, #b8d0ff); color: #0c63e4;">
+                    <i class="fas fa-calendar me-2"></i> {{ meses_nombres[mes] }} {{ ano }}
                 </button>
             </h2>
-            <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#accordionSemanas">
+            <div id="collapseMes1" class="accordion-collapse collapse show" aria-labelledby="headingMes1" data-bs-parent="#accordionMeses">
                 <div class="accordion-body p-0">
-                    <!-- Iterar por días dentro de la semana -->
-                    {% for fecha_str, registros in dias.items() %}
-                    <div class="p-3 border-bottom">
-                        <h5 class="text-primary mb-3"><i class="far fa-calendar-check me-2"></i>{{ fecha_str }}</h5>
-                        <div class="table-responsive">
-                            <table class="table table-hover table-sm align-middle">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Empleado</th>
-                                        <th>Turno Planificado</th>
-                                        <th>Entrada Real</th>
-                                        <th>Salida Real</th>
-                                        <th>Horas</th>
-                                        <th>Extras</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for reg in registros %}
-                                    <tr class="{{ 'table-warning' if not reg.tiene_registro and reg.planificado != '-' else '' }}">
-                                        <td class="fw-bold">{{ reg.nombre }}</td>
-                                        <td><span class="badge bg-info text-dark">{{ reg.planificado }}</span></td>
-                                        <td>{{ reg.inicio if reg.inicio else '-' }}</td>
-                                        <td>{{ reg.salida if reg.salida else '-' }}</td>
-                                        <td>{{ reg.horas }}h</td>
-                                        <td>
-                                            {% if reg.extras > 0 %}
-                                            <span class="badge bg-warning text-dark">{{ reg.extras }}h</span>
-                                            {% else %}
-                                            -
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <a href="{{ url_for('admin_editar_registro', usuario=reg.usuario, fecha=fecha_str) }}" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-edit"></i> {{ 'Editar' if reg.tiene_registro else 'Registrar' }}
-                                            </a>
-                                        </td>
-                                    </tr>
+                    <div class="accordion" id="accordionSemanas">
+                        {% for nombre_semana, dias in calendario_semanal.items() %}
+                        <div class="accordion-item mb-2 border rounded shadow-sm">
+                            <h2 class="accordion-header" id="headingSemana{{ loop.index }}">
+                                <button class="accordion-button collapsed p-2 fw-semibold btn-smaller btn-action" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSemana{{ loop.index }}" aria-expanded="false" aria-controls="collapseSemana{{ loop.index }}" style="background: linear-gradient(to right, #f0f4ff, #d9e4ff); color: #1a3b8f;">
+                                    <i class="fas fa-calendar-week me-2 text-primary"></i> {{ nombre_semana }}
+                                </button>
+                            </h2>
+                            <div id="collapseSemana{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="headingSemana{{ loop.index }}" data-bs-parent="#accordionSemanas">
+                                <div class="accordion-body p-0">
+                                    {% for fecha_str, registros in dias.items() %}
+                                    <div class="p-3 border-bottom">
+                                        <h5 class="text-primary mb-3"><i class="far fa-calendar-check me-2"></i>{{ fecha_str }}</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-hover table-sm align-middle">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Empleado</th>
+                                                        <th>Turno Planificado</th>
+                                                        <th>Entrada Real</th>
+                                                        <th>Salida Real</th>
+                                                        <th>Horas</th>
+                                                        <th>Extras</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for reg in registros %}
+                                                    <tr class="{{ 'table-warning' if not reg.tiene_registro and reg.planificado != '-' else '' }}">
+                                                        <td class="fw-bold">{{ reg.nombre }}</td>
+                                                        <td><span class="badge bg-info text-dark">{{ reg.planificado }}</span></td>
+                                                        <td>{{ reg.inicio if reg.inicio else '-' }}</td>
+                                                        <td>{{ reg.salida if reg.salida else '-' }}</td>
+                                                        <td>{{ reg.horas }}h</td>
+                                                        <td>
+                                                            {% if reg.extras > 0 %}
+                                                            <span class="badge bg-warning text-dark">{{ reg.extras }}h</span>
+                                                            {% else %}
+                                                            -
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            <a href="{{ url_for('admin_editar_registro', usuario=reg.usuario, fecha=fecha_str) }}" class="btn btn-sm btn-outline-primary btn-smaller btn-action">
+                                                                <i class="fas fa-edit"></i> {{ 'Editar' if reg.tiene_registro else 'Registrar' }}
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                     {% endfor %}
-                                </tbody>
-                            </table>
+                                </div>
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
-        {% endfor %}
     </div>
 
     <!-- Resumen Mensual -->
@@ -117,6 +129,13 @@
     .accordion-button:focus {
         box-shadow: none;
         border-color: rgba(0,0,0,.125);
+    }
+    .btn-smaller {
+        padding: 6px 12px !important;
+        font-size: 0.875rem !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
     }
 </style>
 {% endblock %}

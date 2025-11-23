@@ -49,6 +49,25 @@
             background-color: #f9f9f9;
             font-weight: bold;
         }
+        /* para que los botones sean más pequeños y de colores consistentes */
+        .btn-smaller {
+            padding: 6px 12px !important;
+            font-size: 0.875rem !important;
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+        .btn-action {
+            background: linear-gradient(to right, #2563eb, #4f46e5) !important;
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 6px 18px rgba(59, 130, 246, 0.6) !important;
+        }
+        .btn-action:hover {
+            background: linear-gradient(to right, #1e40af, #4338ca) !important;
+            box-shadow: 0 10px 28px rgba(67, 56, 202, 0.8) !important;
+            transform: translateY(-4px);
+        }
     </style>
 </head>
 <body>
@@ -56,10 +75,10 @@
     <p>Mes: {{ meses_nombres.get(mes, 'Desconocido') }} {{ ano }}</p>
 
     {% for mes_ano, data_mes in meses.items() %}
-        <button class="accordion">{{ meses_nombres.get(data_mes.mes, 'Desconocido') }} {{ data_mes.ano }}</button>
+        <button class="accordion btn-smaller btn-action">{{ meses_nombres.get(data_mes.mes, 'Desconocido') }} {{ data_mes.ano }}</button>
         <div class="panel">
             {% for nombre_semana, semanas_data in data_mes.semanas.items() %}
-                <button class="accordion">{{ nombre_semana }}</button>
+                <button class="accordion btn-smaller btn-action">{{ nombre_semana }}</button>
                 <div class="panel">
                     <table>
                         <thead>
