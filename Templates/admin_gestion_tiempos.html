@@ -243,100 +243,37 @@
     <div>Usuarios activos: {{ stats.gestores_activos if stats.gestores_activos is defined else 'N/A' }}</div>
     <div>Turnos libres: {{ stats.turnos_disponibles if stats.turnos_disponibles is defined else 'N/A' }}</div>
   </div>
-  
-  <!-- Contenedor meses (acordeón nivel 1) -->
-  {% for mes_ano_key, mes_data in meses.items() %}
-  <div class="month-card">
-    <div class="month-header accordion-header" tabindex="0">
-      <span>{{ meses_nombres[mes_data.mes] }} {{ mes_data.ano }}</span>
-      <i class="fas fa-chevron-right"></i>
+
+  <!-- Nuevo panel resumen uso turnos por usuario -->
+  <div class="stats-summary" style="margin-top: 40px;">
+    <div style="flex-basis: 100%; font-size: 1.5em; font-weight: 700; color: #2563eb; margin-bottom: 15px;">
+      Resumen Uso de Turnos por Usuario
     </div>
-    <div class="accordion-content">
-      <!-- Semanas dentro del mes (acordeón nivel 2) -->
-      {% for semana_nombre, dias in mes_data.semanas.items() %}
-      <div class="week-card">
-        <div class="week-header accordion-header" tabindex="0">
-          <span>{{ semana_nombre }}</span>
-          <i class="fas fa-chevron-right"></i>
+    {% if resumen_uso_turnos %}
+      {% for usuario, resumen in resumen_uso_turnos.items() %}
+        <div>
+          <strong>{{ usuario }}</strong><br>
+          Turnos usados: {{ resumen.turnos_usados }}<br>
+          Horas extras: {{ resumen.horas_extras }}h
+          {% if admin %}
+          <br>Costos asociados: ${{ "{:,.0f}".format(resumen.costos) }}
+          {% endif %}
         </div>
-        <div class="accordion-content">
-          <!-- Días dentro de la semana (acordeón nivel 3) -->
-          {% for fecha_str, datos_usuarios in dias.items() %}
-          <div class="fecha-card">
-            <div class="fecha-header accordion-header" tabindex="0" style="font-size:1.1em;">
-              <i class="fas fa-calendar-day"></i> {{ fecha_str }}
-              <i class="fas fa-chevron-right" style="margin-left:auto;"></i>
-            </div>
-            <div class="accordion-content">
-              <div style="overflow-x: auto;">
-                <table class="tiempos-table">
-                  <thead>
-                    <tr>
-                      <th>Usuario</th>
-                      <th>Turno Planificado</th>
-                      <th>Hora Inicio</th>
-                      <th>Hora Salida</th>
-                      <th>Horas Calc.</th>
-                      <th>Extras</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for data in datos_usuarios %}
-                    <tr id="row-{{ data.usuario_id }}-{{ fecha_str }}" style="{{ 'background-color: #fff7ed;' if not data.tiene_registro else '' }}">
-                      <form method="POST" action="{{ url_for('admin_editar_registro') }}">
-                        <input type="hidden" name="usuario" value="{{ data.usuario }}">
-                        <input type="hidden" name="fecha" value="{{ fecha_str }}">
-                        
-                        <td>
-                          <div style="font-weight:600; color:#4b5563;">{{ data.nombre }}</div>
-                          <div style="font-size:0.8em; color:#9ca3af;">{{ data.usuario }}</div>
-                        </td>
-                        <td>
-                          <span class="badge-horas" style="background:#f3f4f6; color:#4b5563;">
-                            {{ data.planificado }}
-                          </span>
-                        </td>
-                        <td>
-                          <input type="time" name="inicio" value="{{ data.inicio }}" class="input-time" {% if not data.tiene_registro %}placeholder="--:--"{% endif %}>
-                        </td>
-                        <td>
-                          <input type="time" name="salida" value="{{ data.salida }}" class="input-time">
-                        </td>
-                        <td>
-                          <span class="badge-horas">{{ data.horas }}h</span>
-                        </td>
-                        <td>
-                          <span class="badge-extras">{{ data.extras }}h</span>
-                        </td>
-                        <td>
-                          <button type="submit" class="btn-save-row" title="{{ 'Crear registro' if not data.tiene_registro else 'Actualizar registro' }}">
-                            <i class="fas fa-{{ 'plus-circle' if not data.tiene_registro else 'save' }}"></i> 
-                            {{ 'Crear' if not data.tiene_registro else 'Guardar' }}
-                          </button>
-                        </td>
-                      </form>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
       {% endfor %}
-    </div>
+    {% else %}
+      <div>No hay datos de uso.</div>
+    {% endif %}
   </div>
-  {% endfor %}
 
   <!-- Gráficos (espacio reservado) -->
-  <div class="charts-container">
-    <h3 style="color:#2563eb; font-weight: 700;">Gráficos de Tiempos & Turnos</h3>
+  <div class="charts-container" style="margin-top: 50px;">
+    <h3 style="color:#2563eb; font-weight: 700;">Gráficos de Horas Extras por Usuario</h3>
     <canvas id="horasMensualesChart" width="900" height="400"></canvas>
+    <canvas id="extraHorasDiarioChart" width="900" height="300"></canvas>
+    <canvas id="extraHorasSemanalChart" width="900" height="300" style="margin-top: 30px;"></canvas>
+    <canvas id="extraHorasMensualChart" width="900" height="300" style="margin-top: 30px;"></canvas>
   </div>
-
+ 
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -402,6 +339,86 @@
         }
       },
     });
+
+    // Gráficos de Horas Extras por usuario
+    const ctxDiario = document.getElementById('extraHorasDiarioChart').getContext('2d');
+    const ctxSemanal = document.getElementById('extraHorasSemanalChart').getContext('2d');
+    const ctxMensual = document.getElementById('extraHorasMensualChart').getContext('2d');
+
+    const extraHorasDiarioData = {
+      labels: {{ extra_horas.diario.labels|default([])|tojson }},
+      datasets: [{
+        label: 'Horas Extras Diarias',
+        data: {{ extra_horas.diario.data|default([])|tojson }},
+        backgroundColor: 'rgba(220, 38, 38, 0.7)',
+        borderColor: 'rgba(220, 38, 38, 1)',
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    };
+    const extraHorasSemanalData = {
+      labels: {{ extra_horas.semanal.labels|default([])|tojson }},
+      datasets: [{
+        label: 'Horas Extras Semanales',
+        data: {{ extra_horas.semanal.data|default([])|tojson }},
+        backgroundColor: 'rgba(159, 122, 234, 0.7)',
+        borderColor: 'rgba(159, 122, 234, 1)',
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    };
+    const extraHorasMensualData = {
+      labels: {{ extra_horas.mensual.labels|default([])|tojson }},
+      datasets: [{
+        label: 'Horas Extras Mensuales',
+        data: {{ extra_horas.mensual.data|default([])|tojson }},
+        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    };
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        tooltip: {
+          enabled: true
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Horas Extras'
+          }
+        }
+      }
+    };
+
+    new Chart(ctxDiario, {
+      type: 'bar',
+      data: extraHorasDiarioData,
+      options: options
+    });
+    new Chart(ctxSemanal, {
+      type: 'bar',
+      data: extraHorasSemanalData,
+      options: options
+    });
+    new Chart(ctxMensual, {
+      type: 'bar',
+      data: extraHorasMensualData,
+      options: options
+    });
+
   });
 </script>
 

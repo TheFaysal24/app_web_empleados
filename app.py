@@ -2146,13 +2146,111 @@ def admin_gestion_tiempos():
                 'tiene_registro': real_row is not None
             })
 
+    # --- NUEVO: Agregar resumen de uso de turnos por usuario ---
+    resumen_uso = []
+    salario_minimo = 1384308
+    valor_hora_ordinaria = salario_minimo / (30 * 8)
+
+    for usuario in usuarios_activos:
+        user_id = usuario['id']
+        cursor.execute("""
+            SELECT COUNT(*) as total_turnos, SUM(ra.horas_extras) as total_extras
+            FROM turnos_asignados ta
+            LEFT JOIN registros_asistencia ra ON ta.id_usuario = ra.id_usuario AND ta.fecha_asignacion = ra.fecha
+            WHERE ta.id_usuario = %s AND EXTRACT(YEAR FROM ta.fecha_asignacion) = %s AND EXTRACT(MONTH FROM ta.fecha_asignacion) = %s
+        """, (user_id, ano, mes))
+        uso_data = cursor.fetchone()
+        total_turnos = uso_data['total_turnos'] or 0
+        total_extras = float(uso_data['total_extras'] or 0)
+        costo_extras = 0
+        try:
+            # Multiplicador y costo de horas extras aproximado según día de semana
+            cursor.execute("""
+                SELECT SUM(
+                    CASE 
+                        WHEN EXTRACT(DOW FROM fecha_asignacion) IN (6) THEN horas_extras * 1.75
+                        WHEN EXTRACT(DOW FROM fecha_asignacion) IN (0) THEN horas_extras * 2.0
+                        ELSE horas_extras * 1.25
+                    END
+                ) as costo_ajustado
+                FROM turnos_asignados ta
+                LEFT JOIN registros_asistencia ra ON ta.id_usuario = ra.id_usuario AND ta.fecha_asignacion = ra.fecha
+                WHERE ta.id_usuario = %s AND EXTRACT(YEAR FROM ta.fecha_asignacion) = %s AND EXTRACT(MONTH FROM ta.fecha_asignacion) = %s
+            """, (user_id, ano, mes))
+            costo_ajustado = cursor.fetchone()['costo_ajustado'] or 0
+            costo_extras = costo_ajustado * valor_hora_ordinaria
+        except Exception:
+            pass
+
+        resumen_uso.append({
+            'usuario': usuario['username'],
+            'nombre': usuario['nombre'],
+            'total_turnos': total_turnos,
+            'total_extras': round(total_extras, 2),
+            'costo_extras': round(costo_extras, 2)
+        })
+
+    # --- NUEVO: Datos para gráficos de horas extras ---
+    extra_horas = {
+        'diario': {'labels': [], 'data': []},
+        'semanal': {'labels': [], 'data': []},
+        'mensual': {'labels': [], 'data': []}
+    }
+
+    # Datos diarios (últimos 7 días)
+    cursor.execute("""
+        SELECT fecha, SUM(horas_extras) as total_extras
+        FROM registros_asistencia
+        WHERE fecha BETWEEN %s AND %s
+        GROUP BY fecha ORDER BY fecha
+    """, (hoy - datetime.timedelta(days=7), hoy))
+    diarios = cursor.fetchall()
+    for row in diarios:
+        extra_horas['diario']['labels'].append(row['fecha'].isoformat())
+        extra_horas['diario']['data'].append(float(row['total_extras'] or 0))
+
+    # Datos semanales (últimas 6 semanas)
+    semana_ayear_ago = (hoy - datetime.timedelta(weeks=6)).isocalendar()
+    ano_ayear = semana_ayear_ago[0]
+    semana_ayear = semana_ayear_ago[1]
+
+    cursor.execute("""
+        SELECT EXTRACT(YEAR FROM fecha) as ano, EXTRACT(WEEK FROM fecha) as semana, SUM(horas_extras) as total_extras
+        FROM registros_asistencia
+        WHERE fecha >= %s
+        GROUP BY ano, semana
+        ORDER BY ano, semana
+    """, (hoy - datetime.timedelta(weeks=6),))
+    semanas = cursor.fetchall()
+    for row in semanas:
+        etiqueta_semana = f"Año {int(row['ano'])} Semana {int(row['semana'])}"
+        extra_horas['semanal']['labels'].append(etiqueta_semana)
+        extra_horas['semanal']['data'].append(float(row['total_extras'] or 0))
+
+    # Datos mensuales (últimos 6 meses)
+    ano_mes_inicio = (hoy.replace(day=1) - datetime.timedelta(days=180))
+    cursor.execute("""
+        SELECT EXTRACT(YEAR FROM fecha) as ano, EXTRACT(MONTH FROM fecha) as mes, SUM(horas_extras) as total_extras
+        FROM registros_asistencia
+        WHERE fecha >= %s
+        GROUP BY ano, mes
+        ORDER BY ano, mes
+    """, (ano_mes_inicio,))
+    meses_extras = cursor.fetchall()
+    for row in meses_extras:
+        etiqueta_mes = f"{int(row['ano'])}-{int(row['mes']):02d}"
+        extra_horas['mensual']['labels'].append(etiqueta_mes)
+        extra_horas['mensual']['data'].append(float(row['total_extras'] or 0))
+
     cursor.close()
     conn.close()
 
-    return render_template('admin_gestion_tiempos.html', 
+    return render_template('admin_gestion_tiempos.html',
                          meses=meses,
                          mes=mes, ano=ano,
-                         meses_nombres={1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'})
+                         meses_nombres={1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'},
+                         resumen_uso=resumen_uso,
+                         extra_horas=extra_horas)
 
 # ✅ Eliminar turno
 @app.route('/eliminar_turno', methods=['POST'])

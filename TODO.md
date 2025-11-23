@@ -1,73 +1,32 @@
-# Plan de mejoras para Gestión y Asignación de Turnos con UI Jerárquica y Gráficos
+# TODO - Mejoras para admin_gestion_tiempos (resumen uso turnos y gráficos extras)
 
-## Objetivo
-Desarrollar un sistema completo para:
-- Visualizar gestión de tiempos (turnos y registros) por mes, semana, día en UI acordeón.
-- Asignar turnos sin sobreescribir, manteniendo registro histórico (bitácora).
-- Mostrar resúmenes tabulares y visuales (gráficos) con horas trabajadas y extras.
-- Mejorar estética con colores elegantes, botones pequeños y cómodos.
-- Permitir usuarios ver sus propios turnos, tiempos y estadísticas gráficas.
+## Paso 1: Analizar función admin_gestion_tiempos en app.py
+- Revisar lógica actual de agregación y armado de estructura de datos `meses`.
+- Identificar puntos para agregar nuevos cálculos y variables para la plantilla.
 
-## Información Relevante
-- Se corrigió bug de cambio de año en gestión de tiempos (semanas 0 ó negativas).
-- Actualmente gestión de tiempos con UI acordeón meses-semanas-días ya funciona.
-- Nuevo módulo asignar turnos debe tener estructura jerárquica similar con visualización histórica.
-- Usuarios necesitan dashboard personal con historial y gráficos.
+## Paso 2: Agregar resumen uso de turnos por usuario
+- Consultar en la base de datos los turnos usados por cada usuario activo en el mes seleccionado.
+- Calcular para cada usuario:
+  - Cantidad total de turnos usados.
+  - Horas extras totales acumuladas.
+  - Costo asociado a las horas extras.
+- Preparar estructura para renderizar en el nuevo panel "Resumen Uso de Turnos por Usuario".
 
-## Plan de Desarrollo
+## Paso 3: Agregar datos para gráficos de horas extras
+- Agregar consultas para obtener horas extras diarias agrupadas por usuario.
+- Agregar consultas para horas extras semanales y mensuales agregadas.
+- Formatear cada conjunto en formato JSON con labels (fechas o semanas) y data (horas).
+- Empaquetar en variable `extra_horas` con claves `diario`, `semanal`, `mensual`.
 
-### 1. Backend
-- Modificar/Crear APIs para:
-  - Obtener registros históricos sin sobrescribir.
-  - Insertar asignaciones sin borrar previas.
-  - Agregar datos agregados para resumen de turnos y horas.
-- Añadir vistas Flask para:
-  - /admin/asignar_turnos con vista jerárquica (mes, semana, día).
-  - /usuario/turnos para vista personal del usuario con gráficos.
-- Crear modelos o funciones para consultas agregadas (resúmenes por usuario).
+## Paso 4: Modificar llamada a render_template en admin_gestion_tiempos para incluir:
+- `resumen_uso` como resumen por usuario.
+- `extra_horas` con datos para los 3 gráficos.
 
-### 2. Frontend (Plantillas y Estilos)
-- Actualizar Templates:
-  - Templates/admin_asignar_turnos.html con acordeón mes-semana-día, tabla resumen y controls para asignar.
-  - Templates/usuario_turnos.html con tablas y gráficos (Chart.js o similar).
-- Añadir CSS:
-  - Botones más pequeños, colores en degradado o pastel, con estilos consistentes !important.
-  - Mejorar separación y espacio visual para menos empacado.
-- Añadir JS:
-  - Funcionalidad acordeón (expandir/colapsar secciones).
-  - Scripts para gráficos dinámicos.
-  - Funcionalidades para añadir registros sin reemplazar (bitácora).
-
-### 3. Gráficos y Visualización
-- Implementar gráficos con librería JS (Chart.js preferida):
-  - Horas trabajadas y extras por mes/semanas.
-  - Turnos usados vs disponibles.
-- Estilizar gráficos con colores armónicos y contrastes suaves.
-- Agregar leyendas y tooltips claros.
-
-### 4. UX/UI para Usuarios y Admin
-- Interfaces limpias, botones accesibles, tamaños reducidos.
-- Navegación intuitiva por períodos temporales.
-- Feedback visual para acciones (guardado, error).
-- Histórico con posibilidad de filtrar o buscar.
-
-## Archivos a Editar o Crear
-- app.py (vistas, lógica backend)
-- Templates/admin_asignar_turnos.html (nueva)
-- Templates/usuario_turnos.html (nueva)
-- Templates/admin_gestion_tiempos.html (posible ajustes)
-- static/css/custom_styles.css (u otro para estilos nuevos)
-- static/js/turnos.js (scripts nuevos)
-- requirements.txt (añadir Chart.js CDN o dependencias frontend)
-
-## Pasos Seguimiento
-- Implementar backend APIs y vistas preliminares.
-- Crear plantillas HTML con UI acordeón básica.
-- Incorporar gráficos estáticos y luego dinámicos.
-- Ajustar estilos y comportamiento interactivo.
-- Test funcional y visual.
-- Documentar instrucciones para usuario y admin.
+## Paso 5: Probar la integración y validar que los datos aparecen correctamente en:
+- Nuevo panel debajo del resumen principal.
+- Gráficos de barras diarios, semanales y mensuales.
 
 ---
 
-¿Confirmas el plan para proceder con la implementación de estos cambios ampliados y visualmente mejorados?
+# Próximos pasos
+- Solicitar confirmación del plan para continuar con la implementación.
