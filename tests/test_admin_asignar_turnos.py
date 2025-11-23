@@ -28,14 +28,15 @@ class AdminAsignarTurnosTest(TestCase):
         with self.client:
             # Simulate a non-admin user login by patching is_admin method
             class DummyUser:
+                def __init__(self):
+                    self.admin = False
                 def is_active(self):
                     return True
                 def is_authenticated(self):
                     return True
-                def is_admin(self):
-                    return False
                 def get_id(self):
                     return "dummy_user_id"
+
 
             login_user(DummyUser())
             response = self.client.get('/admin/asignar_turnos')
@@ -50,11 +51,11 @@ class AdminAsignarTurnosTest(TestCase):
         """Test rendering of admin asignar turnos page for admin user"""
         with self.client:
             class DummyAdminUser:
+                def __init__(self):
+                    self.admin = True
                 def is_active(self):
                     return True
                 def is_authenticated(self):
-                    return True
-                def is_admin(self):
                     return True
                 def get_id(self):
                     return "dummy_admin_user_id"
@@ -71,14 +72,15 @@ class AdminAsignarTurnosTest(TestCase):
         """Test the page with specific month and year parameters"""
         with self.client:
             class DummyAdminUser:
+                def __init__(self):
+                    self.admin = True
                 def is_active(self):
                     return True
                 def is_authenticated(self):
                     return True
-                def is_admin(self):
-                    return True
                 def get_id(self):
                     return "dummy_admin_user_id"
+
 
             login_user(DummyAdminUser())
             response = self.client.get('/admin/asignar_turnos?mes=1&ano=2024')

@@ -25,14 +25,13 @@ class AdminGestionTiemposTest(TestCase):
     def test_access_denied_for_non_admin(self):
         with self.client:
             class DummyUser:
+                def __init__(self):
+                    self.admin = False
                 def is_active(self):
                     return True
 
                 def is_authenticated(self):
                     return True
-
-                def is_admin(self):
-                    return False
 
                 def get_id(self):
                     return "dummy_user_id"
@@ -46,13 +45,12 @@ class AdminGestionTiemposTest(TestCase):
     def test_admin_gestion_tiempos_page(self):
         with self.client:
             class DummyAdminUser:
+                def __init__(self):
+                    self.admin = True
                 def is_active(self):
                     return True
 
                 def is_authenticated(self):
-                    return True
-
-                def is_admin(self):
                     return True
 
                 def get_id(self):
@@ -69,13 +67,12 @@ class AdminGestionTiemposTest(TestCase):
     def test_page_parameters(self):
         with self.client:
             class DummyAdminUser:
+                def __init__(self):
+                    self.admin = True
                 def is_active(self):
                     return True
 
                 def is_authenticated(self):
-                    return True
-
-                def is_admin(self):
                     return True
 
                 def get_id(self):
