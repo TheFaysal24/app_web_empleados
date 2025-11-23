@@ -77,4 +77,8 @@ echo   2. git commit -m "Version final para despliegue"
 echo   3. git push origin main
 echo   4. git push heroku main
 echo.
+echo   NOTA: Si necesitas forzar la subida (con cuidado), usa:
+echo   git push origin main --force
+echo   git push heroku main --force
+echo.
 pause
