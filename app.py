@@ -798,6 +798,8 @@ def dashboard():
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
 
+    calendario_semanal_usuario = {}  # Definido para evitar error en dashboard.html
+
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -890,7 +892,7 @@ def dashboard():
         fechas_horas_db = cursor.fetchall()
         for fh in fechas_horas_db:
             fechas_horas[fh['fecha'].isoformat()] = float(fh['total_horas'])
-        
+
         fechas_ordenadas = sorted(fechas_horas.keys())
         horas_fechas = [fechas_horas.get(fecha, 0) for fecha in fechas_ordenadas]
         
@@ -1003,6 +1005,7 @@ def dashboard():
         turnos_semana_actual=turnos_semana_actual,
         turnos_usuarios=turnos_usuarios,  # ✅ NUEVO: Pasar turnos seleccionados
         fechas_semana_actual=fechas_semana_actual,
+        calendario_semanal_usuario=calendario_semanal_usuario,
         session=session,
         form=form  # ✅ Pasar el formulario a la plantilla
     )
