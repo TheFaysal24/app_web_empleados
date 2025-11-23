@@ -72,6 +72,7 @@
 </head>
 <body>
     <h1>Asignación de Turnos - Administración</h1>
+    <button class="btn-back" onclick="history.back()"><i class="fas fa-arrow-left"></i> Atrás</button>
     <p>Mes: {{ meses_nombres.get(mes, 'Desconocido') }} {{ ano }}</p>
 
     {% for mes_ano, data_mes in meses.items() %}
@@ -92,7 +93,6 @@
                         <tbody>
                             {% for dia_fecha in semanas_data.values() | first %}
                                 {% set usuarios = semanas_data.values() | map(attribute=0) | list %}
-                                {# Eliminado el tag break porque Jinja no lo soporta #}
                             {% endfor %}
                             {% for usuario_data in semanas_data.values() | list | first %}
                                 <tr>
@@ -122,7 +122,7 @@
     {% endfor %}
 
     <script>
-        // Script para manejar acordeón
+        // Script para manejar acordeones
         const acc = document.getElementsByClassName("accordion");
         for (let i = 0; i < acc.length; i++) {
             acc[i].addEventListener("click", function() {
