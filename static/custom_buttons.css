@@ -1,3 +1,4 @@
+
 .btn-action, .btn-turnos {
   background: linear-gradient(to right, #2563eb, #4f46e5) !important;
   color: white !important;
@@ -18,4 +19,50 @@
   background: linear-gradient(to right, #1e40af, #4338ca) !important;
   box-shadow: 0 10px 28px rgba(67, 56, 202, 0.8) !important;
   transform: translateY(-4px);
+}
+
+/* Botón Atrás */
+.btn-back {
+  background: #526488 !important;
+  color: #f5f7fa !important;
+  padding: 10px 26px !important;
+  border-radius: 25px !important;
+  font-weight: 700 !important;
+  font-size: 1.05em !important;
+  box-shadow: 0 6px 20px rgba(35, 82, 167, 0.35) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  cursor: pointer !important;
+  border: none !important;
+  transition: all 0.25s ease !important;
+}
+
+.btn-back:hover {
+  background: #345082 !important;
+  box-shadow: 0 8px 28px rgba(26, 45, 82, 0.7) !important;
+  transform: translateY(-3px);
+}
+
+/* Botón Dashboard */
+.btn-dashboard {
+  background: #2d72d9 !important;
+  color: white !important;
+  padding: 10px 28px !important;
+  border-radius: 25px !important;
+  font-weight: 700 !important;
+  font-size: 1.05em !important;
+  box-shadow: 0 6px 20px rgba(45, 114, 217, 0.45) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  cursor: pointer !important;
+  border: none !important;
+  transition: all 0.25s ease !important;
+}
+
+.btn-dashboard:hover {
+  background: #1b4daf !important;
+  box-shadow: 0 8px 28px rgba(27, 77, 175, 0.65) !important;
+  transform: translateY(-3px);
 }

@@ -1,7 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
+<<<<<<<
     <title>Asignación de Turnos - Administración</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
@@ -100,98 +97,116 @@
             gap: 12px;
         }
     </style>
-</head>
-<body>
-    <h1>Asignación de Turnos - Administración</h1>
-    <button class="btn-back" onclick="history.back()"><i class="fas fa-arrow-left"></i> Atrás</button>
-
-    <div class="month-selector">
-        <form method="get" action="{{ url_for('admin_asignar_turnos') }}" id="monthForm">
-            <button type="submit" name="mes" value="{{ mes - 1 if mes > 1 else 12 }}" formaction="{{ url_for('admin_asignar_turnos', mes=mes-1 if mes>1 else 12, ano=ano-1 if mes==1 else ano) }}" class="btn-smaller btn-action" title="Mes Anterior">&laquo;</button>
-            <select name="mes" onchange="document.getElementById('monthForm').submit()">
-                {% for num, name in meses_nombres.items() %}
-                    <option value="{{num}}" {% if num == mes %}selected{% endif %}>{{name}}</option>
-                {% endfor %}
-            </select>
-            <input type="number" name="ano" value="{{ ano }}" min="2000" max="2100" onchange="document.getElementById('monthForm').submit()" style="width:80px; border-radius:6px; padding:4px;">
-            <button type="submit" class="btn-smaller btn-action" title="Ir">Ir</button>
-            <button type="submit" name="mes" value="{{ mes + 1 if mes < 12 else 1 }}" formaction="{{ url_for('admin_asignar_turnos', mes=mes+1 if mes<12 else 1, ano=ano+1 if mes==12 else ano) }}" class="btn-smaller btn-action" title="Mes Siguiente">&raquo;</button>
-        </form>
-    </div>
-
-    <form method="post" action="{{ url_for('admin_asignar_turno_manual') }}">
-        {{ form.csrf_token }}
-        {% for mes_ano, data_mes in meses.items() %}
-            <button type="button" class="accordion btn-smaller btn-action">{{ meses_nombres.get(data_mes.mes, 'Desconocido') }} {{ data_mes.ano }}</button>
-            <div class="panel">
-                {% for nombre_semana, semanas_data in data_mes.semanas.items() %}
-                    <button type="button" class="accordion btn-smaller btn-action">{{ nombre_semana }}</button>
-                    <div class="panel">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Usuario</th>
-                                    {% for fecha_str in semanas_data.keys() %}
-                                        <th>{{ fecha_str }}</th>
-                                    {% endfor %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for usuario_data in semanas_data.values() | list | first %}
-                                    <tr>
-                                        <td class="usuario-row">{{ usuario_data.nombre }} <small>({{ usuario_data.usuario }})</small></td>
-                                        {% for fecha_str, lista_usuarios in semanas_data.items() %}
-                                            {% set usuario_match = lista_usuarios | selectattr("usuario", "equalto", usuario_data.usuario) | list %}
-                                            <td>
-                                                {% if usuario_match %}
-                                                    {% set user_turno = usuario_match[0] %}
-                                                    {% set dia_semana = fecha_str | todatetime | strftime("%A") | lower %}
-                                                    {% if turno_disponibles.get(dia_semana) %}
-                                                        <select name="turno_{{ usuario_data.usuario }}_{{ fecha_str }}" class="turno-select">
-                                                            <option value="">-</option>
-                                                            {% for hora_opcion in turno_disponibles.get(dia_semana) %}
-                                                                {% set selected = "" %}
-                                                                {% if user_turno.turnos | selectattr('hora', 'equalto', hora_opcion) | list %}
-                                                                    {% set selected = "selected" %}
-                                                                {% endif %}
-                                                                <option value="{{ hora_opcion }}" {{ selected }}>{{ hora_opcion }}</option>
-                                                            {% endfor %}
-                                                        </select>
-                                                    {% else %}
-                                                        -
-                                                    {% endif %}
-                                                {% else %}
-                                                    -
-                                                {% endif %}
-                                            </td>
-                                        {% endfor %}
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endfor %}
-        <div style="text-align: center; margin-top: 15px;">
-            <button type="submit" class="btn-smaller btn-action">Guardar Cambios</button>
-        </div>
-    </form>
-
-    <script>
-        // Script para manejar acordeones
-        const acc = document.getElementsByClassName("accordion");
-        for (let i = 0; i < acc.length; i++) {
-            acc[i].addEventListener("click", function() {
-                this.classList.toggle("active");
-                let panel = this.nextElementSibling;
-                if (panel.style.maxHeight) {
-                    panel.style.maxHeight = null;
-                } else {
-                    panel.style.maxHeight = panel.scrollHeight + "px";
-                }
-            });
+=======
+    <title>Asignación de Turnos - Administración</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='custom_buttons.css') }}">
+    <style>
+        /* Nueva paleta elegante para acordeón y botones */
+        .accordion {
+            background-color: #fafafa;
+            color: #2c3e50;
+            cursor: pointer;
+            padding: 10px 15px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 17px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            margin-top: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(44, 62, 80, 0.1);
         }
-    </script>
-</body>
-</html>
+        .active, .accordion:hover {
+            background: linear-gradient(90deg, #4b79a1, #283e51);
+            color: white;
+            box-shadow: 0 10px 20px rgba(40, 62, 81, 0.5);
+        }
+        .panel {
+            padding: 12px 16px;
+            background-color: white;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 8px rgba(44, 62, 80, 0.1);
+            border: none;
+            margin-bottom: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 12px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(44, 62, 80, 0.1);
+        }
+        th, td {
+            border: 1px solid #e1e8f0;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+            min-width: 65px;
+        }
+        th {
+            background: linear-gradient(90deg, #283e51, #4b79a1);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            font-weight: 600;
+        }
+        .usuario-row {
+            background-color: #dbe9f4;
+            font-weight: 700;
+            white-space: nowrap;
+            position: sticky;
+            left: 0;
+            background-clip: padding-box;
+            color: #2c3e50;
+            z-index: 10;
+        }
+        select.turno-select {
+            width: 100%;
+            padding: 6px;
+            border-radius: 10px;
+            border: 1.5px solid #4b79a1;
+            font-size: 0.95rem;
+            cursor: pointer;
+            background-color: #f7fbff;
+            color: #283e51;
+            font-weight: 600;
+            transition: border-color 0.3s ease;
+        }
+        select.turno-select:hover, select.turno-select:focus {
+            border-color: #1f3a5a;
+            outline: none;
+            background-color: #e6f0fa;
+            color: #1f3a5a;
+        }
+        /* Contenedor para selector mes */
+        .month-selector {
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+        .month-selector select, .month-selector input[type="number"], .month-selector button {
+            border-radius: 20px !important;
+            padding: 10px 15px !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            border: 1.8px solid #4b79a1 !important;
+            color: #283e51 !important;
+            background-color: #f7fbff !important;
+            transition: border-color 0.3s ease;
+        }
+        .month-selector select:hover, .month-selector input[type="number"]:hover, .month-selector button:hover {
+            border-color: #1f3a5a !important;
+            background-color: #e6f0fa !important;
+            color: #1f3a5a !important;
+            cursor: pointer;
+        }
+    </style>
