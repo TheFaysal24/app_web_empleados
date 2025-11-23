@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_limiter import Limiter
+from flask_mail import Mail, Message
 from flask_limiter.util import get_remote_address
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect, CSRFError, generate_csrf
@@ -60,6 +61,16 @@ app = Flask(__name__, template_folder='Templates')
 # Configuración de SECRET_KEY robusta (Fallback seguro)
 SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback_secret_key_para_emergencias')
 app.config['SECRET_KEY'] = SECRET_KEY
+
+# ✅ NUEVO: Configuración de Flask-Mail desde variables de entorno
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.googlemail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() in ['true', 'on', '1']
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+
+mail = Mail(app)
 
 # Registrar filtro Jinja2 para convertir string a datetime
 import datetime as dtclass
@@ -1513,11 +1524,22 @@ def recuperar_contrasena():
                     "INSERT INTO reset_tokens (token, id_usuario, expira) VALUES (%s, %s, %s) ON CONFLICT (token) DO NOTHING",
                     (token, user_data['id'], expira.isoformat())
                 )
-                conn.commit()
-                send_password_reset_email(email, token)
-                if telefono:
-                    send_password_reset_sms(telefono, token)
-                flash('Se ha enviado un correo para restablecer la contraseña.', 'info')
+                if cursor.rowcount > 0:
+                    conn.commit()
+                    try:
+                        # ✅ CORRECCIÓN: Llamar a la función de envío de email que ahora sí existe
+                        send_password_reset_email(user_data, token)
+                        flash('Se ha enviado un correo para restablecer la contraseña.', 'info')
+                    except Exception as mail_error:
+                        flash('Error al enviar el correo. Verifica la configuración del servidor de correo.', 'error')
+                        logger.error(f"Error al enviar email de reseteo: {mail_error}")
+                else:
+                    conn.rollback()
+                    flash('No se pudo generar el token. Intenta de nuevo.', 'error')
+
+                # La funcionalidad de SMS requiere un servicio externo y no está implementada.
+                # if telefono:
+                #     send_password_reset_sms(telefono, token)
             except Exception as e:
                 flash(f'Error al generar token de restablecimiento: {e}', 'error')
                 logger.error(f"Error en recuperar_contrasena para {email}: {e}")
@@ -3283,6 +3305,27 @@ def importar_turnos_historicos():
         flash(msg, 'error')
 
     return redirect(url_for('admin_usuarios')) # Redirigir a la GESTIÓN DE USUARIOS para ver los registros
+
+# ✅ NUEVO: Función para enviar el correo de restablecimiento de contraseña
+def send_password_reset_email(user, token):
+    """
+    Construye y envía el correo electrónico para restablecer la contraseña.
+    """
+    try:
+        msg = Message('Restablecimiento de Contraseña - Sistema de Empleados',
+                      recipients=[user['correo']])
+        reset_url = url_for('resetear_clave', token=token, _external=True)
+        msg.body = f'''Hola {user['nombre']},
+
+Para restablecer tu contraseña, visita el siguiente enlace:
+{reset_url}
+
+Si no solicitaste este cambio, puedes ignorar este correo. El enlace expirará en 30 minutos.
+'''
+        mail.send(msg)
+    except Exception as e:
+        logger.error(f"Fallo al enviar correo a {user['correo']}: {e}")
+        raise e
 
 # -------------------
 # Ejecutar aplicación
