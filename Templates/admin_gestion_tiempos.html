@@ -36,40 +36,43 @@
   }
 
   .btn-nav {
-    background: white;
-    border: 1px solid #e5e7eb;
-    color: #374151;
-    padding: 8px 12px;
-    border-radius: 8px;
+    background: #2563eb !important; /* azul más vivo */
+    border: none !important;
+    color: white !important;
+    padding: 12px 20px !important;
+    border-radius: 10px !important;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    font-weight: 700;
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
     text-decoration: none;
-    font-weight: 600;
   }
 
   .btn-nav:hover {
-    background: #667eea;
-    color: white;
-    border-color: #667eea;
+    background: #1e40af !important; /* azul más oscuro */
+    box-shadow: 0 6px 12px rgba(30, 64, 175, 0.6);
   }
 
-  .fecha-card {
+  .fecha-card, .week-card, .month-card {
     background: white;
     border-radius: 15px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     overflow: hidden;
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
   }
 
-  .fecha-header {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+  .fecha-header, .week-header, .month-header {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
     color: white;
     padding: 15px 25px;
-    font-size: 1.2em;
+    font-size: 1.4em;
     font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 15px 15px 0 0;
   }
 
   .tiempos-table {
@@ -78,72 +81,137 @@
   }
 
   .tiempos-table th {
-    background: #f9fafb;
-    padding: 12px 15px;
+    background: #e0e7ff; /* azul claro */
+    padding: 14px 18px;
     text-align: left;
-    font-size: 0.9em;
-    color: #6b7280;
+    font-size: 1em;
+    color: #3730a3;
     text-transform: uppercase;
-    font-weight: 600;
+    font-weight: 700;
+    border-bottom: 2px solid #4338ca;
   }
 
   .tiempos-table td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 14px 18px;
+    border-bottom: 1px solid #e0e7ff;
     vertical-align: middle;
+    font-size: 0.95em;
+    color: #4b5563;
   }
 
   .input-time {
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 0.95em;
-    width: 110px;
-    transition: border-color 0.2s;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 1em;
+    width: 130px;
+    transition: border-color 0.3s ease;
   }
 
   .input-time:focus {
-    border-color: #667eea;
+    border-color: #2563eb;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
   }
 
   .badge-horas {
     background: #dbeafe;
     color: #1e40af;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.9em;
+    padding: 6px 14px;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 1em;
   }
 
   .badge-extras {
     background: #fef3c7;
     color: #92400e;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.9em;
+    padding: 6px 14px;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 1em;
   }
 
   .btn-save-row {
-    background: linear-gradient(135deg, #10b981, #34d399);
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.9em;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: transform 0.2s;
+    background: linear-gradient(135deg, #10b981, #34d399) !important;
+    color: white !important;
+    border: none !important;
+    padding: 12px 24px !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    font-size: 1em !important;
+    font-weight: 800 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    transition: transform 0.3s ease;
+    box-shadow: 0 6px 14px rgba(16, 185, 129, 0.4);
   }
 
   .btn-save-row:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5);
+  }
+
+  /* Acordeón: ocultar contenido por defecto */
+  .accordion-content {
+    display: none;
+    padding: 12px 24px;
+    animation: fadein 0.45s ease-in-out;
+  }
+
+  .accordion-content.active {
+    display: block;
+  }
+
+  /* Animación */
+  @keyframes fadein {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+
+  /* Icono de flecha para acordeón */
+  .accordion-header i {
+    transition: transform 0.3s ease;
+    font-size: 1.5em;
+  }
+
+  .accordion-header.active i {
+    transform: rotate(90deg);
+  }
+  .rotate {
+    transform: rotate(90deg);
+  }
+
+  /* Estilo para resumen estadístico */
+  .stats-summary {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgb(0 0 0 / 0.1);
+    padding: 20px 30px;
+    margin-bottom: 35px;
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 30px;
+    font-weight: 700;
+    color: #1e3a8a;
+  }
+  .stats-summary div {
+    font-size: 1.2em;
+    background: #e0e7ff;
+    padding: 15px 25px;
+    border-radius: 15px;
+    box-shadow: 0 6px 12px rgb(37 99 235 / 0.4);
+  }
+
+  /* Área para los gráficos */
+  .charts-container {
+    margin-top: 40px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgb(0 0 0 / 0.1);
+    padding: 20px 30px;
   }
 </style>
 
@@ -168,74 +236,173 @@
     </div>
   </div>
 
-  <!-- Lista de Registros por Fecha -->
-  {% if calendario_completo %}
-    {% for fecha_str, datos_usuarios in calendario_completo.items() %}
-    <div class="fecha-card">
-      <div class="fecha-header">
-        <i class="fas fa-calendar-day"></i> {{ fecha_str }}
-      </div>
-      <div style="overflow-x: auto;">
-        <table class="tiempos-table">
-          <thead>
-            <tr>
-              <th>Usuario</th>
-              <th>Turno Planificado</th>
-              <th>Hora Inicio</th>
-              <th>Hora Salida</th>
-              <th>Horas Calc.</th>
-              <th>Extras</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for data in datos_usuarios %}
-            <tr id="row-{{ data.usuario_id }}-{{ fecha_str }}" style="{{ 'background-color: #fff7ed;' if not data.tiene_registro else '' }}">
-              <form method="POST" action="{{ url_for('admin_editar_registro') }}">
-                <input type="hidden" name="usuario" value="{{ data.usuario }}">
-                <input type="hidden" name="fecha" value="{{ fecha_str }}">
-                
-                <td>
-                  <div style="font-weight:600; color:#4b5563;">{{ data.nombre }}</div>
-                  <div style="font-size:0.8em; color:#9ca3af;">{{ data.usuario }}</div>
-                </td>
-                <td>
-                  <span class="badge-horas" style="background:#f3f4f6; color:#4b5563;">
-                    {{ data.planificado }}
-                  </span>
-                </td>
-                <td>
-                  <input type="time" name="inicio" value="{{ data.inicio }}" class="input-time" {% if not data.tiene_registro %}placeholder="--:--"{% endif %}>
-                </td>
-                <td>
-                  <input type="time" name="salida" value="{{ data.salida }}" class="input-time">
-                </td>
-                <td>
-                  <span class="badge-horas">{{ data.horas }}h</span>
-                </td>
-                <td>
-                  <span class="badge-extras">{{ data.extras }}h</span>
-                </td>
-                <td>
-                  <button type="submit" class="btn-save-row" title="{{ 'Crear registro' if not data.tiene_registro else 'Actualizar registro' }}">
-                    <i class="fas fa-{{ 'plus-circle' if not data.tiene_registro else 'save' }}"></i> 
-                    {{ 'Crear' if not data.tiene_registro else 'Guardar' }}
-                  </button>
-                </td>
-              </form>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+  <!-- Estadísticas resumen -->
+  <div class="stats-summary">
+    <div>Total días con registros: {{ meses[mes|string + '-' + ano|string].semanas|length }}</div>
+    <div>Turnos completados: {{ stats.total_turnos_mes if stats.total_turnos_mes is defined else 'N/A' }}</div>
+    <div>Usuarios activos: {{ stats.gestores_activos if stats.gestores_activos is defined else 'N/A' }}</div>
+    <div>Turnos libres: {{ stats.turnos_disponibles if stats.turnos_disponibles is defined else 'N/A' }}</div>
+  </div>
+  
+  <!-- Contenedor meses (acordeón nivel 1) -->
+  {% for mes_ano_key, mes_data in meses.items() %}
+  <div class="month-card">
+    <div class="month-header accordion-header" tabindex="0">
+      <span>{{ meses_nombres[mes_data.mes] }} {{ mes_data.ano }}</span>
+      <i class="fas fa-chevron-right"></i>
     </div>
-    {% endfor %}
-  {% else %}
-    <div style="text-align:center; padding:50px; background:white; border-radius:15px; color:#9ca3af;">
-      <i class="fas fa-calendar-times" style="font-size:4em; margin-bottom:20px; opacity:0.5;"></i>
-      <h3>No se encontraron datos para este mes</h3>
+    <div class="accordion-content">
+      <!-- Semanas dentro del mes (acordeón nivel 2) -->
+      {% for semana_nombre, dias in mes_data.semanas.items() %}
+      <div class="week-card">
+        <div class="week-header accordion-header" tabindex="0">
+          <span>{{ semana_nombre }}</span>
+          <i class="fas fa-chevron-right"></i>
+        </div>
+        <div class="accordion-content">
+          <!-- Días dentro de la semana (acordeón nivel 3) -->
+          {% for fecha_str, datos_usuarios in dias.items() %}
+          <div class="fecha-card">
+            <div class="fecha-header accordion-header" tabindex="0" style="font-size:1.1em;">
+              <i class="fas fa-calendar-day"></i> {{ fecha_str }}
+              <i class="fas fa-chevron-right" style="margin-left:auto;"></i>
+            </div>
+            <div class="accordion-content">
+              <div style="overflow-x: auto;">
+                <table class="tiempos-table">
+                  <thead>
+                    <tr>
+                      <th>Usuario</th>
+                      <th>Turno Planificado</th>
+                      <th>Hora Inicio</th>
+                      <th>Hora Salida</th>
+                      <th>Horas Calc.</th>
+                      <th>Extras</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for data in datos_usuarios %}
+                    <tr id="row-{{ data.usuario_id }}-{{ fecha_str }}" style="{{ 'background-color: #fff7ed;' if not data.tiene_registro else '' }}">
+                      <form method="POST" action="{{ url_for('admin_editar_registro') }}">
+                        <input type="hidden" name="usuario" value="{{ data.usuario }}">
+                        <input type="hidden" name="fecha" value="{{ fecha_str }}">
+                        
+                        <td>
+                          <div style="font-weight:600; color:#4b5563;">{{ data.nombre }}</div>
+                          <div style="font-size:0.8em; color:#9ca3af;">{{ data.usuario }}</div>
+                        </td>
+                        <td>
+                          <span class="badge-horas" style="background:#f3f4f6; color:#4b5563;">
+                            {{ data.planificado }}
+                          </span>
+                        </td>
+                        <td>
+                          <input type="time" name="inicio" value="{{ data.inicio }}" class="input-time" {% if not data.tiene_registro %}placeholder="--:--"{% endif %}>
+                        </td>
+                        <td>
+                          <input type="time" name="salida" value="{{ data.salida }}" class="input-time">
+                        </td>
+                        <td>
+                          <span class="badge-horas">{{ data.horas }}h</span>
+                        </td>
+                        <td>
+                          <span class="badge-extras">{{ data.extras }}h</span>
+                        </td>
+                        <td>
+                          <button type="submit" class="btn-save-row" title="{{ 'Crear registro' if not data.tiene_registro else 'Actualizar registro' }}">
+                            <i class="fas fa-{{ 'plus-circle' if not data.tiene_registro else 'save' }}"></i> 
+                            {{ 'Crear' if not data.tiene_registro else 'Guardar' }}
+                          </button>
+                        </td>
+                      </form>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
     </div>
-  {% endif %}
+  </div>
+  {% endfor %}
+
+  <!-- Gráficos (espacio reservado) -->
+  <div class="charts-container">
+    <h3 style="color:#2563eb; font-weight: 700;">Gráficos de Tiempos & Turnos</h3>
+    <canvas id="horasMensualesChart" width="900" height="400"></canvas>
+  </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const headers = document.querySelectorAll('.accordion-header');
+
+    headers.forEach(header => {
+      header.addEventListener('click', function(){
+        this.classList.toggle('active');
+        const content = this.nextElementSibling;
+        if(content){
+          content.classList.toggle('active');
+        }
+        const icon = this.querySelector('i.fa-chevron-right');
+        if(icon){
+          icon.classList.toggle('rotate');
+        }
+      });
+
+      header.addEventListener('keydown', function(e){
+        if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          this.click();
+        }
+      });
+    });
+
+    /* -- Gráfico ejemplo básico -- */
+    const ctx = document.getElementById('horasMensualesChart').getContext('2d');
+    const data = {
+      labels: {{ meses[mes|string + '-' + ano|string].semanas.keys()|list|tojson }},
+      datasets: [{
+        label: 'Horas trabajadas',
+        backgroundColor: 'rgba(37, 99, 235, 0.7)',
+        borderColor: 'rgba(37, 99, 235, 1)',
+        borderWidth: 1,
+        data: {{ meses[mes|string + '-' + ano|string].semanas.values()|map(attribute='|length')|list|tojson }},
+      }]
+    };
+
+    const horasMensualesChart = new Chart(ctx, {
+      type: 'bar',
+      data: data,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            enabled: true
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Cantidad de Días Registrados'
+            }
+          }
+        }
+      },
+    });
+  });
+</script>
+
 {% endblock %}

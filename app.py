@@ -2024,20 +2024,84 @@ def admin_gestion_tiempos():
     cursor.execute("SELECT id, username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
     usuarios_activos = cursor.fetchall()
 
-    # Generar todas las fechas del mes
-    num_dias = (datetime.date(ano, mes % 12 + 1, 1) - datetime.timedelta(days=1)).day if mes < 12 else 31
-    fechas_mes = [datetime.date(ano, mes, d) for d in range(1, num_dias + 1)]
+    # Calcular fecha inicio del mes solicitado
+    fecha_inicio_mes = datetime.date(ano, mes, 1)
+    # Calcular fecha fin del mes siguiente (para incluir semanas después del mes actual)
+    if mes == 12:
+        fecha_fin_mes_siguiente = datetime.date(ano + 1, 1, 1) - datetime.timedelta(days=1)
+    else:
+        fecha_fin_mes_siguiente = datetime.date(ano, mes + 1, 1) - datetime.timedelta(days=1)
+    
+    # Calcular la semana del mes (ISO week) para fecha inicio y fin
+    semana_inicio = fecha_inicio_mes.isocalendar()[1]
+    semana_fin = fecha_fin_mes_siguiente.isocalendar()[1]
 
-    # Estructura de datos completa: Fecha -> Usuario -> {Planificado, Real}
-    calendario_completo = {}
+    # Para manejar casos del año en el cambio de semana ISO
+    if semana_fin < semana_inicio:
+        semana_fin += 52  # Año bisiesto no gestionado pero rarísimo
 
-    for fecha in fechas_mes:
-        fecha_str = fecha.isoformat()
-        calendario_completo[fecha_str] = []
+    # Para incluir la semana anterior y siguiente a las del mes actual para el acordeón
+    semanas_a_incluir = list(range(semana_inicio - 1, semana_fin + 2))
+
+    # Diccionario jerárquico: meses -> semanas -> días con datos para plantilla
+    meses = {}
+
+    # Preparar rango de fechas para las semanas que incluiremos
+    fechas_rango = []
+    hoy = now_local().date()
+    for semana_num in semanas_a_incluir:
+        # Ajustes para manejo correcto de semanas en enero y diciembre con salto año
+        adj_ano = ano
+        adj_semana = semana_num
+        if adj_semana <= 0:
+            adj_semana += 52
+            adj_ano -= 1
+        elif adj_semana > 52:
+            adj_semana -= 52
+            adj_ano += 1
+        try:
+            fecha_inicio_semana = datetime.date.fromisocalendar(adj_ano, adj_semana, 1)
+        except ValueError:
+            # Como fallback, usar primera semana del año actual o siguiente según ajuste
+            fecha_inicio_semana = datetime.date.fromisocalendar(adj_ano, 1, 1)
         
+        for dia_offset in range(7):
+            dia = fecha_inicio_semana + datetime.timedelta(days=dia_offset)
+            fechas_rango.append(dia)
+
+    # Eliminar duplicados y ordenar
+    fechas_rango = sorted(list(set(fechas_rango)))
+
+    # Construir estructura de meses para interfaz (mes_año como llave)
+    for fecha in fechas_rango:
+        mes_ano_key = f"{fecha.year}-{fecha.month:02d}"
+        if mes_ano_key not in meses:
+            meses[mes_ano_key] = {'mes': fecha.month, 'ano': fecha.year, 'semanas': {}}
+
+    # Poblar semanas dentro de cada mes
+    for fecha in fechas_rango:
+        mes_ano_key = f"{fecha.year}-{fecha.month:02d}"
+        semana = fecha.isocalendar()[1]
+        inicio_sem = fecha - datetime.timedelta(days=fecha.weekday())
+        fin_sem = inicio_sem + datetime.timedelta(days=6)
+        nombre_semana = f"Semana {semana} ({inicio_sem.strftime('%d %b')} - {fin_sem.strftime('%d %b')})"
+        if nombre_semana not in meses[mes_ano_key]['semanas']:
+            meses[mes_ano_key]['semanas'][nombre_semana] = {}
+
+    # Consultamos datos para todos los usuarios y fechas a mostrar
+    for fecha in fechas_rango:
+        mes_ano_key = f"{fecha.year}-{fecha.month:02d}"
+        semana = fecha.isocalendar()[1]
+        inicio_sem = fecha - datetime.timedelta(days=fecha.weekday())
+        fin_sem = inicio_sem + datetime.timedelta(days=6)
+        nombre_semana = f"Semana {semana} ({inicio_sem.strftime('%d %b')} - {fin_sem.strftime('%d %b')})"
+        fecha_str = fecha.isoformat()
+
+        if fecha_str not in meses[mes_ano_key]['semanas'][nombre_semana]:
+            meses[mes_ano_key]['semanas'][nombre_semana][fecha_str] = []
+
         for usuario in usuarios_activos:
             user_id = usuario['id']
-            
             # 1. Buscar turno planificado
             cursor.execute("""
                 SELECT td.hora 
@@ -2069,7 +2133,7 @@ def admin_gestion_tiempos():
                 horas = float(real_row['horas_trabajadas'])
                 extras = float(real_row['horas_extras'])
 
-            calendario_completo[fecha_str].append({
+            meses[mes_ano_key]['semanas'][nombre_semana][fecha_str].append({
                 'usuario_id': user_id,
                 'usuario': usuario['username'],
                 'nombre': usuario['nombre'],
@@ -2086,7 +2150,7 @@ def admin_gestion_tiempos():
     conn.close()
 
     return render_template('admin_gestion_tiempos.html', 
-                         calendario_completo=calendario_completo,
+                         meses=meses,
                          mes=mes, ano=ano,
                          meses_nombres={1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'})
 
@@ -2164,97 +2228,113 @@ def eliminar_turno():
     return redirect(url_for('ver_turnos_asignados'))
 
 
-# ✅ Panel de asignación manual de turnos (Admin)
-@app.route('/admin/asignar_turnos')
+# Nueva vista para asignar turnos con estructura jerárquica mes-semana-día y registro histórico sin sobreescribir
+@app.route('/admin/asignar_turnos', methods=['GET'])
 def admin_asignar_turnos():
     if not current_user.is_admin():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
-    
-    form = EmptyForm() # Se añade para validación CSRF
+
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    # Obtener fecha base desde argumentos (navegación) o usar hoy
-    fecha_base_str = request.args.get('fecha')
+
     try:
-        if fecha_base_str:
-            fecha_base = datetime.datetime.strptime(fecha_base_str, '%Y-%m-%d').date()
-        else:
-            fecha_base = now_local().date()
+        mes = int(request.args.get('mes', now_local().month))
+        ano = int(request.args.get('ano', now_local().year))
     except ValueError:
-        fecha_base = now_local().date()
+        mes = now_local().month
+        ano = now_local().year
 
-    # Calcular inicio de la semana seleccionada
-    inicio_semana = fecha_base - datetime.timedelta(days=fecha_base.weekday())
-    fin_semana = inicio_semana + datetime.timedelta(days=6)
-    
-    # Calcular fechas para navegación
-    semana_anterior = (inicio_semana - datetime.timedelta(days=7)).isoformat()
-    semana_siguiente = (inicio_semana + datetime.timedelta(days=7)).isoformat()
-    
-    # Inicializar gestores antes del bucle
-    gestores = {}
+    # Obtener usuarios activos
+    cursor.execute("SELECT id, username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
+    usuarios_activos = cursor.fetchall()
 
-    # Obtener TODOS los usuarios activos para gestión de turnos
-    cursor.execute("SELECT id, username, nombre, cedula, cargo FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
-    gestores_db = cursor.fetchall()
+    # Determinar semanas que incluyen el mes
+    fecha_inicio_mes = datetime.date(ano, mes, 1)
+    if mes == 12:
+        fecha_fin_mes_siguiente = datetime.date(ano + 1, 1, 1) - datetime.timedelta(days=1)
+    else:
+        fecha_fin_mes_siguiente = datetime.date(ano, mes + 1, 1) - datetime.timedelta(days=1)
 
-    for usr_info in gestores_db:
-        gestores[usr_info['username']] = {
-            'id': usr_info['id'],
-            'nombre': usr_info['nombre'],
-            'cedula': usr_info['cedula'],
-            'cargo': usr_info['cargo']
-        }
+    semana_inicio = fecha_inicio_mes.isocalendar()[1]
+    semana_fin = fecha_fin_mes_siguiente.isocalendar()[1]
 
-    # Diccionario para traducir los nombres de los días
-    dias_nombres = {
-        'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
-        'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado',
-        'sunday': 'Domingo'
-    }
+    if semana_fin < semana_inicio:
+        semana_fin += 52
 
-    # Generar horas disponibles (intervalos de 30min)
-    horas = []
-    start_time = datetime.datetime.strptime("05:00", "%H:%M")
-    end_time = datetime.datetime.strptime("22:00", "%H:%M")
-    while start_time <= end_time:
-        horas.append(start_time.strftime("%H:%M"))
-        start_time += datetime.timedelta(minutes=30)
-        
-    turnos_disponibles_por_dia = {dia: horas for dia in dias_nombres.keys()}
+    semanas_a_incluir = list(range(semana_inicio - 1, semana_fin + 2))
 
-    # Obtener turnos ya asignados para la SEMANA SELECCIONADA
-    cursor.execute("""
-        SELECT ta.id_usuario, td.dia_semana, td.hora
-        FROM turnos_asignados ta
-        JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
-        WHERE ta.fecha_asignacion BETWEEN %s AND %s
-    """, (inicio_semana, fin_semana))
-    
-    turnos_asignados_semana = cursor.fetchall()
-    
-    # Estructurar los turnos asignados por usuario y día
-    turnos_por_gestor = {g['id']: {} for g in gestores.values()}
-    for turno in turnos_asignados_semana:
-        if turno['id_usuario'] in turnos_por_gestor:
-            turnos_por_gestor[turno['id_usuario']][turno['dia_semana']] = turno['hora']
-    
+    meses = {}
+    fechas_rango = []
+    for semana_num in semanas_a_incluir:
+        adj_ano = ano
+        adj_semana = semana_num
+        if adj_semana <= 0:
+            adj_semana += 52
+            adj_ano -= 1
+        elif adj_semana > 52:
+            adj_semana -= 52
+            adj_ano += 1
+        try:
+            fecha_inicio_semana = datetime.date.fromisocalendar(adj_ano, adj_semana, 1)
+        except ValueError:
+            fecha_inicio_semana = datetime.date.fromisocalendar(adj_ano, 1, 1)
+        for dia_offset in range(7):
+            dia = fecha_inicio_semana + datetime.timedelta(days=dia_offset)
+            fechas_rango.append(dia)
+
+    fechas_rango = sorted(list(set(fechas_rango)))
+
+    for fecha in fechas_rango:
+        mes_ano_key = f"{fecha.year}-{fecha.month:02d}"
+        if mes_ano_key not in meses:
+            meses[mes_ano_key] = {'mes': fecha.month, 'ano': fecha.year, 'semanas': {}}
+
+    for fecha in fechas_rango:
+        mes_ano_key = f"{fecha.year}-{fecha.month:02d}"
+        semana = fecha.isocalendar()[1]
+        inicio_sem = fecha - datetime.timedelta(days=fecha.weekday())
+        fin_sem = inicio_sem + datetime.timedelta(days=6)
+        nombre_semana = f"Semana {semana} ({inicio_sem.strftime('%d %b')} - {fin_sem.strftime('%d %b')})"
+        if nombre_semana not in meses[mes_ano_key]['semanas']:
+            meses[mes_ano_key]['semanas'][nombre_semana] = {}
+
+    # Consultar turnos asignados (histórico sin sobrescribir)
+    for fecha in fechas_rango:
+        mes_ano_key = f"{fecha.year}-{fecha.month:02d}"
+        semana = fecha.isocalendar()[1]
+        inicio_sem = fecha - datetime.timedelta(days=fecha.weekday())
+        fin_sem = inicio_sem + datetime.timedelta(days=6)
+        nombre_semana = f"Semana {semana} ({inicio_sem.strftime('%d %b')} - {fin_sem.strftime('%d %b')})"
+        fecha_str = fecha.isoformat()
+
+        if fecha_str not in meses[mes_ano_key]['semanas'][nombre_semana]:
+            meses[mes_ano_key]['semanas'][nombre_semana][fecha_str] = []
+
+        for usuario in usuarios_activos:
+            user_id = usuario['id']
+            cursor.execute("""
+                SELECT ta.id, td.hora, ta.fecha_asignacion
+                FROM turnos_asignados ta
+                JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+                WHERE ta.id_usuario = %s AND ta.fecha_asignacion = %s
+                ORDER BY ta.id
+            """, (user_id, fecha))
+            turnos = cursor.fetchall()
+            meses[mes_ano_key]['semanas'][nombre_semana][fecha_str].append({
+                'usuario_id': user_id,
+                'usuario': usuario['username'],
+                'nombre': usuario['nombre'],
+                'turnos': turnos
+            })
+
     cursor.close()
     conn.close()
-    
+
     return render_template('admin_asignar_turnos.html',
-                         turnos_disponibles=turnos_disponibles_por_dia,
-                         turnos_asignados=turnos_por_gestor,
-                         gestores=gestores,
-                         dias_semana=['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
-                         dias_nombres=dias_nombres,
-                         inicio_semana=inicio_semana,
-                         fin_semana=fin_semana,
-                         semana_anterior=semana_anterior,
-                         semana_siguiente=semana_siguiente,
-                         form=form)
+                           meses=meses,
+                           mes=mes, ano=ano,
+                           meses_nombres={1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'})
 
 # ✅ Asignar turno manual (Admin)
 @app.route('/admin/asignar_turno_manual', methods=['POST'])
