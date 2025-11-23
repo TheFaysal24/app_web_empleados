@@ -60,6 +60,16 @@ app = Flask(__name__, template_folder='Templates')
 SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback_secret_key_para_emergencias')
 app.secret_key = SECRET_KEY
 
+# Registrar filtro Jinja2 para convertir string a datetime
+from datetime import datetime
+
+def todatetime(value, format="%Y-%m-%d"):
+    try:
+        return datetime.strptime(value, format)
+    except Exception:
+        return None
+
+app.jinja_env.filters['todatetime'] = todatetime
 
 # Rate Limiting para proteger contra ataques de fuerza bruta
 limiter = Limiter(
