@@ -1,153 +1,19 @@
-{% extends "base.html" %}
-{% block title %}Recuperar Contraseña{% endblock %}
-{% block content %}
-<style>
-  .recuperar-container {
-    max-width: 500px;
-    margin: 50px auto;
-  }
-
-  .recuperar-card {
-    background: white;
-    border-radius: 15px;
-    padding: 40px;
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
-    border: 1px solid rgba(102, 126, 234, 0.1);
-  }
-
-  .recuperar-header {
-    text-align: center;
-    margin-bottom: 30px;
-  }
-
-  .recuperar-header h2 {
-    color: #667eea;
-    font-weight: 700;
-    margin-bottom: 10px;
-  }
-
-  .recuperar-header p {
-    color: #666;
-    font-size: 0.95em;
-  }
-
-  .form-group {
-    margin-bottom: 20px;
-  }
-
-  .form-label {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
-    display: block;
-  }
-
-  .form-control {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 12px 15px;
-    font-size: 1em;
-    transition: all 0.3s ease;
-    width: 100%;
-  }
-
-  .form-control:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  .btn-recuperar {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    color: white;
-    padding: 12px 30px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 1em;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    width: 100%;
-    margin-top: 10px;
-  }
-
-  .btn-recuperar:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    color: white;
-    text-decoration: none;
-  }
-
-  .links {
-    text-align: center;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #e0e0e0;
-  }
-
-  .links a {
-    color: #667eea;
-    text-decoration: none;
-    font-weight: 600;
-    margin: 0 10px;
-    transition: all 0.3s ease;
-  }
-
-  .links a:hover {
-    color: #764ba2;
-    text-decoration: underline;
-  }
-
-  .info-box {
-    background: #e3f2fd;
-    border-left: 4px solid #667eea;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    color: #1565c0;
-    font-size: 0.9em;
-  }
-
-  .info-box i {
-    margin-right: 8px;
-  }
-</style>
-
-<div class="recuperar-container">
-  <div class="recuperar-card">
-    <div class="recuperar-header">
-      <h2>🔑 Recuperar Contraseña</h2>
-      <p>Ingresa tu correo electrónico para recibir instrucciones</p>
-    </div>
-
-    <div class="info-box">
-      <i class="fas fa-info-circle"></i>
-      Te enviaremos un enlace de recuperación a tu correo electrónico.
-    </div>
-
-    <form method="POST">
-      <div class="form-group">
-        <label class="form-label" for="correo">Correo Electrónico</label>
-        <input 
-          type="email" 
-          class="form-control" 
-          id="correo" 
-          name="correo" 
-          placeholder="tu.correo@empresa.com"
-          required
-        >
-      </div>
-
-      <button type="submit" class="btn-recuperar">
-        <i class="fas fa-envelope"></i> Enviar Enlace de Recuperación
-      </button>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recuperar Contraseña</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Recuperar Contraseña</h1>
+    <form method="post" action="{{ url_for('recuperar_contrasena') }}">
+        {{ form.csrf_token }}
+        <label for="email">Correo Electrónico:</label>
+        <input type="email" name="email" id="email" required><br><br>
+        <label for="telefono">Número de Teléfono (opcional):</label>
+        <input type="tel" name="telefono" id="telefono" pattern="[0-9]{10,15}" placeholder="Ingrese número telefónico"><br><br>
+        <button type="submit" class="btn-action btn-smaller">Enviar enlace de recuperación</button>
     </form>
-
-    <div class="links">
-      <a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Volver a Login</a>
-      <a href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i> Crear Cuenta</a>
-    </div>
-  </div>
-</div>
-{% endblock %}
+</body>
+</html>

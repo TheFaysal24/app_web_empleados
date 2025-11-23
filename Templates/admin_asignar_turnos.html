@@ -10,7 +10,7 @@
             background-color: #eee;
             color: #444;
             cursor: pointer;
-            padding: 10px;
+            padding: 8px 12px;
             width: 100%;
             border: none;
             text-align: left;
@@ -18,12 +18,13 @@
             font-size: 16px;
             transition: background-color 0.3s ease;
             margin-top: 10px;
+            border-radius: 6px;
         }
         .active, .accordion:hover {
             background-color: #ccc;
         }
         .panel {
-            padding: 0 10px 10px 10px;
+            padding: 8px 10px;
             background-color: white;
             max-height: 0;
             overflow: hidden;
@@ -31,23 +32,44 @@
             border-left: 2px solid #ccc;
             border-right: 2px solid #ccc;
             border-bottom: 2px solid #ccc;
+            margin-bottom: 15px;
         }
         table {
             border-collapse: collapse;
             width: 100%;
             margin-top: 8px;
+            font-size: 0.9rem;
         }
         th, td {
             border: 1px solid #ccc;
             padding: 6px;
             text-align: center;
+            vertical-align: middle;
+            min-width: 60px;
         }
         th {
             background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+            z-index: 5;
         }
         .usuario-row {
             background-color: #f9f9f9;
             font-weight: bold;
+            white-space: nowrap;
+            position: sticky;
+            left: 0;
+            background-clip: padding-box;
+            z-index: 10;
+        }
+        select.turno-select {
+            width: 100%;
+            padding: 4px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 0.9rem;
+            cursor: pointer;
+            background-color: #fff;
         }
         /* para que los botones sean más pequeños y de colores consistentes */
         .btn-smaller {
@@ -56,6 +78,7 @@
             border-radius: 10px !important;
             font-weight: 600 !important;
             transition: all 0.3s ease !important;
+            cursor: pointer;
         }
         .btn-action {
             background: linear-gradient(to right, #2563eb, #4f46e5) !important;
@@ -68,58 +91,92 @@
             box-shadow: 0 10px 28px rgba(67, 56, 202, 0.8) !important;
             transform: translateY(-4px);
         }
+        /* Contenedor para selector mes */
+        .month-selector {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
     </style>
 </head>
 <body>
     <h1>Asignación de Turnos - Administración</h1>
     <button class="btn-back" onclick="history.back()"><i class="fas fa-arrow-left"></i> Atrás</button>
-    <p>Mes: {{ meses_nombres.get(mes, 'Desconocido') }} {{ ano }}</p>
 
-    {% for mes_ano, data_mes in meses.items() %}
-        <button class="accordion btn-smaller btn-action">{{ meses_nombres.get(data_mes.mes, 'Desconocido') }} {{ data_mes.ano }}</button>
-        <div class="panel">
-            {% for nombre_semana, semanas_data in data_mes.semanas.items() %}
-                <button class="accordion btn-smaller btn-action">{{ nombre_semana }}</button>
-                <div class="panel">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Usuario</th>
-                                {% for fecha_str in semanas_data.keys() %}
-                                    <th>{{ fecha_str }}</th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for dia_fecha in semanas_data.values() | first %}
-                                {% set usuarios = semanas_data.values() | map(attribute=0) | list %}
-                            {% endfor %}
-                            {% for usuario_data in semanas_data.values() | list | first %}
+    <div class="month-selector">
+        <form method="get" action="{{ url_for('admin_asignar_turnos') }}" id="monthForm">
+            <button type="submit" name="mes" value="{{ mes - 1 if mes > 1 else 12 }}" formaction="{{ url_for('admin_asignar_turnos', mes=mes-1 if mes>1 else 12, ano=ano-1 if mes==1 else ano) }}" class="btn-smaller btn-action" title="Mes Anterior">&laquo;</button>
+            <select name="mes" onchange="document.getElementById('monthForm').submit()">
+                {% for num, name in meses_nombres.items() %}
+                    <option value="{{num}}" {% if num == mes %}selected{% endif %}>{{name}}</option>
+                {% endfor %}
+            </select>
+            <input type="number" name="ano" value="{{ ano }}" min="2000" max="2100" onchange="document.getElementById('monthForm').submit()" style="width:80px; border-radius:6px; padding:4px;">
+            <button type="submit" class="btn-smaller btn-action" title="Ir">Ir</button>
+            <button type="submit" name="mes" value="{{ mes + 1 if mes < 12 else 1 }}" formaction="{{ url_for('admin_asignar_turnos', mes=mes+1 if mes<12 else 1, ano=ano+1 if mes==12 else ano) }}" class="btn-smaller btn-action" title="Mes Siguiente">&raquo;</button>
+        </form>
+    </div>
+
+    <form method="post" action="{{ url_for('admin_asignar_turno_manual') }}">
+        {{ form.csrf_token }}
+        {% for mes_ano, data_mes in meses.items() %}
+            <button type="button" class="accordion btn-smaller btn-action">{{ meses_nombres.get(data_mes.mes, 'Desconocido') }} {{ data_mes.ano }}</button>
+            <div class="panel">
+                {% for nombre_semana, semanas_data in data_mes.semanas.items() %}
+                    <button type="button" class="accordion btn-smaller btn-action">{{ nombre_semana }}</button>
+                    <div class="panel">
+                        <table>
+                            <thead>
                                 <tr>
-                                    <td class="usuario-row">{{ usuario_data.nombre }} <small>({{ usuario_data.usuario }})</small></td>
-                                    {% for fecha_str, lista_usuarios in semanas_data.items() %}
-                                        {% for user_turno in lista_usuarios %}
-                                            {% if user_turno.usuario == usuario_data.usuario %}
-                                                <td>
-                                                    {% if user_turno.turnos|length == 0 %}
-                                                        -
-                                                    {% else %}
-                                                        {% for turno in user_turno.turnos %}
-                                                            {{ turno.hora }}<br>
-                                                        {% endfor %}
-                                                    {% endif %}
-                                                </td>
-                                            {% endif %}
-                                        {% endfor %}
+                                    <th>Usuario</th>
+                                    {% for fecha_str in semanas_data.keys() %}
+                                        <th>{{ fecha_str }}</th>
                                     {% endfor %}
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endfor %}
+                            </thead>
+                            <tbody>
+                                {% for usuario_data in semanas_data.values() | list | first %}
+                                    <tr>
+                                        <td class="usuario-row">{{ usuario_data.nombre }} <small>({{ usuario_data.usuario }})</small></td>
+                                        {% for fecha_str, lista_usuarios in semanas_data.items() %}
+                                            {% set usuario_match = lista_usuarios | selectattr("usuario", "equalto", usuario_data.usuario) | list %}
+                                            <td>
+                                                {% if usuario_match %}
+                                                    {% set user_turno = usuario_match[0] %}
+                                                    {% set dia_semana = fecha_str | todatetime | strftime("%A") | lower %}
+                                                    {% if turno_disponibles.get(dia_semana) %}
+                                                        <select name="turno_{{ usuario_data.usuario }}_{{ fecha_str }}" class="turno-select">
+                                                            <option value="">-</option>
+                                                            {% for hora_opcion in turno_disponibles.get(dia_semana) %}
+                                                                {% set selected = "" %}
+                                                                {% if user_turno.turnos | selectattr('hora', 'equalto', hora_opcion) | list %}
+                                                                    {% set selected = "selected" %}
+                                                                {% endif %}
+                                                                <option value="{{ hora_opcion }}" {{ selected }}>{{ hora_opcion }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <div style="text-align: center; margin-top: 15px;">
+            <button type="submit" class="btn-smaller btn-action">Guardar Cambios</button>
         </div>
-    {% endfor %}
+    </form>
 
     <script>
         // Script para manejar acordeones

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
+++++++++++++++++++++++++/from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -1437,19 +1437,17 @@ def cambiar_contrasena():
 # ✅ Recuperar contraseña (genera nueva contraseña y envía notificación)
 @app.route('/recuperar_contrasena', methods=['GET', 'POST'])
 def recuperar_contrasena():
-    if request.method == 'POST':
-        correo = request.form.get('correo', '').strip()
-        
+    form = EmptyForm()
+    if form.validate_on_submit():
+        email = request.form.get('email')
+        telefono = request.form.get('telefono')
         conn = get_db_connection()
         cursor = conn.cursor()
-
-        cursor.execute("SELECT id, username, nombre FROM usuarios WHERE correo = %s", (correo,))
+        cursor.execute("SELECT id, username, nombre FROM usuarios WHERE correo = %s", (email,))
         user_data = cursor.fetchone()
-
         if user_data:
             token = uuid.uuid4().hex
             expira = now_local() + datetime.timedelta(minutes=60)
-            
             try:
                 logger.info(f"Inserting reset token: id_usuario={user_data['id']}")
                 cursor.execute(
@@ -1457,21 +1455,19 @@ def recuperar_contrasena():
                     (token, user_data['id'], expira.isoformat())
                 )
                 conn.commit()
-                flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.', 'message')
+                send_password_reset_email(email, token)
+                if telefono:
+                    send_password_reset_sms(telefono, token)
+                flash('Se ha enviado un correo para restablecer la contraseña.', 'info')
             except Exception as e:
                 flash(f'Error al generar token de restablecimiento: {e}', 'error')
-                logger.error(f"Error en recuperar_contrasena para {correo}: {e}")
-        
-        # Por seguridad, mostramos el mismo mensaje incluso si el correo no existe
-        # para no revelar qué correos están registrados en el sistema.
+                logger.error(f"Error en recuperar_contrasena para {email}: {e}")
         else:
             flash('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.', 'message')
-
         cursor.close()
         conn.close()
         return redirect(url_for('login'))
-
-    return render_template('recuperar_contrasena.html')
+    return render_template('recuperar_contrasena.html', form=form)
 
 # ✅ Panel de Administración
 @app.route('/admin/usuarios')
