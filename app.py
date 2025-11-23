@@ -2377,13 +2377,26 @@ def admin_asignar_turnos():
                 'turnos': turnos
             })
 
+    # NUEVO: Consultar turnos_disponibles para pasar opciones a la plantilla (diccionario: dia_semana -> lista horas)
+    cursor.execute("SELECT dia_semana, hora FROM turnos_disponibles ORDER BY CASE dia_semana WHEN 'monday' THEN 1 WHEN 'tuesday' THEN 2 WHEN 'wednesday' THEN 3 WHEN 'thursday' THEN 4 WHEN 'friday' THEN 5 WHEN 'saturday' THEN 6 ELSE 7 END, hora")
+    turnos_disp_db = cursor.fetchall()
+    turno_disponibles = {}
+    for row in turnos_disp_db:
+        dia = row['dia_semana']
+        hora = row['hora']
+        if dia not in turno_disponibles:
+            turno_disponibles[dia] = []
+        turno_disponibles[dia].append(hora)
+
     cursor.close()
     conn.close()
 
     return render_template('admin_asignar_turnos.html',
                            meses=meses,
                            mes=mes, ano=ano,
-                           meses_nombres={1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'})
+                           meses_nombres={1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'},
+                           turno_disponibles=turno_disponibles,
+                           form=EmptyForm())  # Pasar formulario para CSRF
 
 # ✅ Asignar turno manual (Admin)
 @app.route('/admin/asignar_turno_manual', methods=['POST'])
