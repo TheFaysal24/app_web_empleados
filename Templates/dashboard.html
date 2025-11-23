@@ -792,53 +792,60 @@
   {% endif %}
 </div>
 
-<!-- Tabla de registros -->
-<div class="table-card">
-  <h3 class="section-title"><i class="fas fa-clipboard-list"></i> Control de Asistencia</h3>
-  {% if registros %}
-    <div style="overflow-x: auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Usuario</th>
-            <th>Veces Iniciado</th>
-            <th>Última Fecha</th>
-            <th>Hora Inicio</th>
-            <th>Hora Salida</th>
-            <th>Horas Trabajadas</th>
-            <th>Horas Extras</th>
-            {% if admin %}<th>💰 Costo Extras</th>{% endif %}
-          </tr>
-        </thead>
-        <tbody>
-          {% set row_count = namespace(count=0) %}
-          {% for usr, regs in registros.items() %}
-            {% if regs and regs is mapping %}
-            {% set last_reg = regs.items()|list|last %}
-            {% if last_reg and last_reg|length == 2 and last_reg[1] is mapping %}
-              <tr>
-                <td><strong>{{ usr }}</strong></td>
-                <td><span class="badge badge-success">{{ contador_inicios.get(usr, 0) if contador_inicios else 0 }} veces</span></td>
-                <td>{{ last_reg[0] }}</td>
-                <td>{{ last_reg[1].get('inicio', '')[:16][11:] if last_reg[1].get('inicio') else '-' }}</td>
-                <td>{{ last_reg[1].get('salida', '')[:16][11:] if last_reg[1].get('salida') else '-' }}</td>
-                <td><span class="badge badge-success" style="background: #e8f5ff; color: #0ea5e9; font-weight: 700;">{{ last_reg[1].get('horas_trabajadas', 0) }}h</span></td>
-                <td><span class="badge badge-warning" style="background: #fff7ed; color: #f97316; font-weight: 700;">{{ last_reg[1].get('horas_extras', 0) }}h</span></td>
-                {% if admin %}<td><span class="badge badge-cost">$ {{ "{:,.0f}".format(costo_horas_extras.get(usr, 0) if costo_horas_extras else 0) }}</span></td>{% endif %}
-              </tr>
-              {% set row_count.count = row_count.count + 1 %}
-            {% endif %}
-            {% endif %}
-          {% endfor %}
-        </tbody>
-      </table>
+<!-- Historial Detallado (Acordeón) -->
+<div class="card mt-4 shadow">
+  <div class="card-header bg-white border-0">
+    <h3 class="section-title mb-0"><i class="fas fa-history"></i> Mi Historial de Turnos</h3>
+  </div>
+  <div class="card-body p-0">
+    <div class="accordion" id="accordionUserHistory">
+      {% for nombre_semana, dias in calendario_semanal_usuario.items() %}
+      <div class="accordion-item border-0 mb-2">
+        <h2 class="accordion-header" id="heading{{ loop.index }}">
+          <button class="accordion-button collapsed rounded shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}" style="background: #f8fafc;">
+            <span class="fw-bold text-primary">{{ nombre_semana }}</span>
+          </button>
+        </h2>
+        <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#accordionUserHistory">
+          <div class="accordion-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Planificado</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Horas</th>
+                    <th>Extras</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for fecha_str, datos in dias.items() %}
+                  <tr>
+                    <td class="fw-bold">{{ fecha_str }}</td>
+                    <td><span class="badge bg-info text-dark">{{ datos.planificado }}</span></td>
+                    <td>{{ datos.inicio if datos.inicio else '-' }}</td>
+                    <td>{{ datos.salida if datos.salida else '-' }}</td>
+                    <td>{{ datos.horas }}h</td>
+                    <td>
+                      {% if datos.extras > 0 %}
+                      <span class="badge bg-warning text-dark">{{ datos.extras }}h</span>
+                      {% else %}
+                      -
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
     </div>
-  {% else %}
-    <div class="no-data">
-      <i class="fas fa-inbox" style="font-size: 3em; opacity: 0.3;"></i>
-      <p>No hay registros disponibles. Comienza a registrar turnos.</p>
-    </div>
-  {% endif %}
+  </div>
 </div>
 
 <!-- Resumen Semanal de Turnos -->
@@ -891,13 +898,28 @@
 <div class="grid-2">
   <div class="chart-card">
     <h4>👥 Distribución de Turnos</h4>
-    <canvas id="graficoInicios" style="max-height: 300px;"></canvas>
+    <canvas id="graficoInicios" style="max-height: 350px;"></canvas>
   </div>
   <div class="chart-card">
     <h4>📊 Horas Trabajadas por Día</h4>
-    <canvas id="graficoHoras" style="max-height: 300px;"></canvas>
+    <canvas id="graficoHoras" style="max-height: 350px;"></canvas>
   </div>
 </div>
+
+{% if admin %}
+<div class="grid-2">
+  <div class="chart-card">
+    <h4>💰 Costos Horas Extras</h4>
+    <canvas id="graficoCostos" style="max-height: 350px;"></canvas>
+  </div>
+  <div class="chart-card">
+    <h4>👔 Distribución de Cargos</h4>
+    <div style="height: 300px; position: relative;">
+      <canvas id="graficoCargos"></canvas>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% if admin %}
 <div class="export-buttons">
   <a href="{{ url_for('exportar_registros') }}" class="btn-export-small">

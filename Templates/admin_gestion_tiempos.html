@@ -1,425 +1,122 @@
-{% extends "base.html" %}
-{% block title %}Gestión de Tiempos Mensual{% endblock %}
+{% extends "layout.html" %}
+
+{% block title %}Gestión de Tiempos{% endblock %}
+
 {% block content %}
-<style>
-  body {
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
-    min-height: 100vh;
-    padding: 20px;
-  }
-
-  .container-fluid {
-    max-width: 1800px;
-    margin: 0 auto;
-  }
-
-  .header-card {
-    background: white;
-    border-radius: 15px;
-    padding: 25px;
-    margin-bottom: 25px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-
-  .month-nav {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background: #f3f4f6;
-    padding: 8px 15px;
-    border-radius: 12px;
-  }
-
-  .btn-nav {
-    background: #2563eb !important; /* azul más vivo */
-    border: none !important;
-    color: white !important;
-    padding: 12px 20px !important;
-    border-radius: 10px !important;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 700;
-    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
-    text-decoration: none;
-  }
-
-  .btn-nav:hover {
-    background: #1e40af !important; /* azul más oscuro */
-    box-shadow: 0 6px 12px rgba(30, 64, 175, 0.6);
-  }
-
-  .fecha-card, .week-card, .month-card {
-    background: white;
-    border-radius: 15px;
-    margin-bottom: 20px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  }
-
-  .fecha-header, .week-header, .month-header {
-    background: linear-gradient(135deg, #2563eb, #1e40af);
-    color: white;
-    padding: 15px 25px;
-    font-size: 1.4em;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    user-select: none;
-    border-radius: 15px 15px 0 0;
-  }
-
-  .tiempos-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .tiempos-table th {
-    background: #e0e7ff; /* azul claro */
-    padding: 14px 18px;
-    text-align: left;
-    font-size: 1em;
-    color: #3730a3;
-    text-transform: uppercase;
-    font-weight: 700;
-    border-bottom: 2px solid #4338ca;
-  }
-
-  .tiempos-table td {
-    padding: 14px 18px;
-    border-bottom: 1px solid #e0e7ff;
-    vertical-align: middle;
-    font-size: 0.95em;
-    color: #4b5563;
-  }
-
-  .input-time {
-    border: 1px solid #c7d2fe;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 1em;
-    width: 130px;
-    transition: border-color 0.3s ease;
-  }
-
-  .input-time:focus {
-    border-color: #2563eb;
-    outline: none;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
-  }
-
-  .badge-horas {
-    background: #dbeafe;
-    color: #1e40af;
-    padding: 6px 14px;
-    border-radius: 24px;
-    font-weight: 700;
-    font-size: 1em;
-  }
-
-  .badge-extras {
-    background: #fef3c7;
-    color: #92400e;
-    padding: 6px 14px;
-    border-radius: 24px;
-    font-weight: 700;
-    font-size: 1em;
-  }
-
-  .btn-save-row {
-    background: linear-gradient(135deg, #10b981, #34d399) !important;
-    color: white !important;
-    border: none !important;
-    padding: 12px 24px !important;
-    border-radius: 10px !important;
-    cursor: pointer !important;
-    font-size: 1em !important;
-    font-weight: 800 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    transition: transform 0.3s ease;
-    box-shadow: 0 6px 14px rgba(16, 185, 129, 0.4);
-  }
-
-  .btn-save-row:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5);
-  }
-
-  /* Acordeón: ocultar contenido por defecto */
-  .accordion-content {
-    display: none;
-    padding: 12px 24px;
-    animation: fadein 0.45s ease-in-out;
-  }
-
-  .accordion-content.active {
-    display: block;
-  }
-
-  /* Animación */
-  @keyframes fadein {
-    from {opacity: 0;}
-    to {opacity: 1;}
-  }
-
-  /* Icono de flecha para acordeón */
-  .accordion-header i {
-    transition: transform 0.3s ease;
-    font-size: 1.5em;
-  }
-
-  .accordion-header.active i {
-    transform: rotate(90deg);
-  }
-  .rotate {
-    transform: rotate(90deg);
-  }
-
-  /* Estilo para resumen estadístico */
-  .stats-summary {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgb(0 0 0 / 0.1);
-    padding: 20px 30px;
-    margin-bottom: 35px;
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    gap: 30px;
-    font-weight: 700;
-    color: #1e3a8a;
-  }
-  .stats-summary div {
-    font-size: 1.2em;
-    background: #e0e7ff;
-    padding: 15px 25px;
-    border-radius: 15px;
-    box-shadow: 0 6px 12px rgb(37 99 235 / 0.4);
-  }
-
-  /* Área para los gráficos */
-  .charts-container {
-    margin-top: 40px;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgb(0 0 0 / 0.1);
-    padding: 20px 30px;
-  }
-</style>
-
-<div class="container-fluid">
-  <!-- Header -->
-  <div class="header-card">
-    <div style="display:flex; align-items:center; gap:15px;">
-      <a href="{{ url_for('dashboard') }}" class="btn-nav"><i class="fas fa-arrow-left"></i> Dashboard</a>
-      <h2 style="margin:0; color:#1e3a8a;"><i class="fas fa-clock"></i> Gestión de Tiempos Mensual</h2>
-    </div>
-
-    <div class="month-nav">
-      <a href="{{ url_for('admin_gestion_tiempos', mes=mes-1 if mes > 1 else 12, ano=ano if mes > 1 else ano-1) }}" class="btn-nav">
-        <i class="fas fa-chevron-left"></i>
-      </a>
-      <span style="font-size:1.2em; font-weight:700; color:#374151; min-width:150px; text-align:center;">
-        {{ meses_nombres[mes] }} {{ ano }}
-      </span>
-      <a href="{{ url_for('admin_gestion_tiempos', mes=mes+1 if mes < 12 else 1, ano=ano if mes < 12 else ano+1) }}" class="btn-nav">
-        <i class="fas fa-chevron-right"></i>
-      </a>
-    </div>
-  </div>
-
-  <!-- Estadísticas resumen -->
-  <div class="stats-summary">
-    <div>Total días con registros: {{ meses[mes|string + '-' + ano|string].semanas|length }}</div>
-    <div>Turnos completados: {{ stats.total_turnos_mes if stats.total_turnos_mes is defined else 'N/A' }}</div>
-    <div>Usuarios activos: {{ stats.gestores_activos if stats.gestores_activos is defined else 'N/A' }}</div>
-    <div>Turnos libres: {{ stats.turnos_disponibles if stats.turnos_disponibles is defined else 'N/A' }}</div>
-  </div>
-
-  <!-- Nuevo panel resumen uso turnos por usuario -->
-  <div class="stats-summary" style="margin-top: 40px;">
-    <div style="flex-basis: 100%; font-size: 1.5em; font-weight: 700; color: #2563eb; margin-bottom: 15px;">
-      Resumen Uso de Turnos por Usuario
-    </div>
-    {% if resumen_uso_turnos %}
-      {% for usuario, resumen in resumen_uso_turnos.items() %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-calendar-alt"></i> Gestión de Tiempos - {{ meses_nombres[mes] }} {{ ano }}</h2>
         <div>
-          <strong>{{ usuario }}</strong><br>
-          Turnos usados: {{ resumen.turnos_usados }}<br>
-          Horas extras: {{ resumen.horas_extras }}h
-          {% if admin %}
-          <br>Costos asociados: ${{ "{:,.0f}".format(resumen.costos) }}
-          {% endif %}
+            <a href="{{ url_for('admin_gestion_tiempos', mes=mes-1 if mes > 1 else 12, ano=ano if mes > 1 else ano-1) }}" class="btn btn-outline-primary">
+                <i class="fas fa-chevron-left"></i> Anterior
+            </a>
+            <a href="{{ url_for('admin_gestion_tiempos', mes=mes+1 if mes < 12 else 1, ano=ano if mes < 12 else ano+1) }}" class="btn btn-outline-primary">
+                Siguiente <i class="fas fa-chevron-right"></i>
+            </a>
         </div>
-      {% endfor %}
-    {% else %}
-      <div>No hay datos de uso.</div>
-    {% endif %}
-  </div>
+    </div>
 
-  <!-- Gráficos (espacio reservado) -->
-  <div class="charts-container" style="margin-top: 50px;">
-    <h3 style="color:#2563eb; font-weight: 700;">Gráficos de Horas Extras por Usuario</h3>
-    <canvas id="horasMensualesChart" width="900" height="400"></canvas>
-    <canvas id="extraHorasDiarioChart" width="900" height="300"></canvas>
-    <canvas id="extraHorasSemanalChart" width="900" height="300" style="margin-top: 30px;"></canvas>
-    <canvas id="extraHorasMensualChart" width="900" height="300" style="margin-top: 30px;"></canvas>
-  </div>
- 
+    <!-- Acordeón de Semanas -->
+    <div class="accordion" id="accordionSemanas">
+        {% for nombre_semana, dias in calendario_semanal.items() %}
+        <div class="accordion-item mb-3 border rounded shadow-sm">
+            <h2 class="accordion-header" id="heading{{ loop.index }}">
+                <button class="accordion-button collapsed p-3 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}" style="background: linear-gradient(to right, #f8f9fa, #e9ecef); color: #495057;">
+                    <i class="fas fa-calendar-week me-2 text-primary"></i> {{ nombre_semana }}
+                </button>
+            </h2>
+            <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#accordionSemanas">
+                <div class="accordion-body p-0">
+                    <!-- Iterar por días dentro de la semana -->
+                    {% for fecha_str, registros in dias.items() %}
+                    <div class="p-3 border-bottom">
+                        <h5 class="text-primary mb-3"><i class="far fa-calendar-check me-2"></i>{{ fecha_str }}</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Empleado</th>
+                                        <th>Turno Planificado</th>
+                                        <th>Entrada Real</th>
+                                        <th>Salida Real</th>
+                                        <th>Horas</th>
+                                        <th>Extras</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reg in registros %}
+                                    <tr class="{{ 'table-warning' if not reg.tiene_registro and reg.planificado != '-' else '' }}">
+                                        <td class="fw-bold">{{ reg.nombre }}</td>
+                                        <td><span class="badge bg-info text-dark">{{ reg.planificado }}</span></td>
+                                        <td>{{ reg.inicio if reg.inicio else '-' }}</td>
+                                        <td>{{ reg.salida if reg.salida else '-' }}</td>
+                                        <td>{{ reg.horas }}h</td>
+                                        <td>
+                                            {% if reg.extras > 0 %}
+                                            <span class="badge bg-warning text-dark">{{ reg.extras }}h</span>
+                                            {% else %}
+                                            -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('admin_editar_registro', usuario=reg.usuario, fecha=fecha_str) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i> {{ 'Editar' if reg.tiene_registro else 'Registrar' }}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Resumen Mensual -->
+    <div class="card mt-4 shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Resumen Mensual</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            <th>Total Turnos</th>
+                            <th>Total Extras (Horas)</th>
+                            <th>Costo Estimado Extras</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for uso in resumen_uso %}
+                        <tr>
+                            <td>{{ uso.nombre }}</td>
+                            <td>{{ uso.total_turnos }}</td>
+                            <td>{{ uso.total_extras }}</td>
+                            <td>$ {{ "{:,.0f}".format(uso.costo_extras) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function(){
-    const headers = document.querySelectorAll('.accordion-header');
-
-    headers.forEach(header => {
-      header.addEventListener('click', function(){
-        this.classList.toggle('active');
-        const content = this.nextElementSibling;
-        if(content){
-          content.classList.toggle('active');
-        }
-        const icon = this.querySelector('i.fa-chevron-right');
-        if(icon){
-          icon.classList.toggle('rotate');
-        }
-      });
-
-      header.addEventListener('keydown', function(e){
-        if(e.key === 'Enter' || e.key === ' '){
-          e.preventDefault();
-          this.click();
-        }
-      });
-    });
-
-    /* -- Gráfico ejemplo básico -- */
-    const ctx = document.getElementById('horasMensualesChart').getContext('2d');
-    const data = {
-      labels: {{ meses[mes|string + '-' + ano|string].semanas.keys()|list|tojson }},
-      datasets: [{
-        label: 'Horas trabajadas',
-        backgroundColor: 'rgba(37, 99, 235, 0.7)',
-        borderColor: 'rgba(37, 99, 235, 1)',
-        borderWidth: 1,
-        data: {{ meses[mes|string + '-' + ano|string].semanas.values()|map(attribute='|length')|list|tojson }},
-      }]
-    };
-
-    const horasMensualesChart = new Chart(ctx, {
-      type: 'bar',
-      data: data,
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'top',
-          },
-          tooltip: {
-            enabled: true
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Cantidad de Días Registrados'
-            }
-          }
-        }
-      },
-    });
-
-    // Gráficos de Horas Extras por usuario
-    const ctxDiario = document.getElementById('extraHorasDiarioChart').getContext('2d');
-    const ctxSemanal = document.getElementById('extraHorasSemanalChart').getContext('2d');
-    const ctxMensual = document.getElementById('extraHorasMensualChart').getContext('2d');
-
-    const extraHorasDiarioData = {
-      labels: {{ extra_horas.diario.labels|default([])|tojson }},
-      datasets: [{
-        label: 'Horas Extras Diarias',
-        data: {{ extra_horas.diario.data|default([])|tojson }},
-        backgroundColor: 'rgba(220, 38, 38, 0.7)',
-        borderColor: 'rgba(220, 38, 38, 1)',
-        borderWidth: 1,
-        borderRadius: 6,
-        borderSkipped: false
-      }]
-    };
-    const extraHorasSemanalData = {
-      labels: {{ extra_horas.semanal.labels|default([])|tojson }},
-      datasets: [{
-        label: 'Horas Extras Semanales',
-        data: {{ extra_horas.semanal.data|default([])|tojson }},
-        backgroundColor: 'rgba(159, 122, 234, 0.7)',
-        borderColor: 'rgba(159, 122, 234, 1)',
-        borderWidth: 1,
-        borderRadius: 6,
-        borderSkipped: false
-      }]
-    };
-    const extraHorasMensualData = {
-      labels: {{ extra_horas.mensual.labels|default([])|tojson }},
-      datasets: [{
-        label: 'Horas Extras Mensuales',
-        data: {{ extra_horas.mensual.data|default([])|tojson }},
-        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-        borderColor: 'rgba(59, 130, 246, 1)',
-        borderWidth: 1,
-        borderRadius: 6,
-        borderSkipped: false
-      }]
-    };
-
-    const options = {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'top',
-        },
-        tooltip: {
-          enabled: true
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'Horas Extras'
-          }
-        }
-      }
-    };
-
-    new Chart(ctxDiario, {
-      type: 'bar',
-      data: extraHorasDiarioData,
-      options: options
-    });
-    new Chart(ctxSemanal, {
-      type: 'bar',
-      data: extraHorasSemanalData,
-      options: options
-    });
-    new Chart(ctxMensual, {
-      type: 'bar',
-      data: extraHorasMensualData,
-      options: options
-    });
-
-  });
-</script>
-
+<style>
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff;
+        color: #0c63e4;
+    }
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,.125);
+    }
+</style>
 {% endblock %}

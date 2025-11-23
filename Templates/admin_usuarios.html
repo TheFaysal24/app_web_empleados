@@ -1,356 +1,174 @@
-{% extends "base.html" %}
+{% extends "layout.html" %}
 {% block title %}Gestión de Usuarios - Admin{% endblock %}
 {% block content %}
-<style>
-  .admin-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 30px;
-    border-radius: 15px;
-    margin-bottom: 30px;
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
-  }
-
-  .admin-header h2 {
-    margin: 0;
-    font-size: 2em;
-  }
-
-  .users-grid {
-    display: grid;
-    gap: 20px;
-  }
-
-  .user-card {
-    background: white;
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border-left: 5px solid #667eea;
-    transition: all 0.3s ease;
-  }
-
-  .user-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  }
-
-  .user-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #f0f0f0;
-  }
-
-  .user-info h3 {
-    margin: 0;
-    color: #667eea;
-    font-size: 1.5em;
-  }
-
-  .user-info p {
-    margin: 5px 0;
-    color: #666;
-    font-size: 0.95em;
-  }
-
-  .user-badge {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.85em;
-    font-weight: 600;
-    margin-left: 10px;
-  }
-
-  .badge-admin {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: white;
-  }
-
-  .badge-user {
-    background: #e0e0e0;
-    color: #666;
-  }
-
-  .badge-blocked {
-    background: #ff6b6b;
-    color: white;
-  }
-
-  .user-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 20px;
-  }
-
-  .btn {
-    padding: 10px 16px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    color: white;
-  }
-
-  .btn-primary {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-  }
-
-  .btn-warning {
-    background: linear-gradient(135deg, #f093fb, #f5576c);
-    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-  }
-
-  .btn-warning:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-  }
-
-  .btn-danger {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-  }
-
-  .btn-danger:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
-  }
-
-  .btn-success {
-    background: linear-gradient(135deg, #11998e, #38ef7d);
-    box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
-  }
-
-  .btn-success:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(56, 239, 125, 0.4);
-  }
-
-  .user-details {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin: 15px 0;
-  }
-
-  .detail-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #555;
-  }
-
-  .detail-item i {
-    color: #667eea;
-    font-size: 1.1em;
-  }
-
-  .registros-section {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 2px solid #f0f0f0;
-  }
-
-  .registros-section h4 {
-    color: #667eea;
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .registro-item {
-    background: #f8f9fa;
-    padding: 12px 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .registro-info {
-    flex: 1;
-  }
-
-  .registro-info p {
-    margin: 3px 0;
-    font-size: 0.9em;
-    color: #666;
-  }
-
-  .registro-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .btn-sm {
-    padding: 6px 12px;
-    font-size: 0.85em;
-  }
-
-  .back-link {
-    display: inline-block;
-    margin-bottom: 20px;
-    color: #667eea;
-    text-decoration: none;
-    font-weight: 600;
-    transition: all 0.3s ease;
-  }
-
-  .back-link:hover {
-    color: #764ba2;
-    transform: translateX(-5px);
-  }
-</style>
-
-<!-- Navegación Superior -->
-<div style="background: white; padding: 18px 30px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: center;">
-  <a href="{{ url_for('dashboard') }}" style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 700; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); transition: all 0.3s ease;">
-    <i class="fas fa-arrow-left"></i> Volver al Dashboard
-  </a>
-  <div style="display: flex; gap: 12px;">
-    <a href="{{ url_for('admin_backups') }}" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9em; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: all 0.3s ease;">
-      <i class="fas fa-database"></i> Backups
-    </a>
-    <a href="{{ url_for('exportar_registros') }}" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9em; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: all 0.3s ease;">
-      <i class="fas fa-file-excel"></i> Exportar
-    </a>
-    <a href="{{ url_for('logout') }}" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #ef4444, #f87171); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9em; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); transition: all 0.3s ease;">
-      <i class="fas fa-sign-out-alt"></i> Salir
-    </a>
-  </div>
-</div>
-
-<div class="admin-header">
-  <h2><i class="fas fa-users-cog"></i> Gestión de Usuarios</h2>
-  <p style="margin: 10px 0 0 0; opacity: 0.95;">Administra usuarios, contraseñas y registros</p>
-</div>
-
-<div class="users-grid">
-  {% for usuario, datos in usuarios.items() %}
-  <div class="user-card">
-    <div class="user-header">
-      <div class="user-info">
-        <h3>
-          <i class="fas fa-user-circle"></i> {{ usuario }} 
-          <span style="font-size: 0.6em; color: #666; font-weight: normal;">({{ datos.nombre }})</span>
-          {% if datos.get('admin') %}
-            <span class="user-badge badge-admin"><i class="fas fa-crown"></i> Admin</span>
-          {% else %}
-            <span class="user-badge badge-user"><i class="fas fa-user"></i> Usuario</span>
-          {% endif %}
-          {% if datos.get('bloqueado') %}
-            <span class="user-badge badge-blocked"><i class="fas fa-lock"></i> Bloqueado</span>
-          {% endif %}
-        </h3>
-      </div>
-    </div>
-
-    <div class="user-details">
-      <div class="detail-item">
-        <i class="fas fa-id-card"></i>
-        <span><strong>Cédula:</strong> {{ datos.cedula or 'N/A' }}</span>
-      </div>
-      <div class="detail-item">
-        <i class="fas fa-briefcase"></i>
-        <span><strong>Cargo:</strong> {{ datos.cargo }}</span>
-      </div>
-      <div class="detail-item">
-        <i class="fas fa-envelope"></i>
-        <span><strong>Correo:</strong> {{ datos.correo }}</span>
-      </div>
-    </div>
-
-    <div class="user-actions">
-      <a href="{{ url_for('admin_editar_completo', username=usuario) }}" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-        <i class="fas fa-edit"></i> Edición Completa
-      </a>
-      
-      <a href="{{ url_for('admin_cambiar_clave') }}?usuario={{ usuario }}" class="btn btn-primary">
-        <i class="fas fa-key"></i> Cambiar Contraseña
-      </a>
-      
-      {% if datos.get('bloqueado') %}
-        <form method="POST" action="{{ url_for('admin_desbloquear') }}" style="display: inline;">
-          <input type="hidden" name="usuario" value="{{ usuario }}">
-          <button type="submit" class="btn btn-success">
-            <i class="fas fa-unlock"></i> Desbloquear
-          </button>
-        </form>
-      {% else %}
-        <form method="POST" action="{{ url_for('admin_bloquear') }}" style="display: inline;">
-          <input type="hidden" name="usuario" value="{{ usuario }}">
-          <button type="submit" class="btn btn-warning">
-            <i class="fas fa-ban"></i> Bloquear
-          </button>
-        </form>
-      {% endif %}
-      
-      {% if not datos.get('admin') %}
-        <button type="button" class="btn btn-danger" onclick="if(confirm('¿Eliminar {{ datos.nombre }}? Esto eliminará sus registros y turnos.')) window.location.href='{{ url_for('admin_eliminar_usuario', usuario=usuario) }}'">
-          <i class="fas fa-trash"></i> Eliminar
-        </button>
-      {% endif %}
-    </div>
-
-    {% if usuario in registros and registros[usuario] %}
-    <div class="registros-section">
-      <h4><i class="fas fa-clock"></i> Registros Recientes (últimos 5)</h4>
-      {% set sorted_dates = registros[usuario].items() | sort(reverse=True) %}
-      {% for fecha, reg in sorted_dates[:5] %}
-        {% if reg.inicio is defined %}
-        <div class="registro-item">
-          <div class="registro-info">
-            <p><strong><i class="fas fa-calendar"></i> {{ fecha }}</strong></p>
-            <p>
-              <i class="fas fa-sign-in-alt" style="color: green;"></i> Inicio: {{ reg.inicio[:19] if reg.inicio else 'N/A' }}
-              &nbsp;&nbsp;|&nbsp;&nbsp;
-              <i class="fas fa-sign-out-alt" style="color: red;"></i> Salida: {{ reg.salida[:19] if reg.salida else 'No registrada' }}
-            </p>
-            <p>
-              <i class="fas fa-hourglass-half"></i> Horas: {{ reg.horas_trabajadas }}h
-              &nbsp;&nbsp;|&nbsp;&nbsp;
-              <i class="fas fa-plus-circle"></i> Extras: {{ reg.horas_extras }}h
-            </p>
-          </div>
-          <div class="registro-actions">
-            <a href="{{ url_for('admin_editar_registro') }}?usuario={{ usuario }}&fecha={{ fecha }}" class="btn btn-primary btn-sm">
-              <i class="fas fa-edit"></i> Editar
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Volver
             </a>
-            <form method="POST" action="{{ url_for('admin_eliminar_registro') }}"
-                  onsubmit="return confirm('¿Eliminar este registro?')" style="display: inline;">
-              <!-- Eliminado csrf_token() innecesario -->
-              <input type="hidden" name="usuario" value="{{ usuario }}">
-              <input type="hidden" name="fecha" value="{{ fecha }}">
-              <button type="submit" class="btn btn-danger btn-sm">
-                <i class="fas fa-trash"></i> Borrar
-              </button>
-            </form>
-          </div>
+            <h2 class="mb-0"><i class="fas fa-users-cog text-primary"></i> Gestión de Usuarios</h2>
         </div>
-        {% endif %}
-      {% endfor %}
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin_backups') }}" class="btn btn-warning">
+                <i class="fas fa-database"></i> Backups
+            </a>
+            <a href="{{ url_for('exportar_registros') }}" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Exportar
+            </a>
+        </div>
     </div>
-    {% endif %}
-  </div>
-  {% endfor %}
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="accordion accordion-flush" id="accordionUsers">
+                {% for usuario, datos in usuarios.items() %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
+                            <div class="d-flex align-items-center w-100 me-3">
+                                <div class="me-auto d-flex align-items-center gap-3">
+                                    <i class="fas fa-user-circle fa-2x text-secondary"></i>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold text-dark">{{ datos.nombre }}</h5>
+                                        <small class="text-muted">@{{ usuario }}</small>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if datos.get('admin') %}
+                                        <span class="badge bg-primary rounded-pill"><i class="fas fa-crown"></i> Admin</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark border rounded-pill"><i class="fas fa-user"></i> Usuario</span>
+                                    {% endif %}
+                                    
+                                    {% if datos.get('bloqueado') %}
+                                        <span class="badge bg-danger rounded-pill"><i class="fas fa-lock"></i> Bloqueado</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#accordionUsers">
+                        <div class="accordion-body bg-light">
+                            <div class="row g-4">
+                                <!-- Detalles del Usuario -->
+                                <div class="col-md-4">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-primary mb-3"><i class="fas fa-id-card"></i> Información Personal</h6>
+                                            <ul class="list-unstyled mb-0">
+                                                <li class="mb-2"><strong>Cédula:</strong> {{ datos.cedula or 'N/A' }}</li>
+                                                <li class="mb-2"><strong>Cargo:</strong> {{ datos.cargo }}</li>
+                                                <li class="mb-2"><strong>Correo:</strong> {{ datos.correo }}</li>
+                                                <li class="mb-2"><strong>Teléfono:</strong> {{ datos.telefono or 'N/A' }}</li>
+                                            </ul>
+                                            
+                                            <hr>
+                                            
+                                            <div class="d-grid gap-2">
+                                                <a href="{{ url_for('admin_editar_completo', username=usuario) }}" class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-edit"></i> Editar Perfil Completo
+                                                </a>
+                                                <a href="{{ url_for('admin_cambiar_clave') }}?usuario={{ usuario }}" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-key"></i> Cambiar Contraseña
+                                                </a>
+                                                
+                                                {% if datos.get('bloqueado') %}
+                                                    <form method="POST" action="{{ url_for('admin_desbloquear') }}" class="d-grid">
+                                                        <input type="hidden" name="usuario" value="{{ usuario }}">
+                                                        <button type="submit" class="btn btn-success btn-sm">
+                                                            <i class="fas fa-unlock"></i> Desbloquear Usuario
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <form method="POST" action="{{ url_for('admin_bloquear') }}" class="d-grid">
+                                                        <input type="hidden" name="usuario" value="{{ usuario }}">
+                                                        <button type="submit" class="btn btn-warning btn-sm">
+                                                            <i class="fas fa-ban"></i> Bloquear Usuario
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                                
+                                                {% if not datos.get('admin') %}
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="if(confirm('¿Eliminar {{ datos.nombre }}? Esto eliminará sus registros y turnos.')) window.location.href='{{ url_for('admin_eliminar_usuario', usuario=usuario) }}'">
+                                                        <i class="fas fa-trash"></i> Eliminar Usuario
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Registros Recientes -->
+                                <div class="col-md-8">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-primary mb-3"><i class="fas fa-history"></i> Actividad Reciente</h6>
+                                            {% if usuario in registros and registros[usuario] %}
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-hover">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Fecha</th>
+                                                                <th>Entrada</th>
+                                                                <th>Salida</th>
+                                                                <th>Horas</th>
+                                                                <th>Acciones</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% set sorted_dates = registros[usuario].items() | sort(reverse=True) %}
+                                                            {% for fecha, reg in sorted_dates[:5] %}
+                                                                {% if reg.inicio is defined %}
+                                                                <tr>
+                                                                    <td>{{ fecha }}</td>
+                                                                    <td>{{ reg.inicio[:5] if reg.inicio else '-' }}</td>
+                                                                    <td>{{ reg.salida[:5] if reg.salida else '-' }}</td>
+                                                                    <td>{{ reg.horas_trabajadas }}h</td>
+                                                                    <td>
+                                                                        <div class="btn-group btn-group-sm">
+                                                                            <a href="{{ url_for('admin_editar_registro') }}?usuario={{ usuario }}&fecha={{ fecha }}" class="btn btn-outline-secondary" title="Editar">
+                                                                                <i class="fas fa-edit"></i>
+                                                                            </a>
+                                                                            <form method="POST" action="{{ url_for('admin_eliminar_registro') }}" onsubmit="return confirm('¿Borrar?')" style="display:inline;">
+                                                                                <input type="hidden" name="usuario" value="{{ usuario }}">
+                                                                                <input type="hidden" name="fecha" value="{{ fecha }}">
+                                                                                <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                                                    <i class="fas fa-trash"></i>
+                                                                                </button>
+                                                                            </form>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            {% else %}
+                                                <p class="text-muted fst-italic">No hay registros recientes.</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
 
+<style>
+    .accordion-button:not(.collapsed) {
+        background-color: #f0f7ff;
+        color: #0c63e4;
+    }
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,.125);
+    }
+</style>
 {% endblock %}

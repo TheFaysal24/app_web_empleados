@@ -72,10 +72,10 @@ limiter = Limiter(
 app.config['WTF_CSRF_TIME_LIMIT'] = None
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=31)
 app.config['SESSION_REFRESH_EACH_REQUEST'] = True
-# Deshabilitar CSRF globalmente para evitar bloqueos en la operación diaria
-app.config['WTF_CSRF_ENABLED'] = False
+# Habilitar CSRF globalmente
+app.config['WTF_CSRF_ENABLED'] = True
 
-# ✅ Protección CSRF (Inicializada pero deshabilitada por config)
+# ✅ Protección CSRF
 csrf = CSRFProtect(app)
 
 # Manejador de errores CSRF amigable
@@ -236,6 +236,7 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # 1. Tablas principales
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id SERIAL PRIMARY KEY,
@@ -259,26 +260,27 @@ def init_db():
             UNIQUE (dia_semana, hora)
         )
     """)
-    dias = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    # Generar horas cada 30 minutos desde las 05:00 hasta las 22:00
-    horas = []
-    start_time = datetime.datetime.strptime("05:00", "%H:%M")
-    end_time = datetime.datetime.strptime("22:00", "%H:%M")
-    while start_time <= end_time:
-        horas.append(start_time.strftime("%H:%M"))
-        start_time += datetime.timedelta(minutes=30)
     
-    for dia in dias:
-        for hora in horas:
-            try:
-                logger.info(f"Inserting turno disponible: dia={dia}, hora={hora}")
-                # ON CONFLICT DO NOTHING es la sintaxis de PostgreSQL para evitar duplicados
-                cursor.execute("INSERT INTO turnos_disponibles (dia_semana, hora) VALUES (%s, %s) ON CONFLICT (dia_semana, hora) DO NOTHING", (dia, hora))
-            except psycopg2.Error as err:
-                if err.pgcode == '23505': # unique_violation
+    # Poblar turnos disponibles si está vacía
+    cursor.execute("SELECT COUNT(*) FROM turnos_disponibles")
+    if cursor.fetchone()[0] == 0:
+        dias = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        # Generar horas cada 30 minutos desde las 05:00 hasta las 22:00
+        horas = []
+        start_time = datetime.datetime.strptime("05:00", "%H:%M")
+        end_time = datetime.datetime.strptime("22:00", "%H:%M")
+        while start_time <= end_time:
+            horas.append(start_time.strftime("%H:%M"))
+            start_time += datetime.timedelta(minutes=30)
+        
+        for dia in dias:
+            for hora in horas:
+                try:
+                    # ON CONFLICT DO NOTHING es la sintaxis de PostgreSQL para evitar duplicados
+                    cursor.execute("INSERT INTO turnos_disponibles (dia_semana, hora) VALUES (%s, %s) ON CONFLICT (dia_semana, hora) DO NOTHING", (dia, hora))
+                except psycopg2.Error as err:
                     pass
-                else:
-                    logger.error(f"Error al insertar turno disponible: {err}")
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS turnos_asignados (
             id SERIAL PRIMARY KEY,
@@ -350,6 +352,43 @@ def init_db():
         )
     """)
 
+    # Tablas de historial anual
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS historial_anual (
+            id SERIAL PRIMARY KEY,
+            ano VARCHAR(4) NOT NULL UNIQUE,
+            timestamp_creacion TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS historial_anual_meses (
+            id SERIAL PRIMARY KEY,
+            id_historial_anual INT NOT NULL,
+            mes_ano VARCHAR(7) NOT NULL UNIQUE, -- YYYY-MM
+            total_usuarios INT DEFAULT 0,
+            total_registros INT DEFAULT 0,
+            timestamp_registro TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_historial_anual) REFERENCES historial_anual(id)
+        )
+    """)
+
+    # Crear usuario admin por defecto
+    try:
+        cursor.execute("SELECT id FROM usuarios WHERE username = 'admin'")
+        if not cursor.fetchone():
+            hashed_password = generate_password_hash('1234')
+            logger.info(f"Inserting admin user: username=admin")
+            cursor.execute(
+                "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (username) DO NOTHING",
+                ('admin', hashed_password, True, 'Administrador', 'N/A', 'COORDINADOR', 'admin@empresa.com', '')
+            )
+            logger.info("Usuario 'admin' creado en la base de datos.")
+    except psycopg2.Error as err:
+        if err.pgcode == '23505': # unique_violation
+            logger.info("Usuario 'admin' ya existe o hubo un conflicto.")
+        else:
+            logger.error(f"Error al crear usuario admin: {err}")
+
     conn.commit()
     cursor.close()
     conn.close()
@@ -387,48 +426,6 @@ def registrar_auditoria(accion, detalle, usuario=None):
         conn.close()
     except Exception as e:
         logger.error(f"Error al registrar auditoría: {e}")
-
-# ✅ Inicializar DB y crear usuario admin por defecto
-def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS historial_anual (
-            id SERIAL PRIMARY KEY,
-            ano VARCHAR(4) NOT NULL UNIQUE,
-            timestamp_creacion TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS historial_anual_meses (
-            id SERIAL PRIMARY KEY,
-            id_historial_anual INT NOT NULL,
-            mes_ano VARCHAR(7) NOT NULL UNIQUE, -- YYYY-MM
-            total_usuarios INT DEFAULT 0,
-            total_registros INT DEFAULT 0,
-            timestamp_registro TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (id_historial_anual) REFERENCES historial_anual(id)
-        )
-    """)
-    try:
-        cursor.execute("SELECT id FROM usuarios WHERE username = 'admin'")
-        if not cursor.fetchone():
-            hashed_password = generate_password_hash('1234')
-            logger.info(f"Inserting admin user: username=admin")
-            cursor.execute(
-                "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (username) DO NOTHING",
-                ('admin', hashed_password, True, 'Administrador', 'N/A', 'COORDINADOR', 'admin@empresa.com', '')
-            )
-            logger.info("Usuario 'admin' creado en la base de datos.")
-    except psycopg2.Error as err:
-        if err.pgcode == '23505': # unique_violation
-            logger.info("Usuario 'admin' ya existe o hubo un conflicto.")
-        else:
-            logger.error(f"Error al crear usuario admin: {err}")
-
-    conn.commit()
-    cursor.close()
-    conn.close()
 
 # -------------------
 # Flask-Login user loader
@@ -2024,81 +2021,31 @@ def admin_gestion_tiempos():
     cursor.execute("SELECT id, username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
     usuarios_activos = cursor.fetchall()
 
-    # Calcular fecha inicio del mes solicitado
-    fecha_inicio_mes = datetime.date(ano, mes, 1)
-    # Calcular fecha fin del mes siguiente (para incluir semanas después del mes actual)
-    if mes == 12:
-        fecha_fin_mes_siguiente = datetime.date(ano + 1, 1, 1) - datetime.timedelta(days=1)
-    else:
-        fecha_fin_mes_siguiente = datetime.date(ano, mes + 1, 1) - datetime.timedelta(days=1)
+    # Generar todas las fechas del mes
+    import calendar
+    num_dias = calendar.monthrange(ano, mes)[1]
+    fechas_mes = [datetime.date(ano, mes, d) for d in range(1, num_dias + 1)]
+
+    # Estructura de datos completa: Fecha -> Usuario -> {Planificado, Real}
+    calendario_completo = {}
     
-    # Calcular la semana del mes (ISO week) para fecha inicio y fin
-    semana_inicio = fecha_inicio_mes.isocalendar()[1]
-    semana_fin = fecha_fin_mes_siguiente.isocalendar()[1]
+    # Agrupar por SEMANAS para visualización jerárquica
+    # Estructura: { 'Semana 45 (04 Nov - 10 Nov)': { '2025-11-04': [registros...], ... } }
+    calendario_semanal = {}
 
-    # Para manejar casos del año en el cambio de semana ISO
-    if semana_fin < semana_inicio:
-        semana_fin += 52  # Año bisiesto no gestionado pero rarísimo
-
-    # Para incluir la semana anterior y siguiente a las del mes actual para el acordeón
-    semanas_a_incluir = list(range(semana_inicio - 1, semana_fin + 2))
-
-    # Diccionario jerárquico: meses -> semanas -> días con datos para plantilla
-    meses = {}
-
-    # Preparar rango de fechas para las semanas que incluiremos
-    fechas_rango = []
-    hoy = now_local().date()
-    for semana_num in semanas_a_incluir:
-        # Ajustes para manejo correcto de semanas en enero y diciembre con salto año
-        adj_ano = ano
-        adj_semana = semana_num
-        if adj_semana <= 0:
-            adj_semana += 52
-            adj_ano -= 1
-        elif adj_semana > 52:
-            adj_semana -= 52
-            adj_ano += 1
-        try:
-            fecha_inicio_semana = datetime.date.fromisocalendar(adj_ano, adj_semana, 1)
-        except ValueError:
-            # Como fallback, usar primera semana del año actual o siguiente según ajuste
-            fecha_inicio_semana = datetime.date.fromisocalendar(adj_ano, 1, 1)
+    for fecha in fechas_mes:
+        # Calcular número de semana y rango
+        semana_num = fecha.isocalendar()[1]
+        inicio_sem = fecha - datetime.timedelta(days=fecha.weekday())
+        fin_sem = inicio_sem + datetime.timedelta(days=6)
+        nombre_semana = f"Semana {semana_num} ({inicio_sem.strftime('%d %b')} - {fin_sem.strftime('%d %b')})"
         
-        for dia_offset in range(7):
-            dia = fecha_inicio_semana + datetime.timedelta(days=dia_offset)
-            fechas_rango.append(dia)
-
-    # Eliminar duplicados y ordenar
-    fechas_rango = sorted(list(set(fechas_rango)))
-
-    # Construir estructura de meses para interfaz (mes_año como llave)
-    for fecha in fechas_rango:
-        mes_ano_key = f"{fecha.year}-{fecha.month:02d}"
-        if mes_ano_key not in meses:
-            meses[mes_ano_key] = {'mes': fecha.month, 'ano': fecha.year, 'semanas': {}}
-
-    # Poblar semanas dentro de cada mes
-    for fecha in fechas_rango:
-        mes_ano_key = f"{fecha.year}-{fecha.month:02d}"
-        semana = fecha.isocalendar()[1]
-        inicio_sem = fecha - datetime.timedelta(days=fecha.weekday())
-        fin_sem = inicio_sem + datetime.timedelta(days=6)
-        nombre_semana = f"Semana {semana} ({inicio_sem.strftime('%d %b')} - {fin_sem.strftime('%d %b')})"
-        if nombre_semana not in meses[mes_ano_key]['semanas']:
-            meses[mes_ano_key]['semanas'][nombre_semana] = {}
-
-    # Consultamos datos para todos los usuarios y fechas a mostrar
-    for fecha in fechas_rango:
-        mes_ano_key = f"{fecha.year}-{fecha.month:02d}"
-        semana = fecha.isocalendar()[1]
-        inicio_sem = fecha - datetime.timedelta(days=fecha.weekday())
-        fin_sem = inicio_sem + datetime.timedelta(days=6)
-        nombre_semana = f"Semana {semana} ({inicio_sem.strftime('%d %b')} - {fin_sem.strftime('%d %b')})"
+        if nombre_semana not in calendario_semanal:
+            calendario_semanal[nombre_semana] = {}
+        
         fecha_str = fecha.isoformat()
-
-        if fecha_str not in meses[mes_ano_key]['semanas'][nombre_semana]:
-            meses[mes_ano_key]['semanas'][nombre_semana][fecha_str] = []
+        calendario_completo[fecha_str] = []
+        calendario_semanal[nombre_semana][fecha_str] = []
 
         for usuario in usuarios_activos:
             user_id = usuario['id']
@@ -2133,7 +2080,7 @@ def admin_gestion_tiempos():
                 horas = float(real_row['horas_trabajadas'])
                 extras = float(real_row['horas_extras'])
 
-            meses[mes_ano_key]['semanas'][nombre_semana][fecha_str].append({
+            registro_data = {
                 'usuario_id': user_id,
                 'usuario': usuario['username'],
                 'nombre': usuario['nombre'],
@@ -2144,7 +2091,10 @@ def admin_gestion_tiempos():
                 'horas': horas,
                 'extras': extras,
                 'tiene_registro': real_row is not None
-            })
+            }
+            
+            calendario_completo[fecha_str].append(registro_data)
+            calendario_semanal[nombre_semana][fecha_str].append(registro_data)
 
     # --- NUEVO: Agregar resumen de uso de turnos por usuario ---
     resumen_uso = []
@@ -2196,6 +2146,8 @@ def admin_gestion_tiempos():
         'semanal': {'labels': [], 'data': []},
         'mensual': {'labels': [], 'data': []}
     }
+    
+    hoy = now_local().date()
 
     # Datos diarios (últimos 7 días)
     cursor.execute("""
@@ -2210,10 +2162,6 @@ def admin_gestion_tiempos():
         extra_horas['diario']['data'].append(float(row['total_extras'] or 0))
 
     # Datos semanales (últimas 6 semanas)
-    semana_ayear_ago = (hoy - datetime.timedelta(weeks=6)).isocalendar()
-    ano_ayear = semana_ayear_ago[0]
-    semana_ayear = semana_ayear_ago[1]
-
     cursor.execute("""
         SELECT EXTRACT(YEAR FROM fecha) as ano, EXTRACT(WEEK FROM fecha) as semana, SUM(horas_extras) as total_extras
         FROM registros_asistencia
@@ -2246,7 +2194,7 @@ def admin_gestion_tiempos():
     conn.close()
 
     return render_template('admin_gestion_tiempos.html',
-                         meses=meses,
+                         calendario_semanal=calendario_semanal,
                          mes=mes, ano=ano,
                          meses_nombres={1:'Enero', 2:'Febrero', 3:'Marzo', 4:'Abril', 5:'Mayo', 6:'Junio', 7:'Julio', 8:'Agosto', 9:'Septiembre', 10:'Octubre', 11:'Noviembre', 12:'Diciembre'},
                          resumen_uso=resumen_uso,
