@@ -3329,9 +3329,6 @@ Si no solicitaste este cambio, puedes ignorar este correo. El enlace expirará e
 # -------------------
 # Ejecutar aplicación
 # -------------------
-# Inicializar la base de datos al iniciar la aplicación
-init_db()
-
 # Advertencia si se usa SECRET_KEY por defecto
 if app.secret_key.startswith('CHANGE_THIS'):
     logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
