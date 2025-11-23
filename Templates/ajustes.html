@@ -1,172 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Ajustes de Cuenta{% endblock %}
+
+{% block head %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ajustes.css') }}">
+{% endblock %}
+
 {% block content %}
-<style>
-  body {
-    background: #f5f7fa;
-    padding: 20px;
-  }
-
-  .ajustes-container {
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .ajustes-header {
-    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-    color: white;
-    padding: 35px;
-    border-radius: 15px;
-    margin-bottom: 30px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  }
-
-  .ajustes-header h2 {
-    margin: 0 0 10px 0;
-    font-size: 2.2em;
-    font-weight: 700;
-  }
-
-  .ajustes-header p {
-    margin: 0;
-    opacity: 0.9;
-    font-size: 1.05em;
-  }
-
-  .settings-section {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 25px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(102, 126, 234, 0.1);
-  }
-
-  .settings-section h4 {
-    color: #667eea;
-    margin-top: 0;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .form-group {
-    margin-bottom: 20px;
-  }
-
-  .form-label {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
-    display: block;
-  }
-
-  .form-control {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 12px 15px;
-    font-size: 1em;
-    transition: all 0.3s ease;
-  }
-
-  .form-control:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  .btn-guardar {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    color: white;
-    padding: 12px 30px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 1em;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .btn-guardar:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    color: white;
-    text-decoration: none;
-  }
-
-  .btn-guardar:active {
-    transform: translateY(0);
-  }
-
-  .form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-  }
-
-  .info-box {
-    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-    border-left: 4px solid #667eea;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    color: #333;
-    font-size: 0.95em;
-  }
-
-  .info-box strong {
-    color: #667eea;
-  }
-
-  .success-message {
-    background: #e8f5e9;
-    border: 1px solid #4caf50;
-    color: #2e7d32;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .success-message i {
-    font-size: 1.2em;
-  }
-
-  @media (max-width: 768px) {
-    .ajustes-header {
-      padding: 20px;
-    }
-
-    .ajustes-header h2 {
-      font-size: 1.5em;
-    }
-
-    .form-row {
-      grid-template-columns: 1fr;
-    }
-
-    .btn-guardar {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-</style>
-
 <!-- Navegación Superior -->
-<div style="background: white; padding: 18px 30px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: center; max-width: 900px; margin-left: auto; margin-right: auto;">
-  <a href="{{ url_for('dashboard') }}" style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 700; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); transition: all 0.3s ease;">
+<div class="top-nav">
+  <a href="{{ url_for('dashboard') }}" class="btn btn-info">
     <i class="fas fa-arrow-left"></i> Volver al Dashboard
   </a>
-  <a href="{{ url_for('logout') }}" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #ef4444, #f87171); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.9em; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); transition: all 0.3s ease;">
+  <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">
     <i class="fas fa-sign-out-alt"></i> Salir
   </a>
 </div>
@@ -181,14 +27,13 @@
   <!-- Actualizar datos personales -->
   <div class="settings-section">
     <h4><i class="fas fa-user-edit"></i> Información Personal</h4>
-    
+
     <div class="info-box">
       <strong>💡 Consejo:</strong> Mantén tu información actualizada para que los registros sean precisos.
     </div>
 
-    <!-- Formulario para actualizar datos, ahora apunta a 'ajustes' -->
-    <form method="POST" action="{{ url_for('actualizar_datos') }}">
-      <!-- Eliminado csrf_token() innecesario -->
+    <!-- Ambos formularios apuntan a la misma ruta -->
+    <form method="POST" action="{{ url_for('ajustes') }}">
       {{ update_form.hidden_tag() }}
       <div class="form-row">
         <div class="form-group">
@@ -213,7 +58,7 @@
       </div>
 
       <!-- El 'name' y 'value' ayudan a identificar qué formulario se envió -->
-      <button type="submit" name="submit_update" value="1" class="btn-guardar">
+      <button type="submit" name="submit_update" value="1" class="btn btn-primary">
         <i class="fas fa-save"></i> Guardar Cambios
       </button>
     </form>
@@ -222,13 +67,13 @@
   <!-- Cambiar contraseña -->
   <div class="settings-section">
     <h4><i class="fas fa-lock"></i> Seguridad - Cambiar Contraseña</h4>
-    
+
     <div class="info-box">
       <strong>🔒 Seguridad:</strong> Usa una contraseña fuerte con números, letras y caracteres especiales.
     </div>
 
-    <!-- Formulario para cambiar contraseña, ahora apunta a 'ajustes' -->
-    <form method="POST" action="{{ url_for('cambiar_contrasena') }}">
+    <!-- Ambos formularios apuntan a la misma ruta -->
+    <form method="POST" action="{{ url_for('ajustes') }}">
       {{ password_form.hidden_tag() }}
       <div class="form-group">
         <label class="form-label" for="actual">Contraseña Actual</label>
@@ -246,7 +91,7 @@
       </div>
 
       <!-- El 'name' y 'value' ayudan a identificar qué formulario se envió -->
-      <button type="submit" name="submit_password" value="1" class="btn-guardar" onclick="return validarContrasenas()">
+      <button type="submit" name="submit_password" value="1" class="btn btn-primary" onclick="return validarContrasenas()">
         <i class="fas fa-key"></i> Actualizar Contraseña
       </button>
     </form>
@@ -255,7 +100,7 @@
   <!-- Información de cuenta -->
   <div class="settings-section">
     <h4><i class="fas fa-info-circle"></i> Información de tu Cuenta</h4>
-    
+
     <div class="form-row">
       <div>
         <p><strong>Usuario:</strong> {{ session['usuario'] }}</p>
@@ -265,7 +110,7 @@
       </div>
     </div>
 
-    <div class="form-group" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+    <div class="account-footer">
       <p style="color: #999; font-size: 0.9em;">
         <i class="fas fa-clock"></i> Última sesión: <strong>Hoy</strong>
       </p>
@@ -278,17 +123,17 @@
   function validarContrasenas() {
     const nueva = document.getElementById('nueva').value;
     const confirmar = document.getElementById('confirmar').value;
-    
+
     if (nueva !== confirmar) {
       alert('Las contraseñas no coinciden. Por favor, verifica.');
       return false;
     }
-    
+
     if (nueva.length < 6) {
       alert('La contraseña debe tener al menos 6 caracteres.');
       return false;
     }
-    
+
     return true;
   }
 </script>

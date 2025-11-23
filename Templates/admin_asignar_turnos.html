@@ -1,212 +1,86 @@
-<<<<<<<
-    <title>Asignación de Turnos - Administración</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        /* Estilos para acordeón simple */
-        .accordion {
-            background-color: #eee;
-            color: #444;
-            cursor: pointer;
-            padding: 8px 12px;
-            width: 100%;
-            border: none;
-            text-align: left;
-            outline: none;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-            margin-top: 10px;
-            border-radius: 6px;
-        }
-        .active, .accordion:hover {
-            background-color: #ccc;
-        }
-        .panel {
-            padding: 8px 10px;
-            background-color: white;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            border-left: 2px solid #ccc;
-            border-right: 2px solid #ccc;
-            border-bottom: 2px solid #ccc;
-            margin-bottom: 15px;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 8px;
-            font-size: 0.9rem;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 6px;
-            text-align: center;
-            vertical-align: middle;
-            min-width: 60px;
-        }
-        th {
-            background-color: #f2f2f2;
-            position: sticky;
-            top: 0;
-            z-index: 5;
-        }
-        .usuario-row {
-            background-color: #f9f9f9;
-            font-weight: bold;
-            white-space: nowrap;
-            position: sticky;
-            left: 0;
-            background-clip: padding-box;
-            z-index: 10;
-        }
-        select.turno-select {
-            width: 100%;
-            padding: 4px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 0.9rem;
-            cursor: pointer;
-            background-color: #fff;
-        }
-        /* para que los botones sean más pequeños y de colores consistentes */
-        .btn-smaller {
-            padding: 6px 12px !important;
-            font-size: 0.875rem !important;
-            border-radius: 10px !important;
-            font-weight: 600 !important;
-            transition: all 0.3s ease !important;
-            cursor: pointer;
-        }
-        .btn-action {
-            background: linear-gradient(to right, #2563eb, #4f46e5) !important;
-            color: white !important;
-            border: none !important;
-            box-shadow: 0 6px 18px rgba(59, 130, 246, 0.6) !important;
-        }
-        .btn-action:hover {
-            background: linear-gradient(to right, #1e40af, #4338ca) !important;
-            box-shadow: 0 10px 28px rgba(67, 56, 202, 0.8) !important;
-            transform: translateY(-4px);
-        }
-        /* Contenedor para selector mes */
-        .month-selector {
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-    </style>
-=======
-    <title>Asignación de Turnos - Administración</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='custom_buttons.css') }}">
-    <style>
-        /* Nueva paleta elegante para acordeón y botones */
-        .accordion {
-            background-color: #fafafa;
-            color: #2c3e50;
-            cursor: pointer;
-            padding: 10px 15px;
-            width: 100%;
-            border: none;
-            text-align: left;
-            outline: none;
-            font-size: 17px;
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-            margin-top: 10px;
-            border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(44, 62, 80, 0.1);
-        }
-        .active, .accordion:hover {
-            background: linear-gradient(90deg, #4b79a1, #283e51);
-            color: white;
-            box-shadow: 0 10px 20px rgba(40, 62, 81, 0.5);
-        }
-        .panel {
-            padding: 12px 16px;
-            background-color: white;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out;
-            border-radius: 0 0 12px 12px;
-            box-shadow: 0 4px 8px rgba(44, 62, 80, 0.1);
-            border: none;
-            margin-bottom: 20px;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 12px;
-            font-size: 0.95rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(44, 62, 80, 0.1);
-        }
-        th, td {
-            border: 1px solid #e1e8f0;
-            padding: 8px;
-            text-align: center;
-            vertical-align: middle;
-            min-width: 65px;
-        }
-        th {
-            background: linear-gradient(90deg, #283e51, #4b79a1);
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 5;
-            font-weight: 600;
-        }
-        .usuario-row {
-            background-color: #dbe9f4;
-            font-weight: 700;
-            white-space: nowrap;
-            position: sticky;
-            left: 0;
-            background-clip: padding-box;
-            color: #2c3e50;
-            z-index: 10;
-        }
-        select.turno-select {
-            width: 100%;
-            padding: 6px;
-            border-radius: 10px;
-            border: 1.5px solid #4b79a1;
-            font-size: 0.95rem;
-            cursor: pointer;
-            background-color: #f7fbff;
-            color: #283e51;
-            font-weight: 600;
-            transition: border-color 0.3s ease;
-        }
-        select.turno-select:hover, select.turno-select:focus {
-            border-color: #1f3a5a;
-            outline: none;
-            background-color: #e6f0fa;
-            color: #1f3a5a;
-        }
-        /* Contenedor para selector mes */
-        .month-selector {
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-        }
-        .month-selector select, .month-selector input[type="number"], .month-selector button {
-            border-radius: 20px !important;
-            padding: 10px 15px !important;
-            font-size: 1rem !important;
-            font-weight: 600 !important;
-            border: 1.8px solid #4b79a1 !important;
-            color: #283e51 !important;
-            background-color: #f7fbff !important;
-            transition: border-color 0.3s ease;
-        }
-        .month-selector select:hover, .month-selector input[type="number"]:hover, .month-selector button:hover {
-            border-color: #1f3a5a !important;
-            background-color: #e6f0fa !important;
-            color: #1f3a5a !important;
-            cursor: pointer;
-        }
-    </style>
+{% extends "base.html" %}
+{% block title %}Asignar Turnos{% endblock %}
+
+{% block head %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_asignar_turnos.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="turnos-container">
+
+  <!-- Navegación Superior -->
+  <div class="top-nav">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> Volver al Dashboard
+    </a>
+    <h2 class="page-title">Asignación de Turnos</h2>
+    <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">
+      <i class="fas fa-sign-out-alt"></i> Salir
+    </a>
+  </div>
+
+  <!-- Formulario principal -->
+  <form method="POST">
+    {{ form.hidden_tag() }}
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fas fa-calendar-plus"></i> Planificación Semanal
+        </h3>
+        <p class="card-subtitle">
+          Selecciona el turno para cada gestor y día. Los cambios se aplicarán para la semana actual.
+        </p>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-turnos">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Lunes</th>
+              <th>Martes</th>
+              <th>Miércoles</th>
+              <th>Jueves</th>
+              <th>Viernes</th>
+              <th>Sábado</th>
+              <th>Domingo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for usuario, turnos in usuarios_turnos.items() %}
+            <tr>
+              <td class="user-cell">
+                <i class="fas fa-user"></i> {{ usuario }}
+              </td>
+              {% for dia in ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'] %}
+              <td>
+                <div class="form-group-table">
+                  <select name="{{ usuario }}_{{ dia }}" class="form-control form-control-sm">
+                    {% set turno_actual = turnos.get(dia, 'Descanso') %}
+                    {% for opcion in form.opciones_turno %}
+                      <option value="{{ opcion }}" {% if opcion == turno_actual %}selected{% endif %}>
+                        {{ opcion }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Botón de Guardar -->
+    <div class="submit-container">
+      <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fas fa-save"></i> Guardar Cambios
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

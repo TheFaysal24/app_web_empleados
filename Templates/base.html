@@ -5,91 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Sistema Empleados{% endblock %}</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body { 
-      font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
-      background-color: #f3f4f6;
-      background-image: radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
-                        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
-                        radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%),
-                        radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
-      background-attachment: fixed;
-      min-height: 100vh;
-    }
-    
-    /* Scrollbar elegante */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(0,0,0,0.05);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-
-    .flash-messages {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 9999;
-      max-width: 400px;
-    }
-    
-    .alert {
-      padding: 15px 20px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      animation: slideIn 0.3s ease, fadeOut 0.3s ease 1s forwards;
-      font-weight: 500;
-    }
-    
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateX(100px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-    
-    @keyframes fadeOut {
-      from {
-        opacity: 1;
-        transform: translateX(0);
-      }
-      to {
-        opacity: 0;
-        transform: translateX(100px);
-      }
-    }
-    
-    .alert-success {
-      background: linear-gradient(135deg, #11998e, #38ef7d);
-      color: white;
-      border-left: 5px solid #0d7a6f;
-    }
-    
-    .alert-danger {
-      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
-      color: white;
-      border-left: 5px solid #cc5555;
-    }
-  </style>
+  <!-- Estilos base de la aplicación -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base-styles.css') }}">
+  {% block head %}{% endblock %}
 </head>
 <body>
   <!-- Mensajes flash -->

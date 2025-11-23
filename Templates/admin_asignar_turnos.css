@@ -1,0 +1,101 @@
+/* static/css/admin_asignar_turnos.css */
+
+body {
+  background-color: var(--bg-primary, #f8fafc);
+}
+
+.turnos-container {
+  max-width: 1400px;
+  margin: 20px auto;
+  padding: 0 20px;
+  animation: fadeIn 0.5s ease;
+}
+
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding: 15px 25px;
+  background: white;
+  border-radius: var(--radius-lg, 20px);
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.08));
+}
+
+.page-title {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: var(--text-primary, #1e293b);
+  margin: 0;
+}
+
+.card {
+  border-radius: var(--radius-lg, 20px);
+  overflow: hidden; /* Para que los bordes redondeados afecten a la tabla */
+}
+
+.card-header {
+  background: var(--primary-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+  color: white;
+  padding: 25px;
+}
+
+.card-header .card-title {
+  font-size: 1.6em;
+  font-weight: 700;
+  margin: 0 0 5px 0;
+  color: white; /* Asegura que el título sea blanco sobre el fondo de gradiente */
+}
+
+.card-subtitle {
+  margin: 0;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table-turnos {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.table-turnos th,
+.table-turnos td {
+  padding: 12px 15px;
+  text-align: center;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.table-turnos thead th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.9em;
+  text-transform: uppercase;
+}
+
+.table-turnos .user-cell {
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.form-group-table {
+  margin: 0;
+}
+
+.form-control-sm {
+  padding: 6px 10px;
+  font-size: 0.9em;
+  min-width: 140px; /* Asegura que el select tenga un ancho mínimo */
+}
+
+.submit-container {
+  text-align: center;
+  margin-top: 30px;
+}

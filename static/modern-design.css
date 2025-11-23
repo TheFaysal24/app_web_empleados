@@ -49,25 +49,23 @@ body {
 
 /* === SISTEMA DE BOTONES === */
 .btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  padding: 10px 24px !important;
-  /* Más elegante y compacto */
-  border: none !important;
-  border-radius: var(--radius-md) !important;
-  font-weight: 600 !important;
-  font-size: 0.95em !important;
-  /* Tamaño más estándar */
-  cursor: pointer !important;
-  transition: all var(--transition-normal) !important;
-  text-decoration: none !important;
-  position: relative !important;
-  overflow: hidden !important;
-  white-space: nowrap !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .btn::before {
@@ -228,10 +226,20 @@ body {
 .card-title {
   font-size: 1.8em;
   font-weight: 800;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  /* Se elimina el gradiente de aquí para hacerlo opcional */
+  color: var(--text-primary);
   margin: 0;
+}
+
+/* === NUEVA CLASE DE UTILIDAD PARA TEXTO CON GRADIENTE === */
+.text-gradient {
+  background: var(--primary-gradient);
+  /* Propiedad con prefijo para compatibilidad con WebKit (Chrome, Safari) */
+  -webkit-background-clip: text;
+  /* Propiedad estándar */
+  background-clip: text;
+  /* Color de texto transparente para que se vea el fondo (gradiente) */
+  -webkit-text-fill-color: transparent;
 }
 
 .card-body {
