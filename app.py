@@ -2481,7 +2481,7 @@ def admin_asignar_turnos():
     calendario_mensual = {}
     fecha_actual = primer_dia_mes
     while fecha_actual <= ultimo_dia_mes:
-        semana_num = fecha.isocalendar()[1]
+        semana_num = fecha_actual.isocalendar()[1]
         if semana_num not in calendario_mensual:
             calendario_mensual[semana_num] = []
         # Añadir solo los días de esa semana que pertenecen al mes actual
