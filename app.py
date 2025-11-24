@@ -2405,9 +2405,8 @@ def admin_asignar_turnos():
         
         try:
             for key, id_turno_disponible in request.form.items():
-                # FIX 1: Corregir el procesamiento de la clave del formulario
+                # FIX 1: Corregir el procesamiento de la clave del formulario.
                 if key.startswith('turno-') and key != 'csrf_token':
-                    _, id_usuario_str, fecha_str = key.split('-')
                     id_usuario_str, fecha_str = key.split('-')
                     id_usuario = int(id_usuario_str)
                     fecha = datetime.date.fromisoformat(fecha_str)
@@ -2503,14 +2502,14 @@ def admin_asignar_turno_manual():
         hoy = now_local().date()
         inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
 
-        # FIX 4: Corregir la lógica del bucle y el procesamiento
+        # FIX 5: Corregir la lógica del bucle y el procesamiento
         try:
             for i, dia_str in enumerate(dias_semana):
                 fecha_asignacion = inicio_semana + datetime.timedelta(days=i)
                 # El nombre del campo en el formulario es `turno_dia`
                 hora = request.form.get(f'turno_{dia_str}')
 
-                if hora:
+                if hora: 
                     # 1. Obtener ID del turno disponible
                     cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia_str, hora))
                     turno_disponible_row = cursor.fetchone()
