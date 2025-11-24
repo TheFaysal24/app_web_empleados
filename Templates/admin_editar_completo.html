@@ -185,6 +185,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('admin_actualizar_usuario_completo') }}">
+      {{ form.hidden_tag() }}
       <input type="hidden" name="usuario" value="{{ usuario }}">
       
       <!-- Datos Personales -->
