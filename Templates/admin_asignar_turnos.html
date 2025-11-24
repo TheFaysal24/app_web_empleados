@@ -64,51 +64,49 @@
             </tr>
           </thead>
           <tbody>
-            {% for usuario in usuarios %} {# Inicio del bucle de usuarios #}
-            <tr>
-              <td class="user-cell">
-                <div class="user-info-cell">
-                  <i class="fas fa-user-tie"></i>
-                  <span>{{ usuario.username }}</span>
-                </div>
-              </td>
-              {% for fecha in fechas_semana %}
-              <td>
-                <div class="time-picker-group">
-                  {% set turno_actual_id = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
-                  {% set hora_actual = namespace(h=None, m=None, p=None) %}
-                  {% if turno_actual_id %}
-                    {% for t in turnos_disponibles if t.id == turno_actual_id %}
-                      {% set hora_obj = datetime.datetime.strptime(t.hora, '%H:%M') %}
-                      {% set hora_actual.h = hora_obj.strftime('%-I') %}
-                      {% set hora_actual.m = hora_obj.strftime('%M') %}
-                      {% set hora_actual.p = hora_obj.strftime('%p') %}
-                    {% endfor %}
-                  {% endif %}
-                  <select name="hora-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
-                    <option value="">--</option>
-                    {% for h in range(1, 13) %}<option value="{{ h }}" {% if hora_actual.h == h|string %}selected{% endif %}>{{ h }}</option>{% endfor %}
-                  </select>
-                  <select name="minuto-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
-                    <option value="">--</option>
-                    <option value="00" {% if hora_actual.m == '00' %}selected{% endif %}>00</option>
-                    <option value="30" {% if hora_actual.m == '30' %}selected{% endif %}>30</option>
-                  </select>
-                  <select name="periodo-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
-                    <option value="">--</option>
-                    <option value="AM" {% if hora_actual.p == 'AM' %}selected{% endif %}>AM</option>
-                    <option value="PM" {% if hora_actual.p == 'PM' %}selected{% endif %}>PM</option>
-                  </select>
-                </div>
-              </td>
-              {% endfor %}
-            </tr>
-            {% endfor %} {# Cierre del bucle de usuarios #}
-            {% else %} {# Esto se ejecuta si la lista de usuarios está vacía #}
+            {% for usuario in usuarios %}
+              <tr>
+                <td class="user-cell">
+                  <div class="user-info-cell">
+                    <i class="fas fa-user-tie"></i>
+                    <span>{{ usuario.username }}</span>
+                  </div>
+                </td>
+                {% for fecha in fechas_semana %}
+                <td>
+                  <div class="time-picker-group">
+                    {% set turno_actual_id = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
+                    {% set hora_actual = namespace(h=None, m=None, p=None) %}
+                    {% if turno_actual_id %}
+                      {% for t in turnos_disponibles if t.id == turno_actual_id %}
+                        {% set hora_obj = datetime.datetime.strptime(t.hora, '%H:%M') %}
+                        {% set hora_actual.h = hora_obj.strftime('%-I') %}
+                        {% set hora_actual.m = hora_obj.strftime('%M') %}
+                        {% set hora_actual.p = hora_obj.strftime('%p') %}
+                      {% endfor %}
+                    {% endif %}
+                    <select name="hora-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
+                      <option value="">--</option>
+                      {% for h in range(1, 13) %}<option value="{{ h }}" {% if hora_actual.h == h|string %}selected{% endif %}>{{ h }}</option>{% endfor %}
+                    </select>
+                    <select name="minuto-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
+                      <option value="">--</option>
+                      <option value="00" {% if hora_actual.m == '00' %}selected{% endif %}>00</option>
+                      <option value="30" {% if hora_actual.m == '30' %}selected{% endif %}>30</option>
+                    </select>
+                    <select name="periodo-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
+                      <option value="">--</option>
+                      <option value="AM" {% if hora_actual.p == 'AM' %}selected{% endif %}>AM</option>
+                      <option value="PM" {% if hora_actual.p == 'PM' %}selected{% endif %}>PM</option>
+                    </select>
+                  </div>
+                </td>
+                {% endfor %}
+              </tr>
+            {% else %}
             <tr>
               <td colspan="8" class="text-center p-3">No hay usuarios para mostrar.</td>
             </tr>
-            {% endfor %} {# Cierre del bucle de usuarios #}
           </tbody>
         </table>
       </div>
