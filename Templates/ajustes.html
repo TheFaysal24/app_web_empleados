@@ -1,11 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Ajustes de Cuenta{% endblock %}
 
-{% block head %}
-  {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ajustes.css') }}">
-{% endblock %}
-
 {% block content %}
 <div class="ajustes-container">
   <!-- Header -->
@@ -16,108 +11,105 @@
     </a>
   </div>
 
-  <!-- Actualizar datos personales -->
-  <div class="settings-section">
-    <h4><i class="fas fa-user-edit"></i> Información Personal</h4>
-
-    <div class="info-box">
-      <strong>💡 Consejo:</strong> Mantén tu información actualizada para que los registros sean precisos.
-    </div>
-
-    <!-- Ambos formularios apuntan a la misma ruta -->
-    <form method="POST" action="{{ url_for('ajustes') }}">
-      {{ update_form.hidden_tag() }}
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="nombre">Nombre</label>
-          {{ update_form.nombre(class="form-control", placeholder="Tu nombre", value=current_user.nombre) }}
+  <div class="ajustes-grid">
+    <!-- Columna Principal -->
+    <div class="ajustes-main-content">
+      <!-- Actualizar datos personales -->
+      <div class="settings-section">
+        <h4><i class="fas fa-user-edit"></i> Información Personal</h4>
+        <div class="info-box">
+          <strong>💡 Consejo:</strong> Mantén tu información actualizada para que los registros sean precisos.
         </div>
-        <div class="form-group">
-          <label class="form-label" for="apellido">Apellido</label>
-          {{ update_form.apellido(class="form-control", placeholder="Tu apellido", value=current_user.apellido) }}
+        <form method="POST" action="{{ url_for('ajustes') }}">
+          {{ update_form.hidden_tag() }}
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="update-nombre">Nombre</label>
+              {{ update_form.nombre(class="form-control", placeholder="Tu nombre", value=current_user.nombre) }}
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="update-apellido">Apellido</label>
+              {{ update_form.apellido(class="form-control", placeholder="Tu apellido", value=current_user.apellido) }}
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="update-correo">Correo Electrónico</label>
+              {{ update_form.correo(class="form-control", placeholder="tu.correo@empresa.com", value=current_user.correo) }}
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="update-telefono">Teléfono</label>
+              {{ update_form.telefono(class="form-control", placeholder="+57 300 123 4567", value=current_user.telefono) }}
+            </div>
+          </div>
+          <button type="submit" name="submit_update" value="1" class="btn btn-primary">
+            <i class="fas fa-save"></i> Guardar Cambios
+          </button>
+        </form>
+      </div>
+
+      <!-- Cambiar contraseña -->
+      <div class="settings-section">
+        <h4><i class="fas fa-lock"></i> Seguridad - Cambiar Contraseña</h4>
+        <div class="info-box">
+          <strong>🔒 Seguridad:</strong> Usa una contraseña fuerte con números, letras y caracteres especiales.
         </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="correo">Correo Electrónico</label>
-          {{ update_form.correo(class="form-control", placeholder="tu.correo@empresa.com", value=current_user.correo) }}
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="telefono">Teléfono</label>
-          {{ update_form.telefono(class="form-control", placeholder="+57 300 123 4567", value=current_user.telefono) }}
-        </div>
-      </div>
-
-      <!-- El 'name' y 'value' ayudan a identificar qué formulario se envió -->
-      <button type="submit" name="submit_update" value="1" class="btn btn-primary">
-        <i class="fas fa-save"></i> Guardar Cambios
-      </button>
-    </form>
-  </div>
-
-  <!-- Cambiar contraseña -->
-  <div class="settings-section">
-    <h4><i class="fas fa-lock"></i> Seguridad - Cambiar Contraseña</h4>
-
-    <div class="info-box">
-      <strong>🔒 Seguridad:</strong> Usa una contraseña fuerte con números, letras y caracteres especiales.
-    </div>
-
-    <!-- Ambos formularios apuntan a la misma ruta -->
-    <form method="POST" action="{{ url_for('ajustes') }}">
-      {{ password_form.hidden_tag() }}
-      <div class="form-group">
-        <label class="form-label" for="actual">Contraseña Actual</label>
-        {{ password_form.actual(class="form-control", placeholder="Ingresa tu contraseña actual") }}
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="nueva">Nueva Contraseña</label>
-        {{ password_form.nueva(class="form-control", placeholder="Mínimo 6 caracteres") }}
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="confirmar">Confirmar Contraseña</label>
-        {{ password_form.confirmar(class="form-control", placeholder="Repite la nueva contraseña") }}
-      </div>
-
-      <!-- El 'name' y 'value' ayudan a identificar qué formulario se envió en el backend -->
-      <button type="submit" name="submit_password" value="1" class="btn btn-primary" onclick="return validarContrasenas()">
-        <i class="fas fa-key"></i> Actualizar Contraseña
-      </button>
-    </form>
-  </div>
-
-  <!-- Información de cuenta -->
-  <div class="settings-section">
-    <h4><i class="fas fa-info-circle"></i> Información de tu Cuenta</h4>
-    <div class="form-row account-info">
-      <div>
-        <p><strong>Usuario:</strong> {{ current_user.username }}</p>
-      </div>
-      <div>
-        <p><strong>Rol:</strong> <span class="badge bg-primary">{{ current_user.cargo.capitalize() }}</span></p>
+        <form method="POST" action="{{ url_for('ajustes') }}">
+          {{ password_form.hidden_tag() }}
+          <div class="form-group">
+            <label class="form-label" for="password-actual">Contraseña Actual</label>
+            {{ password_form.actual(class="form-control", placeholder="Ingresa tu contraseña actual") }}
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="password-nueva">Nueva Contraseña</label>
+              {{ password_form.nueva(class="form-control", placeholder="Mínimo 6 caracteres") }}
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="password-confirmar">Confirmar Contraseña</label>
+              {{ password_form.confirmar(class="form-control", placeholder="Repite la nueva contraseña") }}
+            </div>
+          </div>
+          <button type="submit" name="submit_password" value="1" class="btn btn-primary" onclick="return validarContrasenas()">
+            <i class="fas fa-key"></i> Actualizar Contraseña
+          </button>
+        </form>
       </div>
     </div>
 
-    <div class="account-footer">
-      <p>
-        <i class="fas fa-clock"></i> Miembro desde: <strong>{{ current_user.fecha_creacion.strftime('%d de %B de %Y') }}</strong>
-      </p>
-    </div>
-
-    <div class="mt-4 text-center">
-      <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+    <!-- Columna Lateral -->
+    <div class="ajustes-sidebar">
+      <!-- Información de cuenta -->
+      <div class="settings-section">
+        <h4><i class="fas fa-info-circle"></i> Información de tu Cuenta</h4>
+        <div class="account-info">
+          <div class="info-item">
+            <span class="info-label">Usuario</span>
+            <span class="info-value">{{ current_user.username }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Rol</span>
+            <span class="info-value"><span class="badge bg-primary">{{ current_user.cargo.capitalize() }}</span></span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Miembro desde</span>
+            <span class="info-value">{{ current_user.fecha_creacion.strftime('%d de %B de %Y') }}</span>
+          </div>
+        </div>
+        <div class="mt-4 text-center">
+          <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+        </div>
+      </div>
     </div>
   </div>
 
 </div>
 
 <script>
+  // FIX: Corregir IDs para que coincidan con los generados por Flask-WTF
   function validarContrasenas() {
-    const nueva = document.getElementById('nueva_contrasena').value;
-    const confirmar = document.getElementById('confirmar_contrasena').value;
+    const nueva = document.getElementById('password-nueva').value;
+    const confirmar = document.getElementById('password-confirmar').value;
 
     if (nueva !== confirmar) {
       alert('Las contraseñas no coinciden. Por favor, verifica.');
@@ -132,4 +124,144 @@
     return true;
   }
 </script>
+{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+  body {
+    background-color: #f4f7f6;
+  }
+  .ajustes-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+  }
+  .ajustes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .ajustes-header h2 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: 700;
+    color: #333;
+  }
+  .ajustes-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+  }
+  .settings-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    margin-bottom: 30px;
+  }
+  .settings-section h4 {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .info-box {
+    background: #f0f7ff;
+    border-left: 4px solid #3b82f6;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    font-size: 0.9em;
+    color: #1e3a8a;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+  .form-label {
+    font-weight: 600;
+    font-size: 0.9em;
+    color: #4a5568;
+    margin-bottom: 8px;
+  }
+  .form-control {
+    padding: 10px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+  }
+  .btn-primary {
+    background: #667eea;
+    border: none;
+  }
+  .btn-primary:hover {
+    background: #5a67d8;
+  }
+  .account-info {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .info-item:last-child {
+    border-bottom: none;
+  }
+  .info-label {
+    font-weight: 600;
+    color: #4a5568;
+  }
+  .info-value {
+    color: #1e293b;
+    font-weight: 500;
+  }
+  .account-footer {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+    font-size: 0.9em;
+    color: #64748b;
+  }
+
+  @media (max-width: 992px) {
+    .ajustes-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+    .ajustes-header {
+      flex-direction: column;
+      gap: 15px;
+      align-items: flex-start;
+    }
+  }
+</style>
 {% endblock %}
