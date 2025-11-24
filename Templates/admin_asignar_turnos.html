@@ -1,11 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Asignar Turnos{% endblock %}
 
-{% block head %}
-  {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_asignar_turnos.css') }}">
-{% endblock %}
-
 {% block content %}
 <div class="turnos-container">
 
@@ -103,4 +98,102 @@
     </div>
   </form>
 </div>
+
+<style>
+  body {
+    background: #f4f7f6;
+  }
+  .turnos-container {
+    max-width: 1400px;
+    margin: 20px auto;
+    padding: 20px;
+  }
+  .top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    margin-bottom: 25px;
+  }
+  .page-title {
+    margin: 0;
+    font-size: 1.6em;
+    font-weight: 700;
+    color: #333;
+  }
+  .week-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  .current-week {
+    font-weight: 600;
+    color: #555;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+    border: none;
+  }
+  .card-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 20px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+  .text-gradient {
+    background: -webkit-linear-gradient(#fff, #e0e0e0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .table-turnos thead th {
+    background-color: #f8f9fa;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 600;
+    color: #495057;
+    padding: 15px;
+  }
+  .user-header { text-align: left !important; }
+  .user-cell {
+    font-weight: 700;
+    color: #343a40;
+    background-color: #f8f9fa;
+  }
+  .user-info-cell {
+    display: flex;
+    flex-direction: column;
+  }
+  .user-info-cell small {
+    font-size: 0.8em;
+    color: #6c757d;
+  }
+  .table-turnos select {
+    min-width: 120px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  }
+  .table-turnos select:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+  }
+  .submit-container {
+    position: sticky;
+    bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    text-align: center;
+    margin-top: 20px;
+  }
+</style>
 {% endblock %}
