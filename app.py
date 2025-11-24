@@ -2128,6 +2128,15 @@ def ver_turnos_asignados():
             'cedula': shift['cedula'],
             'cargo': shift['cargo']
         })
+        
+        # FIX: Poblar el diccionario assigned_shifts para la plantilla
+        username = shift['username']
+        if username not in assigned_shifts:
+            assigned_shifts[username] = []
+        assigned_shifts[username].append({
+            'dia': shift['dia'],
+            'hora': shift['hora']
+        })
 
     cursor.close()
     conn.close()
@@ -2135,6 +2144,7 @@ def ver_turnos_asignados():
     return render_template('ver_turnos_asignados.html',
                         turnos_por_fecha=turnos_por_fecha,
                         admin=admin,
+                        assigned_shifts=assigned_shifts, # FIX: Pasar la variable a la plantilla
                         data={'usuarios': {}, 'turnos': {'shifts': {}}}, # Data ya no se carga de JSON
                         session=session)
 
