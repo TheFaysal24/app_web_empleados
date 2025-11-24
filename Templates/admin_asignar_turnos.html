@@ -74,31 +74,30 @@
               </td>
               {% for fecha in fechas_semana %}
               <td>
-                <div class="form-group-table">
-                  <select name="turno-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm">
-                    <option value="descanso">-- Descanso --</option>
+                <div class="time-picker-group">
                   {% set turno_actual_id = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
-                  {% for turno_disponible in turnos_disponibles %}
-                    {# Agrupar por franja horaria para una mejor UX #}
-                    {% set hora_obj = datetime.datetime.strptime(turno_disponible.hora, '%H:%M') %}
-                    {% if loop.first or (loop.index0 > 0 and hora_obj.hour >= 12 and datetime.datetime.strptime(turnos_disponibles[loop.index0-1].hora, '%H:%M').hour < 12) %}
-                      <optgroup label="Tarde">
-                    {% elif loop.first or (loop.index0 > 0 and hora_obj.hour >= 18 and datetime.datetime.strptime(turnos_disponibles[loop.index0-1].hora, '%H:%M').hour < 18) %}
-                      <optgroup label="Noche">
-                    {% elif loop.first %}
-                      <optgroup label="Mañana">
-                    {% endif %}
-
-                    <option value="{{ turno_disponible.id }}" {% if turno_actual_id == turno_disponible.id %}selected{% endif %}>{{ hora_obj.strftime('%-I:%M %p') }}</option>
-
-                    {% if (loop.index < loop.length and datetime.datetime.strptime(turnos_disponibles[loop.index].hora, '%H:%M').hour >= 12 and hora_obj.hour < 12) %}
-                      </optgroup>
-                    {% elif (loop.index < loop.length and datetime.datetime.strptime(turnos_disponibles[loop.index].hora, '%H:%M').hour >= 18 and hora_obj.hour < 18) %}
-                      </optgroup>
-                    {% elif loop.last %}
-                      </optgroup>
-                    {% endif %}
-                  {% endfor %}
+                  {% set hora_actual = namespace(h=None, m=None, p=None) %}
+                  {% if turno_actual_id %}
+                    {% for t in turnos_disponibles if t.id == turno_actual_id %}
+                      {% set hora_obj = datetime.datetime.strptime(t.hora, '%H:%M') %}
+                      {% set hora_actual.h = hora_obj.strftime('%-I') %}
+                      {% set hora_actual.m = hora_obj.strftime('%M') %}
+                      {% set hora_actual.p = hora_obj.strftime('%p') %}
+                    {% endfor %}
+                  {% endif %}
+                  <select name="hora-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
+                    <option value="">--</option>
+                    {% for h in range(1, 13) %}<option value="{{ h }}" {% if hora_actual.h == h|string %}selected{% endif %}>{{ h }}</option>{% endfor %}
+                  </select>
+                  <select name="minuto-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
+                    <option value="">--</option>
+                    <option value="00" {% if hora_actual.m == '00' %}selected{% endif %}>00</option>
+                    <option value="30" {% if hora_actual.m == '30' %}selected{% endif %}>30</option>
+                  </select>
+                  <select name="periodo-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
+                    <option value="">--</option>
+                    <option value="AM" {% if hora_actual.p == 'AM' %}selected{% endif %}>AM</option>
+                    <option value="PM" {% if hora_actual.p == 'PM' %}selected{% endif %}>PM</option>
                   </select>
                 </div>
               </td>
@@ -109,11 +108,11 @@
             <tr>
               <td colspan="8" class="text-center p-3">No hay usuarios para mostrar.</td>
             </tr>
-            {% endif %}
           </tbody>
         </table>
       </div>
     </div>
+    {% endfor %}
 
     <!-- Botón de Guardar Fijo -->
     <div class="submit-container">
@@ -214,6 +213,15 @@
     border-color: #86b7fe;
     outline: 0;
     box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+  }
+  .time-picker-group {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+  }
+  .time-picker-part {
+    min-width: 0 !important;
+    width: auto !important;
   }
   .submit-container {
     position: sticky;
