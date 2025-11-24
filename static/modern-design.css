@@ -90,6 +90,15 @@ body {
   transform: scale(0.98);
 }
 
+/*
+  FIX: Asegura que los botones de submit y el botón de salir (logout)
+  nunca parezcan deshabilitados y siempre sean clickables.
+*/
+button[type="submit"], .btn-logout {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+
 /* Botón Primario */
 .btn-primary {
   background: var(--primary-gradient);
