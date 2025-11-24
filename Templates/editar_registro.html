@@ -130,17 +130,15 @@
     <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Guardar Cambios</button>
   </form>
 
-  {% if registro.inicio or registro.salida %}
-    <!-- Formulario para Eliminar Registro -->
-    <form method="POST" action="{{ url_for('admin_eliminar_registro') }}" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este registro? Esta acción no se puede deshacer.');">
-      {# Reutiliza el mismo form de arriba para el token CSRF si es el mismo #}
-      <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}">
-      <input type="hidden" name="usuario" value="{{ usuario }}">
-      <input type="hidden" name="fecha" value="{{ fecha }}">
-      <button type="submit" class="btn-delete"><i class="fas fa-trash-alt"></i> Eliminar Registro</button>
-    </form>
-  {% endif %}
+  <!-- Formulario para Eliminar Registro -->
+  <form method="POST" action="{{ url_for('admin_eliminar_registro') }}" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este registro? Esta acción no se puede deshacer.');" style="margin-top: 15px;">
+    {# Reutiliza el mismo form de arriba para el token CSRF si es el mismo #}
+    <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}">
+    <input type="hidden" name="usuario" value="{{ usuario }}">
+    <input type="hidden" name="fecha" value="{{ fecha }}">
+    <button type="submit" class="btn-delete"><i class="fas fa-trash-alt"></i> Eliminar Registro</button>
+  </form>
 
-  <a href="{{ request.referrer or url_for('admin_usuarios') }}" class="btn-back">Volver sin guardar</a>
+  <a href="{{ request.referrer or url_for('admin_usuarios') }}" class="btn-back" style="margin-top: 15px;">Volver sin guardar</a>
 </div>
 {% endblock %}

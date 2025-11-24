@@ -360,7 +360,7 @@ e {
 
   .stat-card.naranja {
     border-left-col
-
+or: #f97316;
   .stat-card.morado {
     border-left-color: #a855f7;
   }
@@ -494,7 +494,7 @@ e {
 
   .grid-2 {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Reducido para gráficos más pequeños */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Aún más reducido */
     gap: 20px;
   }
 
@@ -1038,12 +1038,12 @@ e {
           labels: serverData.fechas,
           datasets: [{
             label: 'Horas trabajadas',
-            data: serverData.horas,
+            data: serverData.horas, // Datos del backend
             backgroundColor: [
-              'rgba(75, 192, 192, 0.6)', // Teal Pastel
-              'rgba(54, 162, 235, 0.6)', // Blue Pastel
-              'rgba(153, 102, 255, 0.6)', // Purple Pastel
-              'rgba(255, 159, 64, 0.6)',  // Orange Pastel
+              'rgba(255, 159, 64, 0.6)',  // Naranja
+              'rgba(75, 192, 192, 0.6)', // Turquesa
+              'rgba(153, 102, 255, 0.6)', // Morado
+              'rgba(54, 162, 235, 0.6)', // Azul
               'rgba(255, 99, 132, 0.6)',  // Red Pastel
               'rgba(255, 205, 86, 0.6)',  // Yellow Pastel
               'rgba(201, 203, 207, 0.6)'  // Grey Pastel
@@ -1051,10 +1051,10 @@ e {
             borderColor: [
               'rgb(75, 192, 192)',
               'rgb(54, 162, 235)',
-              'rgb(153, 102, 255)',
               'rgb(255, 159, 64)',
               'rgb(255, 99, 132)',
               'rgb(255, 205, 86)',
+              'rgb(153, 102, 255)',
               'rgb(201, 203, 207)'
             ],
             borderWidth: 1,
@@ -1125,12 +1125,12 @@ e {
             label: 'Inicios por usuario',
             data: topData.map(d => d.inicios),
             backgroundColor: [
-              'rgba(255, 99, 132, 0.7)',
-              'rgba(54, 162, 235, 0.7)',
-              'rgba(255, 206, 86, 0.7)',
-              'rgba(75, 192, 192, 0.7)',
-              'rgba(153, 102, 255, 0.7)',
-              'rgba(255, 159, 64, 0.7)'
+              'rgba(153, 102, 255, 0.7)', // Morado
+              'rgba(255, 99, 132, 0.7)',  // Rojo
+              'rgba(54, 162, 235, 0.7)',  // Azul
+              'rgba(255, 206, 86, 0.7)',  // Amarillo
+              'rgba(75, 192, 192, 0.7)',  // Turquesa
+              'rgba(255, 159, 64, 0.7)'  // Naranja
             ],
             borderColor: [
               'rgba(255, 99, 132, 1)',
