@@ -103,12 +103,11 @@
               </td>
               {% endfor %}
             </tr>
-            {% endfor %} {# Cierre del bucle de usuarios #}
             {% else %} {# Esto se ejecuta si la lista de usuarios está vacía #}
             <tr>
               <td colspan="8" class="text-center p-3">No hay usuarios para mostrar.</td>
             </tr>
-            {% endfor %} {# Cierre del bucle de usuarios #}
+            {% endfor %} {# Cierre correcto del bucle for/else de usuarios #}
           </tbody>
         </table>
       </div>
