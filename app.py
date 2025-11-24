@@ -1047,7 +1047,7 @@ def dashboard():
     turnos_db = cursor.fetchall()
     for turno in turnos_db:
         if turno['username'] not in turnos_semana_actual:
-            turnos_semana_actual[turno['username']] = {}
+            turnos_semana_actual[turno['username']] = {} # FIX: Inicializar diccionario para el usuario
         turnos_semana_actual[turno['username']][turno['dia_semana'].lower()] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p') # FIX: Corregir la asignación
 
     # Obtener fechas de la semana actual
@@ -2405,21 +2405,39 @@ def admin_asignar_turnos():
         
         try:
             for key, id_turno_disponible in request.form.items():
-                # FIX 1: Corregir el procesamiento de la clave del formulario.
-                if key.startswith('turno-') and key != 'csrf_token':
-                    id_usuario_str, fecha_str = key.split('-')
+                # FIX: Procesar el nuevo selector de hora de 3 partes
+                if key.startswith('hora-') and key.count('-') >= 2:
+                    _, id_usuario_str, fecha_str = key.split('-', 2)
                     id_usuario = int(id_usuario_str)
                     fecha = datetime.date.fromisoformat(fecha_str)
 
+                    # Obtener los componentes de la hora del formulario
+                    hora_sel = request.form.get(f'hora-{id_usuario_str}-{fecha_str}')
+                    minuto_sel = request.form.get(f'minuto-{id_usuario_str}-{fecha_str}')
+                    periodo_sel = request.form.get(f'periodo-{id_usuario_str}-{fecha_str}')
+
+                    # Eliminar turno existente para ese día
                     cursor.execute(
                         "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
                         (id_usuario, fecha)
                     )
-                    if id_turno_disponible and id_turno_disponible != 'descanso':
-                        cursor.execute(
-                            "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
-                            (id_usuario, id_turno_disponible, fecha)
-                        )
+
+                    # Si se seleccionó una hora válida, buscar el turno y guardarlo
+                    if hora_sel and minuto_sel and periodo_sel:
+                        # Convertir a formato 24h
+                        hora_int = int(hora_sel)
+                        if periodo_sel == 'PM' and hora_int != 12:
+                            hora_int += 12
+                        if periodo_sel == 'AM' and hora_int == 12:
+                            hora_int = 0
+                        
+                        hora_24h = f"{hora_int:02d}:{minuto_sel}"
+
+                        cursor.execute("SELECT id FROM turnos_disponibles WHERE hora = %s", (hora_24h,))
+                        turno_row = cursor.fetchone()
+                        if turno_row:
+                            id_turno_disponible_nuevo = turno_row['id']
+                            cursor.execute("INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)", (id_usuario, id_turno_disponible_nuevo, fecha))
             conn.commit()
             flash('Turnos de la semana guardados correctamente.', 'message')
         except Exception as e:
