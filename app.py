@@ -1873,10 +1873,8 @@ def admin_editar_registro():
     
     form = EmptyForm()
     if request.method == 'POST':
-        # No necesitamos validar CSRF aquí explícitamente porque lo deshabilitamos globalmente
-        # pero si se requiere, form.validate_on_submit() lo haría.
-        # Como desactivamos CSRF global, esto siempre pasará si es POST.
-        username = request.form.get('usuario')
+      if form.validate_on_submit():
+        username = request.form.get('usuario') # FIX: Mover dentro de la validación
         fecha_str = request.form.get('fecha')
         inicio_str = request.form.get('inicio')
         salida_str = request.form.get('salida')
@@ -1920,6 +1918,10 @@ def admin_editar_registro():
         # Redirigir al nuevo panel de gestión de tiempos para mantener el flujo
         return redirect(url_for('admin_gestion_tiempos', mes=datetime.datetime.strptime(fecha_str, '%Y-%m-%d').month, ano=datetime.datetime.strptime(fecha_str, '%Y-%m-%d').year))
     
+      else:
+        flash('Error de validación del formulario. Intenta de nuevo.', 'error')
+        return redirect(request.referrer or url_for('admin_gestion_tiempos'))
+
     username = request.args.get('usuario')
     fecha_str = request.args.get('fecha')
     registro = None
@@ -1946,7 +1948,7 @@ def admin_editar_registro():
     conn.close()
 
     if registro:
-        return render_template('editar_registro.html', usuario=username, fecha=fecha_str, registro=registro)
+        return render_template('editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form)
     
     flash('Registro no encontrado', 'error')
     return redirect(url_for('admin_usuarios'))

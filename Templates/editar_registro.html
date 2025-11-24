@@ -1,46 +1,35 @@
 {% extends "base.html" %}
-{% block title %}Editar Registro - Admin{% endblock %}
+{% block title %}Editar Registro{% endblock %}
 {% block content %}
 <style>
   body {
-    background: #f5f7fa;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
     padding: 20px;
   }
 
   .edit-container {
-    max-width: 700px;
-    margin: 50px auto;
+    max-width: 600px;
+    margin: 40px auto;
     background: white;
     padding: 40px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.6s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .edit-container h2 {
-    background: linear-gradient(135deg, #0f2027, #2c5364);
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: 700;
+    background: var(--primary-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 10px;
-    font-size: 2em;
-    font-weight: 700;
-  }
-
-  .registro-info {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 30px;
-    border-left: 5px solid #3b82f6;
-  }
-
-  .registro-info p {
-    margin: 8px 0;
-    color: #333;
-  }
-
-  .registro-info strong {
-    color: #3b82f6;
   }
 
   .form-group {
@@ -49,21 +38,15 @@
 
   .form-label {
     display: block;
-    color: #333;
+    margin-bottom: 8px;
     font-weight: 600;
-    margin-bottom: 10px;
-    font-size: 1em;
-  }
-
-  .form-label i {
-    margin-right: 8px;
-    color: #3b82f6;
+    color: #4a5568;
   }
 
   .form-control {
     width: 100%;
-    padding: 14px 16px;
-    border: 2px solid #e0e0e0;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
     border-radius: 10px;
     font-size: 1em;
     transition: all 0.3s ease;
@@ -71,118 +54,60 @@
 
   .form-control:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
   }
 
-  .btn-group {
-    display: flex;
-    gap: 15px;
-    margin-top: 30px;
-  }
-
-  .btn {
-    flex: 1;
-    padding: 14px 20px;
+  .btn-submit {
+    width: 100%;
+    padding: 15px;
+    background: var(--success-gradient);
+    color: white;
     border: none;
     border-radius: 10px;
+    font-size: 1.1em;
     font-weight: 700;
-    font-size: 1em;
     cursor: pointer;
     transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4);
+  }
+
+  .btn-back {
+    display: block;
     text-align: center;
-  }
-
-  .btn-primary {
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
-    color: white;
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4);
-  }
-
-  .btn-secondary {
-    background: #6c757d;
-    color: white;
-  }
-
-  .btn-secondary:hover {
-    background: #5a6268;
-    transform: translateY(-2px);
-  }
-
-  .back-link {
-    display: inline-block;
-    margin-bottom: 20px;
-    color: #3b82f6;
-    text-decoration: none;
+    margin-top: 20px;
+    color: #667eea;
     font-weight: 600;
-    transition: all 0.3s ease;
-  }
-
-  .back-link:hover {
-    color: #2563eb;
-    transform: translateX(-5px);
+    text-decoration: none;
   }
 </style>
 
-<a href="{{ url_for('admin_usuarios') }}" class="back-link">
-  <i class="fas fa-arrow-left"></i> Volver a Gestión de Usuarios
-</a>
-
 <div class="edit-container">
-  <h2><i class="fas fa-edit"></i> Editar Registro</h2>
-  <p style="color: #666; margin-bottom: 30px;">Modifica el registro de asistencia</p>
-
-  <div class="registro-info">
-    <p><strong><i class="fas fa-user"></i> Usuario:</strong> {{ usuario }}</p>
-    <p><strong><i class="fas fa-calendar"></i> Fecha:</strong> {{ fecha }}</p>
-  </div>
+  <h2><i class="fas fa-edit"></i> Editar Registro de Asistencia</h2>
+  <p class="text-center mb-4">Editando registro para <strong>{{ usuario }}</strong> del día <strong>{{ fecha }}</strong>.</p>
 
   <form method="POST" action="{{ url_for('admin_editar_registro') }}">
+    {{ form.hidden_tag() }} {# <-- ESTA ES LA LÍNEA CLAVE PARA EL TOKEN CSRF #}
     <input type="hidden" name="usuario" value="{{ usuario }}">
     <input type="hidden" name="fecha" value="{{ fecha }}">
-    
+
     <div class="form-group">
-      <label class="form-label" for="inicio">
-        <i class="fas fa-sign-in-alt"></i> Fecha y Hora de Inicio
-      </label>
-      <input 
-        type="datetime-local" 
-        id="inicio" 
-        name="inicio" 
-        class="form-control" 
-        value="{{ registro.inicio[:16] if registro.inicio else '' }}"
-        required
-      >
+      <label for="inicio" class="form-label"><i class="fas fa-sign-in-alt"></i> Hora de Inicio (YYYY-MM-DD HH:MM:SS)</label>
+      <input type="text" id="inicio" name="inicio" class="form-control" value="{{ registro.inicio if registro.inicio else '' }}" placeholder="Ej: 2025-11-24 08:30:00">
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="salida">
-        <i class="fas fa-sign-out-alt"></i> Fecha y Hora de Salida
-      </label>
-      <input 
-        type="datetime-local" 
-        id="salida" 
-        name="salida" 
-        class="form-control" 
-        value="{{ registro.salida[:16] if registro.salida else '' }}"
-      >
+      <label for="salida" class="form-label"><i class="fas fa-sign-out-alt"></i> Hora de Salida (YYYY-MM-DD HH:MM:SS)</label>
+      <input type="text" id="salida" name="salida" class="form-control" value="{{ registro.salida if registro.salida else '' }}" placeholder="Ej: 2025-11-24 17:30:00">
     </div>
 
-    <div class="btn-group">
-      <button type="submit" class="btn btn-primary">
-        <i class="fas fa-check"></i> Guardar Cambios
-      </button>
-      <a href="{{ url_for('admin_usuarios') }}" class="btn btn-secondary">
-        <i class="fas fa-times"></i> Cancelar
-      </a>
-    </div>
+    <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Guardar Cambios</button>
   </form>
+  <a href="{{ request.referrer or url_for('admin_gestion_tiempos') }}" class="btn-back">Volver sin guardar</a>
 </div>
 {% endblock %}
