@@ -400,7 +400,6 @@
 
   <!-- Grid de Turnos -->
   <form method="POST" action="{{ url_for('seleccionar_turno') }}">
-    {{ form.hidden_tag() }}
     <input type="hidden" name="inicio_semana" value="{{ inicio_semana.isoformat() }}">
     <div class="turnos-grid">
       {% set dias_nombres = {'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles', 'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'} %}
