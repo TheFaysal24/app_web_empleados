@@ -64,7 +64,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for usuario in usuarios %}
+            {% for usuario in usuarios %} {# Inicio del bucle de usuarios #}
             <tr>
               <td class="user-cell">
                 <div class="user-info-cell">
@@ -103,11 +103,11 @@
               </td>
               {% endfor %}
             </tr>
-            {% endfor %}
-            {% else %}
+            {% else %} {# Esto se ejecuta si la lista de usuarios está vacía #}
             <tr>
               <td colspan="8" class="text-center p-3">No hay usuarios para mostrar.</td>
             </tr>
+            {% endfor %} {# Cierre del bucle de usuarios #}
           </tbody>
         </table>
       </div>
