@@ -966,6 +966,57 @@
   </div>
 </div>
 
+<!-- Historial Detallado de Asistencia -->
+<div class="table-card">
+  <h3 class="section-title">
+    <i class="fas fa-history"></i> Historial de Asistencia Semanal
+  </h3>
+
+  <!-- Navegación de Semana -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
+    <a href="{{ url_for('dashboard', semana_offset=semana_offset-1) }}" class="btn btn-action btn-nav-small">
+      <i class="fas fa-chevron-left"></i> Anterior
+    </a>
+    <span style="font-weight: 600; color: #333;">
+      Semana del {{ fechas_semana_actual[0].strftime('%d %b') }} al {{ fechas_semana_actual[-1].strftime('%d %b, %Y') }}
+    </span>
+    <a href="{{ url_for('dashboard', semana_offset=semana_offset+1) }}" class="btn btn-action btn-nav-small">
+      Siguiente <i class="fas fa-chevron-right"></i>
+    </a>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table class="shift-summary-table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Fecha</th>
+          <th>Entrada</th>
+          <th>Salida</th>
+          <th>Horas Trabajadas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for registro in registros_semana_actual %}
+          <tr>
+            <td class="gestor-name">{{ registro.usuario }}</td>
+            <td>{{ registro.fecha }}</td>
+            <td><span class="badge badge-success">{{ registro.inicio if registro.inicio else '-' }}</span></td>
+            <td><span class="badge badge-warning">{{ registro.salida if registro.salida else '-' }}</span></td>
+            <td><span class="badge badge-info">{{ "%.2f"|format(registro.horas_trabajadas) }}h</span></td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="no-data">
+              No hay registros de asistencia para esta semana.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <div class="grid-2">
   <div class="chart-card">
     <h4>👥 Distribución de Turnos</h4>

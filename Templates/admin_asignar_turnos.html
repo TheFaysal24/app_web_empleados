@@ -74,32 +74,18 @@
                 </td>
                 {% for fecha in fechas_semana %}
                 <td>
-                  <div class="time-picker-group">
-                    {% set turno_actual_id = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
-                    {% set hora_actual = namespace(h=None, m=None, p=None) %}
-                    {% if turno_actual_id %}
-                      {% for t in turnos_disponibles if t.id == turno_actual_id %}
-                        {% set hora_obj = datetime.datetime.strptime(t.hora, '%H:%M') %}
-                        {% set hora_actual.h = hora_obj.strftime('%-I') %}
-                        {% set hora_actual.m = hora_obj.strftime('%M') %}
-                        {% set hora_actual.p = hora_obj.strftime('%p') %}
-                      {% endfor %}
-                    {% endif %}
-                    <select name="hora-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
-                      <option value="">--</option>
-                      {% for h in range(1, 13) %}<option value="{{ h }}" {% if hora_actual.h == h|string %}selected{% endif %}>{{ h }}</option>{% endfor %}
-                    </select>
-                    <select name="minuto-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
-                      <option value="">--</option>
-                      <option value="00" {% if hora_actual.m == '00' %}selected{% endif %}>00</option>
-                      <option value="30" {% if hora_actual.m == '30' %}selected{% endif %}>30</option>
-                    </select>
-                    <select name="periodo-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
-                      <option value="">--</option>
-                      <option value="AM" {% if hora_actual.p == 'AM' %}selected{% endif %}>AM</option>
-                      <option value="PM" {% if hora_actual.p == 'PM' %}selected{% endif %}>PM</option>
-                    </select>
-                  </div>
+                  {% set turno_actual_id = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
+                  {% set hora_actual = namespace(valor='') %}
+                  {% if turno_actual_id %}
+                    {% for t in turnos_disponibles if t.id == turno_actual_id %}
+                      {% set hora_actual.valor = t.hora %}
+                    {% endfor %}
+                  {% endif %}
+                  <input type="time" 
+                         name="turno-{{ usuario.id }}-{{ fecha.isoformat() }}" 
+                         class="form-control form-control-sm" 
+                         value="{{ hora_actual.valor }}"
+                         style="min-width: 120px;">
                 </td>
                 {% endfor %}
               </tr>
@@ -107,12 +93,12 @@
             <tr>
               <td colspan="8" class="text-center p-3">No hay usuarios para mostrar.</td>
             </tr>
-            {% endfor %}
+            {% endfor %} {# Cierre del bucle de usuarios #}
           </tbody>
         </table>
       </div>
     </div>
-    {% endfor %} {# Cierre del bucle de semanas #}
+    {% endfor %}
 
     <!-- Botón de Guardar Fijo -->
     <div class="submit-container">
