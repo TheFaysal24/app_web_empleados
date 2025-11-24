@@ -145,7 +145,7 @@
                                                         <tbody>
                                                             {% set sorted_dates = registros[usuario].items() | sort(reverse=True) %}
                                                             {% for fecha, reg in sorted_dates[:5] %}
-                                                                {% if reg is mapping and 'inicio' in reg %}
+                                                                {% if reg is mapping and reg.get('inicio') %}
                                                                 <tr>
                                                                     <td>{{ fecha }}</td>
                                                                     <td>{{ reg.inicio[:5] if reg.inicio else '-' }}</td>
