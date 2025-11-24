@@ -575,7 +575,8 @@ def login():
                     cargo=user_data['cargo'],
                     correo=user_data['correo'],
                     telefono=user_data['telefono'],
-                    bloqueado=user_data['bloqueado']
+                    bloqueado=user_data['bloqueado'],
+                    fecha_creacion=user_data.get('fecha_creacion') # FIX: Añadir fecha_creacion
                 )
                 login_user(user, remember=recordar)
                 session['usuario'] = user.username
