@@ -1,4 +1,4 @@
-x#!/usr/bin/env python3
+x# pyright: ignore[reportUndefinedVariable] #!/usr/bin/env python3
 """
 Script completo de instalación y configuración
 """
