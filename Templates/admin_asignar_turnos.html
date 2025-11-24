@@ -75,8 +75,8 @@
               {% for fecha in fechas_semana %}
               <td>
                 <div class="form-group-table">
-                  <!-- CORRECCIÓN: El nombre del campo debe ser `id_usuario-fecha` -->
-                  <select name="{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm">
+                  <!-- FIX 1: El nombre del campo debe ser `turno-id_usuario-fecha` para que el backend lo procese -->
+                  <select name="turno-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm">
                     <option value="descanso">-- Descanso --</option>
                     {% set turno_actual = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
                     {% for turno_disponible in turnos_disponibles %}
@@ -146,7 +146,7 @@
   }
   .card + .card { margin-top: 25px; } /* Espacio entre tarjetas de semana */
   .card-header {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #2563eb, #3b82f6); /* Azul Primario */
     color: white;
     padding: 20px;
     border-top-left-radius: 12px;
@@ -170,9 +170,9 @@
     padding: 15px;
   }
   .table-turnos thead th.day-header:nth-child(n+7) { /* Sábado y Domingo */
-    background-color: #e9ecef;
-    border-left: 1px solid #dee2e6;
-    border-right: 1px solid #dee2e6;
+    background-color: #e0f2fe; /* Azul claro para fines de semana */
+    border-left: 2px solid #bfdbfe;
+    border-right: 2px solid #bfdbfe;
   }
   .user-header { text-align: left !important; }
   .user-cell {

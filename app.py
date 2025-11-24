@@ -876,6 +876,17 @@ def dashboard():
     hoy_date = now_local().date()
     hoy_iso = hoy_date.isoformat()
 
+    # FIX 3: Calcular estado de asistencia para el usuario actual
+    attendance_status = 'inactive'
+    if not admin:
+        cursor.execute(
+            "SELECT inicio, salida FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s",
+            (current_user.id, hoy_date)
+        )
+        registro_hoy = cursor.fetchone()
+        if registro_hoy and registro_hoy.get('inicio') and not registro_hoy.get('salida'):
+            attendance_status = 'active'
+
     if admin:
         cursor.execute("SELECT id, username, nombre FROM usuarios")
         all_users = cursor.fetchall()
@@ -1030,13 +1041,13 @@ def dashboard():
         JOIN usuarios u ON ta.id_usuario = u.id
         JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
         WHERE ta.fecha_asignacion BETWEEN %s AND %s
-    """, (inicio_semana, fin_semana))
+    """, (inicio_semana, fin_semana)) # FIX 2: Usar las fechas correctas
     
     turnos_db = cursor.fetchall()
     for turno in turnos_db:
         if turno['username'] not in turnos_semana_actual:
             turnos_semana_actual[turno['username']] = {}
-        turnos_semana_actual[turno['username']][turno['dia_semana']] = turno['hora']
+        turnos_semana_actual[turno['username']][turno['dia_semana'].lower()] = turno['hora']
 
     # Obtener fechas de la semana actual
     fechas_semana_actual = [inicio_semana + datetime.timedelta(days=i) for i in range(7)]
@@ -1067,6 +1078,7 @@ def dashboard():
         fechas_semana_actual=fechas_semana_actual,
         calendario_semanal_usuario=calendario_semanal_usuario,
         semana_offset=semana_offset, # Pasar offset a la plantilla
+        attendance_status=attendance_status, # FIX 3: Pasar estado de asistencia
         session=session,
         form=form  # ✅ Pasar el formulario a la plantilla
     )
