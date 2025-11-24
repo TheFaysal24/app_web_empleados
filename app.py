@@ -1079,13 +1079,23 @@ def dashboard():
     inicio_semana = (hoy_date - datetime.timedelta(days=hoy_date.weekday())) + datetime.timedelta(weeks=semana_offset)
     fin_semana = inicio_semana + datetime.timedelta(days=6)
 
-    cursor.execute("""
-        SELECT u.username, ta.fecha_asignacion, td.hora
-        FROM turnos_asignados ta
-        JOIN usuarios u ON ta.id_usuario = u.id
-        JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
-        WHERE ta.fecha_asignacion BETWEEN %s AND %s
-    """, (inicio_semana, fin_semana))
+    # FIX: Asegurar que el admin vea todos los turnos y el usuario solo los suyos.
+    query_turnos = """
+            SELECT u.username, ta.fecha_asignacion, td.hora
+            FROM turnos_asignados ta
+            JOIN usuarios u ON ta.id_usuario = u.id
+            JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+            WHERE ta.fecha_asignacion BETWEEN %s AND %s
+        """
+    params = [inicio_semana, fin_semana]
+
+    if not admin:
+        query_turnos += " AND u.id = %s"
+        params.append(current_user.id)
+
+    query_turnos += " ORDER BY u.nombre"
+
+    cursor.execute(query_turnos, tuple(params))
 
     turnos_db = cursor.fetchall()
     for turno in turnos_db:
