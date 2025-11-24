@@ -79,19 +79,17 @@
                     <option value="descanso">-- Descanso --</option>
                     {% set turno_actual_id = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
                     {% for turno_disponible in turnos_disponibles %}
-                      {% set hora_obj = datetime.datetime.strptime(turno_disponible.hora, '%H:%M') %}
-                      
                       {# Agrupar por franja horaria para una mejor UX #}
-                      {% if loop.first %}
-                        <optgroup label="Mañana">
-                      {% elif loop.index0 > 0 and hora_obj.hour >= 12 and datetime.datetime.strptime(turnos_disponibles[loop.index0-1].hora, '%H:%M').hour < 12 %}
+                      {% set hora_obj = datetime.datetime.strptime(turno_disponible.hora, '%H:%M') %}
+                      {% if loop.first or (loop.index0 > 0 and hora_obj.hour >= 12 and datetime.datetime.strptime(turnos_disponibles[loop.index0-1].hora, '%H:%M').hour < 12) %}
                         <optgroup label="Tarde">
-                      {% elif loop.index0 > 0 and hora_obj.hour >= 18 and datetime.datetime.strptime(turnos_disponibles[loop.index0-1].hora, '%H:%M').hour < 18 %}
+                      {% elif loop.first or (loop.index0 > 0 and hora_obj.hour >= 18 and datetime.datetime.strptime(turnos_disponibles[loop.index0-1].hora, '%H:%M').hour < 18) %}
                         <optgroup label="Noche">
+                      {% elif loop.first %}
+                        <optgroup label="Mañana">
                       {% endif %}
 
-                      {# Para encontrar el ID correcto, necesitamos buscarlo en la tabla completa #}
-                      <option value="{{ turno_disponible.id if turno_disponible.id is defined else '' }}" {% if turno_actual_id == turno_disponible.id %}selected{% endif %}>
+                      <option value="{{ turno_disponible.id }}" {% if turno_actual_id == turno_disponible.id %}selected{% endif %}>
                         {{ hora_obj.strftime('%-I:%M %p') }}
                       </option>
 

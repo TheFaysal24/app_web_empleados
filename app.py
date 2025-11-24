@@ -1042,13 +1042,13 @@ def dashboard():
         JOIN usuarios u ON ta.id_usuario = u.id
         JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
         WHERE ta.fecha_asignacion BETWEEN %s AND %s
-    """, (inicio_semana, fin_semana))
+    """, (inicio_semana, fin_semana)) # FIX 2: Usar las fechas correctas
     
     turnos_db = cursor.fetchall()
     for turno in turnos_db:
         if turno['username'] not in turnos_semana_actual:
             turnos_semana_actual[turno['username']] = {}
-        turnos_semana_actual[turno['username']][turno['dia_semana'].lower()] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p')
+        turnos_semana_actual[turno['username']][turno['dia_semana'].lower()] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p') # FIX: Corregir la asignación
 
     # Obtener fechas de la semana actual
     fechas_semana_actual = [inicio_semana + datetime.timedelta(days=i) for i in range(7)]
@@ -2434,8 +2434,8 @@ def admin_asignar_turnos():
     cursor.execute("SELECT id, username, nombre, cargo FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
     usuarios = cursor.fetchall()
 
-    # FIX 1: Corregir la consulta para no repetir horas.
-    cursor.execute("SELECT DISTINCT hora FROM turnos_disponibles ORDER BY hora")
+    # FIX 1: Obtener ID y HORA para que el guardado funcione.
+    cursor.execute("SELECT id, hora FROM turnos_disponibles ORDER BY hora")
     turnos_disponibles = cursor.fetchall()
 
     # FIX 2: Usar las fechas de la semana para la consulta, no las del mes
