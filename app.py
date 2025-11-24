@@ -2518,7 +2518,7 @@ def admin_asignar_turnos():
                     id_usuario = int(id_usuario_str)
                     fecha = datetime.date.fromisoformat(fecha_str)
                     dia_semana_str = fecha.strftime('%A').lower()
-
+                    
                     # 1. Buscar el ID del turno disponible basado en la hora y el día
                     cursor.execute(
                         "SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s",
@@ -2529,16 +2529,16 @@ def admin_asignar_turnos():
                         continue # Si la hora no existe en los turnos disponibles, la ignoramos
                     
                     id_turno_disponible = turno_disponible_row['id']
-
+                    
                     # 2. Eliminar cualquier turno existente para ese usuario y día
                     cursor.execute(
                         "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
                         (id_usuario, fecha)
                     )
-
+                    
                     # 3. Insertar el nuevo turno asignado
                     cursor.execute(
-                        "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
+                        "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
                         (id_usuario, id_turno_disponible, fecha)
                     )
 
@@ -2583,7 +2583,7 @@ def admin_asignar_turnos():
         semana_num = fecha_actual.isocalendar()[1]
         if semana_num not in calendario_mensual:
             calendario_mensual[semana_num] = []
-        # Añadir solo los días de esa semana que pertenecen al mes actual
+        
         calendario_mensual[semana_num].append(fecha_actual)
         fecha_actual += datetime.timedelta(days=1)
 

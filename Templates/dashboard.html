@@ -56,8 +56,7 @@
   }
 
   .dropdown-toggle {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
+    background: linear-gradient(135deg, #6
     border: none;
     padding: 12px;
     border-radius: 50%;
@@ -69,9 +68,8 @@
     justify-content: center;
     gap: 0;
     transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
     width: 48px;
-    height: 48px;
     position: relative;
     overflow: hidden;
   }
@@ -92,9 +90,8 @@
 
   .dropdown-toggle:hover {
     transform: translateY(-3px) rotate(90deg);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
   }
-
   .dropdown-toggle .hamburger {
     display: flex;
     flex-direction: column;
@@ -171,10 +168,9 @@
   .dropdown-item i {
     width: 20px;
     text-align: center;
-    color: #667eea;
+    color: #3b82f6; /* Azul Primario */
     font-size: 0.95em;
   }
-
   .dropdown-item:hover {
     background: #e0f2fe;
     color: #0369a1;
@@ -345,12 +341,11 @@
   }
 
   .stat-value {
-    font-size: 1.8em;
+    font-size: 1.6em; /* Reducido para un look más limpio */
     font-weight: 700;
     color: #667eea;
   }
-
-  .stat-card.verde {
+e {
     border-left-color: #11998e;
   }
 
@@ -359,26 +354,24 @@
   }
 
   .stat-card.azul {
-    border-left-color: #4facfe;
+    border-left-color: #3b82f6; /* Azul Primario */
   }
 
   .stat-card.naranja {
-    border-left-color: #f59e0b;
-  }
+    border-left-col
 
   .stat-card.morado {
     border-left-color: #a855f7;
   }
 
   .section-title {
-    color: #667eea;
+    color: #2563eb; /* Azul Primario */
     font-weight: 700;
     margin-bottom: 15px;
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1.2em;
-  }
+    font-siz
 
   .table-card {
     background: white;
@@ -386,14 +379,13 @@
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(79, 172, 254, 0.1);
+    border: 1px solid #e2e8f0;
   }
 
   .table-card table {
     border-collapse: collapse;
     width: 100%;
     font-size: 0.9em;
-  }
 
   .table-card thead {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -450,23 +442,20 @@
     border-radius: 12px;
     padding: 25px;
     margin-bottom: 30px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(79, 172, 254, 0.1);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
   }
 
   .chart-card h4 {
-    color: #667eea;
+    color: #2563eb; /* Azul Primario */
     margin-top: 0;
-    font-weight: 700;
-    margin-bottom: 20px;
-  }
+    font-weight: 700
 
   .export-buttons {
     background: white;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(79, 172, 254, 0.1);
+    box-shad1px solid var(--border-color);
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
@@ -476,9 +465,7 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     color: white;
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-weight: 600;
+    padding: 10x 600;
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -504,7 +491,7 @@
 
   .grid-2 {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Reducido para gráficos más pequeños */
     gap: 20px;
   }
 
@@ -518,7 +505,6 @@
   }
 
   @media (max-width: 768px) {
-    .top-navigation {
       flex-direction: column;
       gap: 15px;
     }
@@ -1070,11 +1056,11 @@
 
 <div class="grid-2">
   <div class="chart-card">
-    <h4>👥 Distribución de Turnos</h4>
+    <h4 class="section-title"><i class="fas fa-chart-pie"></i> Distribución de Turnos</h4>
     <canvas id="graficoInicios" style="max-height: 350px;"></canvas>
   </div>
   <div class="chart-card">
-    <h4>📊 Horas Trabajadas por Día</h4>
+    <h4 class="section-title"><i class="fas fa-chart-bar"></i> Horas Trabajadas por Día</h4>
     <canvas id="graficoHoras" style="max-height: 350px;"></canvas>
   </div>
 </div>
@@ -1082,14 +1068,12 @@
 {% if admin %}
 <div class="grid-2">
   <div class="chart-card">
-    <h4>💰 Costos Horas Extras</h4>
-    <canvas id="graficoCostos" style="max-height: 350px;"></canvas>
-  </div>
+    <h4 class="section-title"><i class="fas fa-dollar-sign"></i> Costos Horas Extras</h4>
+    <canvas id="graficoCo
   <div class="chart-card">
-    <h4>👔 Distribución de Cargos</h4>
+    <h4 class="section-title"><i class="fas fa-user-tie"></i> Distribución de Cargos</h4>
     <div style="height: 300px; position: relative;">
-      <canvas id="graficoCargos"></canvas>
-    </div>
+      <canvas id="grafico
   </div>
 </div>
 {% endif %}
@@ -1098,12 +1082,10 @@
   <a href="{{ url_for('exportar_registros') }}" class="btn-export-small">
     <i class="fas fa-download"></i> Registros CSV
   </a>
-</div>
 {% endif %}
 
 <!-- Variables de datos del servidor -->
-<script type="text/javascript">
-  var serverData = {
+<script type="text/javasc
     fechas: {{ fechas|default([])|tojson|safe }},
     horas: {{ horas_fechas|default([])|tojson|safe }},
     contadores: {{ contador_inicios|default({})|tojson|safe }}

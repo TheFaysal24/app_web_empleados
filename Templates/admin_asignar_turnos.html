@@ -78,7 +78,7 @@
                   <input type="time" 
                          name="turno-{{ usuario.id }}-{{ fecha.isoformat() }}" 
                          class="form-control form-control-sm" 
-                         value="{{ hora_actual }}"
+                         value="{{ hora_actual if hora_actual else '' }}"
                          style="min-width: 120px;">
                 </td>
                 {% endfor %}
@@ -146,6 +146,11 @@
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
   }
+  .card-header .card-title {
+    font-size: 1.4em;
+    font-weight: 700;
+    margin: 0;
+  }
   .card-header small {
     font-weight: 400;
     opacity: 0.8;
@@ -183,13 +188,10 @@
     font-size: 0.8em;
     color: #6c757d;
   }
-  .table-turnos select {
-    min-width: 120px;
+  .table-turnos input[type="time"] {
+    min-width: 100px; /* Reducido para mejor ajuste */
     border: 1px solid #ced4da;
     border-radius: 6px;
-    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-  }
-  .table-turnos select:focus {
     border-color: #86b7fe;
     outline: 0;
     box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
