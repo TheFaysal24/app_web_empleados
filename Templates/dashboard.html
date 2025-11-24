@@ -608,6 +608,9 @@
         <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item">
           <i class="fas fa-calendar-plus" style="color: #8b5cf6;"></i> Asignar Turnos
         </a>
+        <a href="{{ url_for('turnos_mensual') }}" class="dropdown-item">
+          <i class="fas fa-calendar-alt" style="color: #f59e0b;"></i> Turnos Mensual
+        </a>
         <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">
           <i class="fas fa-users" style="color: #f59e0b;"></i> Gestionar Usuarios
         </a>
@@ -903,6 +906,20 @@
   <h3 class="section-title">
     <i class="fas fa-calendar-week"></i> Resumen Semanal - Turnos por Gestor
   </h3>
+  
+  <!-- Navegación de Semana -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
+    <a href="{{ url_for('dashboard', semana_offset=semana_offset-1) }}" class="btn btn-action btn-nav-small">
+      <i class="fas fa-chevron-left"></i> Anterior
+    </a>
+    <span style="font-weight: 600; color: #333;">
+      Semana del {{ fechas_semana_actual[0].strftime('%d %b') }} al {{ fechas_semana_actual[-1].strftime('%d %b, %Y') }}
+    </span>
+    <a href="{{ url_for('dashboard', semana_offset=semana_offset+1) }}" class="btn btn-action btn-nav-small">
+      Siguiente <i class="fas fa-chevron-right"></i>
+    </a>
+  </div>
+
   <div style="overflow-x: auto;">
     <table class="shift-summary-table">
       <thead>

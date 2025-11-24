@@ -9,31 +9,41 @@
     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
       <i class="fas fa-arrow-left"></i> Volver al Dashboard
     </a>
-    <h2 class="page-title">Asignación de Turnos</h2>
-    <!-- Navegación de Semanas -->
-    <div class="week-nav">
-      <a href="{{ url_for('admin_asignar_turnos', semana_offset=semana_offset-1) }}" class="btn btn-info btn-sm">
-        <i class="fas fa-chevron-left"></i> Semana Anterior
-      </a>
-      <span class="current-week">
-        Semana del {{ inicio_semana.strftime('%d de %b') }} al {{ fin_semana.strftime('%d de %b, %Y') }}
-      </span>
-      <a href="{{ url_for('admin_asignar_turnos', semana_offset=semana_offset+1) }}" class="btn btn-info btn-sm">
-        Semana Siguiente <i class="fas fa-chevron-right"></i>
-      </a>
+    <h2 class="page-title">Asignación Mensual de Turnos</h2>
+    <!-- Navegación de Mes y Año -->
+    <div class="month-nav-form">
+      <form method="GET" action="{{ url_for('admin_asignar_turnos') }}" class="d-flex align-items-center gap-2">
+        <select name="mes" class="form-select form-select-sm">
+          {% for i in range(1, 13) %}
+            <option value="{{ i }}" {% if i == mes_actual %}selected{% endif %}>{{ meses_nombres[i] }}</option>
+          {% endfor %}
+        </select>
+        <select name="ano" class="form-select form-select-sm">
+          {% for ano in anos_disponibles %}
+            <option value="{{ ano }}" {% if ano == ano_actual %}selected{% endif %}>{{ ano }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="fas fa-search"></i> Ir
+        </button>
+      </form>
     </div>
   </div>
 
   <!-- Formulario principal -->
   <form method="POST" action="{{ url_for('admin_asignar_turnos') }}">
     {{ form.hidden_tag() }}
-    <!-- Campo oculto para saber qué semana estamos guardando -->
-    <input type="hidden" name="semana_offset" value="{{ semana_offset }}">
+    <!-- Campos ocultos para saber qué mes/año estamos guardando -->
+    <input type="hidden" name="mes_actual" value="{{ mes_actual }}">
+    <input type="hidden" name="ano_actual" value="{{ ano_actual }}">
 
+    {% for semana_num, fechas_semana in calendario_mensual.items() %}
     <div class="card">
       <div class="card-header">
         <h3 class="card-title text-gradient">
-          <i class="fas fa-calendar-plus"></i> Planificación Semanal
+          <i class="fas fa-calendar-week"></i> 
+          Semana {{ semana_num }} 
+          <small>({{ fechas_semana[0].strftime('%d %b') }} - {{ fechas_semana[-1].strftime('%d %b') }})</small>
         </h3>
         <p class="card-subtitle">
           Asigna, edita o corrige los turnos para cada usuario.
@@ -48,7 +58,7 @@
               {% for fecha in fechas_semana %}
                 <th class="day-header">
                   {{ fecha.strftime('%A')|capitalize }}<br>
-                  <small>{{ fecha.strftime('%d/%m') }}</small>
+                  <small class="text-muted">{{ fecha.strftime('%d/%m') }}</small>
                 </th>
               {% endfor %}
             </tr>
@@ -58,20 +68,19 @@
             <tr>
               <td class="user-cell">
                 <div class="user-info-cell">
-                  <i class="fas fa-user-circle"></i>
-                  <span>{{ usuario.nombre }}</span>
-                  <small>{{ usuario.cargo }}</small>
+                  <i class="fas fa-user-tie"></i>
+                  <span>{{ usuario.username }}</span>
                 </div>
               </td>
               {% for fecha in fechas_semana %}
               <td>
                 <div class="form-group-table">
-                  <!-- El nombre del campo es `id_usuario-fecha` -->
+                  <!-- CORRECCIÓN: El nombre del campo debe ser `id_usuario-fecha` -->
                   <select name="{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm">
-                    <option value="">-- Descanso --</option>
-                    {% set turno_actual = turnos_asignados.get(usuario.id, {}).get(fecha.isoformat()) %}
+                    <option value="descanso">-- Descanso --</option>
+                    {% set turno_actual = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
                     {% for turno_disponible in turnos_disponibles %}
-                      <option value="{{ turno_disponible.id }}" {% if turno_actual and turno_actual == turno_disponible.id %}selected{% endif %}>
+                      <option value="{{ turno_disponible.id }}" {% if turno_actual == turno_disponible.id %}selected{% endif %}>
                         {{ turno_disponible.hora }}
                       </option>
                     {% endfor %}
@@ -89,6 +98,7 @@
         </table>
       </div>
     </div>
+    {% endfor %}
 
     <!-- Botón de Guardar Fijo -->
     <div class="submit-container">
@@ -124,14 +134,9 @@
     font-weight: 700;
     color: #333;
   }
-  .week-nav {
+  .month-nav-form {
     display: flex;
     align-items: center;
-    gap: 15px;
-  }
-  .current-week {
-    font-weight: 600;
-    color: #555;
   }
   .card {
     background: white;
@@ -139,12 +144,17 @@
     box-shadow: 0 4px 25px rgba(0,0,0,0.08);
     border: none;
   }
+  .card + .card { margin-top: 25px; } /* Espacio entre tarjetas de semana */
   .card-header {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     padding: 20px;
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
+  }
+  .card-header small {
+    font-weight: 400;
+    opacity: 0.8;
   }
   .text-gradient {
     background: -webkit-linear-gradient(#fff, #e0e0e0);
@@ -159,6 +169,11 @@
     color: #495057;
     padding: 15px;
   }
+  .table-turnos thead th.day-header:nth-child(n+7) { /* Sábado y Domingo */
+    background-color: #e9ecef;
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+  }
   .user-header { text-align: left !important; }
   .user-cell {
     font-weight: 700;
@@ -167,7 +182,8 @@
   }
   .user-info-cell {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 8px;
   }
   .user-info-cell small {
     font-size: 0.8em;

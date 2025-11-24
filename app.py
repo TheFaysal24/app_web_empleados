@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_limiter import Limiter
-from flask_mail import Mail, Message
+from flask_mail import Mail, Message # type: ignore
 from flask_limiter.util import get_remote_address
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect, CSRFError, generate_csrf
@@ -866,6 +866,7 @@ def dashboard():
     costos_por_usuario = {}
     usuarios_iniciados_hoy = 0
     total_usuarios_nuevos = 0
+    fechas_ordenadas = [] # FIX 5: Inicializar variable
     turnos_usuarios = {}  # ✅ NUEVO: Almacenar turnos seleccionados por usuario
 
     salario_minimo = 1384308
@@ -1015,11 +1016,14 @@ def dashboard():
         turnos_db = cursor.fetchall()
         turnos_usuarios[username] = [(t['dia_semana'], t['hora']) for t in turnos_db]
 
+    # Obtener offset de semana para la tabla del dashboard
+    semana_offset = request.args.get('semana_offset', 0, type=int)
+
     # Obtener turnos de la semana actual para la tabla del dashboard
     turnos_semana_actual = {}
-    inicio_semana = hoy_date - datetime.timedelta(days=hoy_date.weekday())
+    inicio_semana = (hoy_date - datetime.timedelta(days=hoy_date.weekday())) + datetime.timedelta(weeks=semana_offset)
     fin_semana = inicio_semana + datetime.timedelta(days=6)
-    
+
     cursor.execute("""
         SELECT u.username, td.dia_semana, td.hora
         FROM turnos_asignados ta
@@ -1035,7 +1039,7 @@ def dashboard():
         turnos_semana_actual[turno['username']][turno['dia_semana']] = turno['hora']
 
     # Obtener fechas de la semana actual
-    fechas_semana_actual = [(hoy_date - datetime.timedelta(days=hoy_date.weekday()) + datetime.timedelta(days=i)) for i in range(7)]
+    fechas_semana_actual = [inicio_semana + datetime.timedelta(days=i) for i in range(7)]
 
     # ✅ AÑADIR FORMULARIO VACÍO PARA LOS BOTONES DE ASISTENCIA (CSRF)
     form = EmptyForm()
@@ -1062,6 +1066,7 @@ def dashboard():
         turnos_usuarios=turnos_usuarios,  # ✅ NUEVO: Pasar turnos seleccionados
         fechas_semana_actual=fechas_semana_actual,
         calendario_semanal_usuario=calendario_semanal_usuario,
+        semana_offset=semana_offset, # Pasar offset a la plantilla
         session=session,
         form=form  # ✅ Pasar el formulario a la plantilla
     )
@@ -2087,6 +2092,7 @@ def admin_gestion_tiempos():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # FIX 6: Definir mes y año antes del bloque try
     # Obtener mes y año de los parámetros o usar el actual
     try:
         mes = int(request.args.get('mes', now_local().month))
@@ -2293,10 +2299,10 @@ def eliminar_turno():
         
         dia = request.form.get('dia')
         hora = request.form.get('hora')
-        fecha_str = request.form.get('fecha_asignacion') # Usar un nombre más específico
+        fecha_str = request.form.get('fecha_asignacion')
         # El usuario que se va a eliminar puede ser el actual o uno especificado por el admin
         usuario_a_eliminar = request.form.get('usuario_a_eliminar', current_user.username)
-        
+
         if not dia or not hora:
             flash('Datos de turno inválidos', 'error')
             cursor.close()
@@ -2316,23 +2322,24 @@ def eliminar_turno():
             flash(f"Usuario '{usuario_a_eliminar}' no encontrado.", 'error')
             return redirect(url_for('ver_turnos_asignados'))
 
+        # FIX 3: Corregir la consulta para encontrar el turno disponible
         cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, hora))
-        turno_disponible_id = cursor.fetchone()
-        
-        if not turno_disponible_id:
+        turno_disponible_row = cursor.fetchone()
+
+        if not turno_disponible_row:
             flash('Turno no encontrado', 'error')
             cursor.close()
             conn.close()
             return redirect(url_for('ver_turnos_asignados'))
-        
-        turno_disponible_id = turno_disponible_id['id']
+
+        id_turno_disponible = turno_disponible_row['id']
 
         # Verificar que el turno pertenece al usuario o es admin
         if usuario_a_eliminar == current_user.username or current_user.is_admin():
             try:
                 cursor.execute(
                     "DELETE FROM turnos_asignados WHERE id_usuario = %s AND id_turno_disponible = %s AND fecha_asignacion = %s",
-                    (user_to_delete_row['id'], turno_disponible_id, fecha_asignacion)
+                    (user_to_delete_row['id'], id_turno_disponible, fecha_asignacion)
                 )
                 if cursor.rowcount > 0:
                     conn.commit()
@@ -2363,6 +2370,12 @@ def admin_asignar_turnos():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # --- Lógica de la versión mensual ---
+    hoy = now_local().date()
+    mes_actual = request.args.get('mes', hoy.month, type=int)
+    ano_actual = request.args.get('ano', hoy.year, type=int)
+    # --- Fin lógica mensual ---
+
     # Obtener el offset de la semana desde los argumentos de la URL
     semana_offset = request.args.get('semana_offset', 0, type=int)
 
@@ -2379,19 +2392,18 @@ def admin_asignar_turnos():
         
         try:
             for key, id_turno_disponible in request.form.items():
-                if '-' in key and key != 'csrf_token':
+                # FIX 1: Corregir el procesamiento de la clave del formulario
+                if key.startswith('turno-') and key != 'csrf_token':
+                    _, id_usuario_str, fecha_str = key.split('-')
                     id_usuario_str, fecha_str = key.split('-')
                     id_usuario = int(id_usuario_str)
                     fecha = datetime.date.fromisoformat(fecha_str)
 
-                    # Primero, eliminar cualquier turno existente para ese usuario en esa fecha
                     cursor.execute(
                         "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
                         (id_usuario, fecha)
                     )
-
-                    # Si se seleccionó un turno (no es "Descanso"), lo insertamos
-                    if id_turno_disponible:
+                    if id_turno_disponible and id_turno_disponible != 'descanso':
                         cursor.execute(
                             "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
                             (id_usuario, id_turno_disponible, fecha)
@@ -2405,12 +2417,18 @@ def admin_asignar_turnos():
         
         return redirect(url_for('admin_asignar_turnos', semana_offset=semana_offset_form))
 
-    # Lógica para GET
-    cursor.execute("SELECT id, nombre, cargo FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
+    # --- Lógica para GET ---
+    cursor.execute("SELECT id, username, nombre, cargo FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
     usuarios = cursor.fetchall()
 
     cursor.execute("SELECT id, hora FROM turnos_disponibles ORDER BY hora")
     turnos_disponibles = cursor.fetchall()
+
+    # FIX 2: Usar las fechas de la semana para la consulta, no las del mes
+    import calendar
+    primer_dia_mes = datetime.date(ano_actual, mes_actual, 1)
+    ultimo_dia_mes_num = calendar.monthrange(ano_actual, mes_actual)[1]
+    ultimo_dia_mes = datetime.date(ano_actual, mes_actual, ultimo_dia_mes_num)
 
     cursor.execute(
         "SELECT id_usuario, fecha_asignacion, id_turno_disponible FROM turnos_asignados WHERE fecha_asignacion BETWEEN %s AND %s",
@@ -2419,22 +2437,39 @@ def admin_asignar_turnos():
     turnos_db = cursor.fetchall()
     turnos_asignados = {}
     for turno in turnos_db:
-        if turno['id_usuario'] not in turnos_asignados:
-            turnos_asignados[turno['id_usuario']] = {}
-        turnos_asignados[turno['id_usuario']][turno['fecha_asignacion'].isoformat()] = turno['id_turno_disponible']
+        fecha_str = turno['fecha_asignacion'].isoformat()
+        if fecha_str not in turnos_asignados:
+            turnos_asignados[fecha_str] = {}
+        turnos_asignados[fecha_str][turno['id_usuario']] = turno['id_turno_disponible']
+
+    # Agrupar fechas por semana para la vista
+    calendario_mensual = {}
+    for i in range(ultimo_dia_mes_num):
+        fecha = primer_dia_mes + datetime.timedelta(days=i)
+        semana_num = fecha.isocalendar()[1]
+        if semana_num not in calendario_mensual:
+            calendario_mensual[semana_num] = []
+        calendario_mensual[semana_num].append(fecha)
 
     cursor.close()
     conn.close()
+
+    meses_nombres = {
+        1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
+        7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+    }
 
     return render_template('admin_asignar_turnos.html',
                            form=form,
                            usuarios=usuarios,
                            turnos_disponibles=turnos_disponibles,
                            turnos_asignados=turnos_asignados,
-                           fechas_semana=fechas_semana,
-                           inicio_semana=inicio_semana,
-                           fin_semana=fin_semana,
-                           semana_offset=semana_offset)
+                           calendario_mensual=calendario_mensual,
+                           mes_actual=mes_actual,
+                           ano_actual=ano_actual,
+                           meses_nombres=meses_nombres,
+                           anos_disponibles=range(hoy.year - 2, hoy.year + 3) # Rango de años para el selector
+                           )
 
 # ✅ Asignar turno manual (Admin)
 @app.route('/admin/asignar_turno_manual', methods=['POST'])
@@ -2454,14 +2489,14 @@ def admin_asignar_turno_manual():
         hoy = now_local().date()
         inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
 
+        # FIX 4: Corregir la lógica del bucle y el procesamiento
         try:
-            # Lógica mejorada para NO borrar historial indiscriminadamente
-            # Recorremos cada día de la semana y actualizamos individualmente
             for i, dia_str in enumerate(dias_semana):
-                hora = request.form.get(f'turno_{dia_str}')
                 fecha_asignacion = inicio_semana + datetime.timedelta(days=i)
-                
-                if hora: 
+                # El nombre del campo en el formulario es `turno_dia`
+                hora = request.form.get(f'turno_{dia_str}')
+
+                if hora:
                     # 1. Obtener ID del turno disponible
                     cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia_str, hora))
                     turno_disponible_row = cursor.fetchone()
@@ -2469,7 +2504,7 @@ def admin_asignar_turno_manual():
                     if turno_disponible_row:
                         id_turno_disponible = turno_disponible_row['id']
                         
-                        # 2. Insertar el nuevo turno.
+                        # Insertar el nuevo turno.
                         cursor.execute("""
                             INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) 
                             VALUES (%s, %s, %s)
@@ -2479,7 +2514,7 @@ def admin_asignar_turno_manual():
                         # Registrar en bitácora
                         registrar_auditoria('Asignación Turno', f"Usuario ID {id_usuario}: Asignado turno {hora} para {fecha_asignacion}")
                         
-                        # 3. Limpieza con respaldo: Antes de borrar, guardar en historial si existe
+                        # Limpieza con respaldo: Antes de borrar, guardar en historial si existe
                         cursor.execute("""
                             SELECT id_turno_disponible FROM turnos_asignados 
                             WHERE id_usuario = %s AND fecha_asignacion = %s AND id_turno_disponible != %s
@@ -2497,12 +2532,8 @@ def admin_asignar_turno_manual():
                             AND id_turno_disponible != %s
                         """, (id_usuario, fecha_asignacion, id_turno_disponible))
 
-                else:
-                    # Borrar turno (admin tiene poder total, incluso pasado, pero se audita)
+                else: # Si no se seleccionó hora, se limpia el turno para ese día
                     try:
-                        # Eliminamos la restricción de fecha para el Admin
-                        # if fecha_asignacion >= now_local().date():
-                        
                          cursor.execute("""
                             SELECT id_turno_disponible FROM turnos_asignados 
                             WHERE id_usuario = %s AND fecha_asignacion = %s
@@ -2520,7 +2551,7 @@ def admin_asignar_turno_manual():
                             """, (id_usuario, fecha_asignacion))
                     except Exception as e_inner:
                         logger.error(f"Error en limpieza de turnos: {e_inner}")
-            
+
             conn.commit()
             flash('✅ Turnos actualizados correctamente (Historial protegido)', 'message')
         except Exception as e:
