@@ -1096,6 +1096,31 @@ def dashboard():
     # Obtener fechas de la semana actual
     fechas_semana_actual = [inicio_semana + datetime.timedelta(days=i) for i in range(7)]
 
+    # ✅ NUEVO: Obtener registros de asistencia para la semana actual
+    registros_semana_actual = []
+    if admin:
+        cursor.execute("""
+            SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
+            FROM registros_asistencia ra
+            JOIN usuarios u ON ra.id_usuario = u.id
+            WHERE ra.fecha BETWEEN %s AND %s
+            ORDER BY ra.fecha, u.nombre
+        """, (inicio_semana, fin_semana))
+        registros_db = cursor.fetchall()
+        for reg in registros_db:
+            registros_semana_actual.append({
+                'usuario': reg['nombre'],
+                'fecha': reg['fecha'].strftime('%d/%m/%Y'),
+                'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
+                'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
+                'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
+            })
+    else: # Lógica para usuario no admin (si se necesita)
+        cursor.execute("SELECT fecha, inicio, salida, horas_trabajadas FROM registros_asistencia WHERE id_usuario = %s AND fecha BETWEEN %s AND %s ORDER BY fecha", (current_user.id, inicio_semana, fin_semana))
+        # ... (procesar y añadir a registros_semana_actual)
+        pass
+
+
     # ✅ NUEVO: Calcular resumen de horas extras para el admin
     resumen_horas_extras = []
     if admin:
@@ -2482,28 +2507,41 @@ def admin_asignar_turnos():
     fin_semana = inicio_semana + datetime.timedelta(days=6)
     fechas_semana = [inicio_semana + datetime.timedelta(days=i) for i in range(7)]
 
-    if form.validate_on_submit():
-        # El offset viene del formulario para saber qué semana se está guardando
-        semana_offset_form = request.form.get('semana_offset', 0, type=int)
-        inicio_semana_guardar = hoy - datetime.timedelta(days=hoy.weekday()) + datetime.timedelta(weeks=semana_offset_form)
-        
+    if request.method == 'POST':
+        mes_guardar = request.form.get('mes_actual', type=int)
+        ano_guardar = request.form.get('ano_actual', type=int)
+
         try:
-            for key, id_turno_disponible in request.form.items():
-                # FIX: Procesar el selector de turno único.
-                if key.startswith('turno-') and key.count('-') >= 2:
+            for key, hora_seleccionada in request.form.items():
+                if key.startswith('turno-') and hora_seleccionada:
                     _, id_usuario_str, fecha_str = key.split('-', 2)
                     id_usuario = int(id_usuario_str)
                     fecha = datetime.date.fromisoformat(fecha_str)
+                    dia_semana_str = fecha.strftime('%A').lower()
 
-                    # Eliminar turno existente para ese día
+                    # 1. Buscar el ID del turno disponible basado en la hora y el día
+                    cursor.execute(
+                        "SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s",
+                        (dia_semana_str, hora_seleccionada)
+                    )
+                    turno_disponible_row = cursor.fetchone()
+                    if not turno_disponible_row:
+                        continue # Si la hora no existe en los turnos disponibles, la ignoramos
+                    
+                    id_turno_disponible = turno_disponible_row['id']
+
+                    # 2. Eliminar cualquier turno existente para ese usuario y día
                     cursor.execute(
                         "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
                         (id_usuario, fecha)
                     )
 
-                    # Si se seleccionó un turno válido (no "descanso"), lo insertamos.
-                    if id_turno_disponible and id_turno_disponible != 'descanso':
-                        cursor.execute("INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)", (id_usuario, id_turno_disponible, fecha))
+                    # 3. Insertar el nuevo turno asignado
+                    cursor.execute(
+                        "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
+                        (id_usuario, id_turno_disponible, fecha)
+                    )
+
             conn.commit()
             flash('Turnos de la semana guardados correctamente.', 'message')
         except Exception as e:
@@ -2511,7 +2549,7 @@ def admin_asignar_turnos():
             flash(f'Error al guardar los turnos: {e}', 'error')
             logger.error(f"Error en POST de admin_asignar_turnos: {e}")
         
-        return redirect(url_for('admin_asignar_turnos', semana_offset=semana_offset_form))
+        return redirect(url_for('admin_asignar_turnos', mes=mes_guardar, ano=ano_guardar))
 
     # --- Lógica para GET ---
     cursor.execute("SELECT id, username, nombre, cargo FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
@@ -2521,15 +2559,14 @@ def admin_asignar_turnos():
     cursor.execute("SELECT id, hora FROM turnos_disponibles ORDER BY hora")
     turnos_disponibles = cursor.fetchall()
 
-    # FIX 2: Usar las fechas de la semana para la consulta, no las del mes
     import calendar
     primer_dia_mes = datetime.date(ano_actual, mes_actual, 1)
     ultimo_dia_mes_num = calendar.monthrange(ano_actual, mes_actual)[1]
     ultimo_dia_mes = datetime.date(ano_actual, mes_actual, ultimo_dia_mes_num)
 
     cursor.execute(
-        "SELECT id_usuario, fecha_asignacion, id_turno_disponible FROM turnos_asignados WHERE fecha_asignacion BETWEEN %s AND %s",
-        (inicio_semana, fin_semana)
+        "SELECT ta.id_usuario, ta.fecha_asignacion, td.hora FROM turnos_asignados ta JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id WHERE ta.fecha_asignacion BETWEEN %s AND %s",
+        (primer_dia_mes, ultimo_dia_mes)
     )
     turnos_db = cursor.fetchall()
     turnos_asignados = {}
@@ -2537,10 +2574,9 @@ def admin_asignar_turnos():
         fecha_str = turno['fecha_asignacion'].isoformat()
         if fecha_str not in turnos_asignados:
             turnos_asignados[fecha_str] = {}
-        turnos_asignados[fecha_str][turno['id_usuario']] = turno['id_turno_disponible']
+        turnos_asignados[fecha_str][turno['id_usuario']] = turno['hora']
 
     # Agrupar fechas por semana para la vista
-    # FIX 2: Corregir la lógica para agrupar semanas correctamente.
     calendario_mensual = {}
     fecha_actual = primer_dia_mes
     while fecha_actual <= ultimo_dia_mes:

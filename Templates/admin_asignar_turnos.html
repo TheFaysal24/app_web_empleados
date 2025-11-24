@@ -74,17 +74,11 @@
                 </td>
                 {% for fecha in fechas_semana %}
                 <td>
-                  {% set turno_actual_id = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
-                  {% set hora_actual = namespace(valor='') %}
-                  {% if turno_actual_id %}
-                    {% for t in turnos_disponibles if t.id == turno_actual_id %}
-                      {% set hora_actual.valor = t.hora %}
-                    {% endfor %}
-                  {% endif %}
+                  {% set hora_actual = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id, '') %}
                   <input type="time" 
                          name="turno-{{ usuario.id }}-{{ fecha.isoformat() }}" 
                          class="form-control form-control-sm" 
-                         value="{{ hora_actual.valor }}"
+                         value="{{ hora_actual }}"
                          style="min-width: 120px;">
                 </td>
                 {% endfor %}
