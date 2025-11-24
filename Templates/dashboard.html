@@ -840,9 +840,9 @@ e {
             <td class="gestor-name">{{ username }}</td>
             {% for fecha in fechas_semana_actual %}
               <td>
-                {% set dia_str = fecha.strftime('%A').lower() %}
-                {% set hora_asignada = turnos_del_usuario.get(dia_str) %}
-                {% if hora_asignada %}
+                {# Buscamos el turno por fecha exacta en lugar de por día de la semana #}
+                {% set hora_asignada = turnos_del_usuario.get(fecha.strftime('%Y-%m-%d')) %}
+                {% if hora_asignada and hora_asignada != 'Libre' %}
                   <span class="badge badge-success">{{ hora_asignada }}</span>
                 {% else %}
                   <span style="color: #ccc;">-</span>
