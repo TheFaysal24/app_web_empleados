@@ -1080,18 +1080,20 @@ def dashboard():
     fin_semana = inicio_semana + datetime.timedelta(days=6)
 
     cursor.execute("""
-        SELECT u.username, td.dia_semana, td.hora
+        SELECT u.username, ta.fecha_asignacion, td.hora
         FROM turnos_asignados ta
         JOIN usuarios u ON ta.id_usuario = u.id
         JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
         WHERE ta.fecha_asignacion BETWEEN %s AND %s
     """, (inicio_semana, fin_semana))
-    
+
     turnos_db = cursor.fetchall()
     for turno in turnos_db:
         if turno['username'] not in turnos_semana_actual:
-            turnos_semana_actual[turno['username']] = {} # FIX: Inicializar diccionario para el usuario
-        turnos_semana_actual[turno['username']][turno['dia_semana'].lower()] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p') # FIX: Corregir la asignación
+            turnos_semana_actual[turno['username']] = {}
+        # Usar la fecha como clave, no el día de la semana
+        fecha_str = turno['fecha_asignacion'].strftime('%Y-%m-%d')
+        turnos_semana_actual[turno['username']][fecha_str] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p')
 
     # Obtener fechas de la semana actual
     fechas_semana_actual = [inicio_semana + datetime.timedelta(days=i) for i in range(7)]
@@ -1170,7 +1172,7 @@ def dashboard():
         total_usuarios_nuevos=total_usuarios_nuevos,
         costos_por_usuario=costos_por_usuario or {},
         costo_total_empresa=costo_total_empresa,
-        valor_hora_ordinaria=round(valor_hora_ordinaria, 2) if valor_hora_ordinaria else 0,
+        valor_hora_ordinaria=round(valor_hora_ordinaria, 2),
         data={'usuarios': {}, 'turnos': {'shifts': {}, 'monthly_assignments': {}}},
         turnos_semana_actual=turnos_semana_actual,
         turnos_usuarios=turnos_usuarios,  # ✅ NUEVO: Pasar turnos seleccionados
@@ -2325,7 +2327,7 @@ def admin_gestion_tiempos():
             # Multiplicador y costo de horas extras aproximado según día de semana
             cursor.execute("""
                 SELECT SUM(
-                    CASE 
+                    CASE
                         WHEN EXTRACT(DOW FROM fecha_asignacion) IN (6) THEN horas_extras * 1.75
                         WHEN EXTRACT(DOW FROM fecha_asignacion) IN (0) THEN horas_extras * 2.0
                         ELSE horas_extras * 1.25
@@ -2336,7 +2338,7 @@ def admin_gestion_tiempos():
                 WHERE ta.id_usuario = %s AND EXTRACT(YEAR FROM ta.fecha_asignacion) = %s AND EXTRACT(MONTH FROM ta.fecha_asignacion) = %s
             """, (user_id, ano, mes))
             costo_ajustado = cursor.fetchone()['costo_ajustado'] or 0
-            costo_extras = costo_ajustado * valor_hora_ordinaria
+            costo_extras = float(costo_ajustado) * valor_hora_ordinaria
         except Exception:
             pass
 
