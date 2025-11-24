@@ -148,7 +148,7 @@ def _proteger_rutas_admin():
 
 # Clase User para Flask-Login
 class User(UserMixin):
-    def __init__(self, id, username, admin, nombre, cedula, cargo, correo, telefono, bloqueado):
+    def __init__(self, id, username, admin, nombre, cedula, cargo, correo, telefono, bloqueado, fecha_creacion):
         self.id = id
         self.username = username
         self.admin = admin
@@ -158,6 +158,7 @@ class User(UserMixin):
         self.correo = correo
         self.telefono = telefono
         self.bloqueado = bloqueado
+        self.fecha_creacion = fecha_creacion
 
     def is_admin(self):
         return self.admin
@@ -305,6 +306,7 @@ def init_db():
             cargo VARCHAR(255),
             correo VARCHAR(255) UNIQUE,
             telefono VARCHAR(255),
+            fecha_creacion TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
             bloqueado BOOLEAN DEFAULT FALSE
         )
     """)
@@ -508,7 +510,8 @@ def load_user(user_id):
                 cargo=user_data['cargo'],
                 correo=user_data['correo'],
                 telefono=user_data['telefono'],
-                bloqueado=user_data.get('bloqueado', False)
+                bloqueado=user_data.get('bloqueado', False),
+                fecha_creacion=user_data.get('fecha_creacion', datetime.datetime.now())
             )
     except Exception as e:
         logger.error(f"Error critico en load_user: {e}")
