@@ -1051,7 +1051,7 @@ def dashboard():
     for turno in turnos_db:
         if turno['username'] not in turnos_semana_actual:
             turnos_semana_actual[turno['username']] = {} # FIX: Inicializar diccionario para el usuario
-        turnos_semana_actual[turno['username']][turno['dia_semana'].lower()] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p') # FIX: Corregir la asignación
+        turnos_semana_actual[turno['username']][turno['dia_semana'].lower()] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p')
 
     # Obtener fechas de la semana actual
     fechas_semana_actual = [inicio_semana + datetime.timedelta(days=i) for i in range(7)]
@@ -2477,13 +2477,16 @@ def admin_asignar_turnos():
         turnos_asignados[fecha_str][turno['id_usuario']] = turno['id_turno_disponible']
 
     # Agrupar fechas por semana para la vista
+    # FIX 2: Corregir la lógica para agrupar semanas correctamente.
     calendario_mensual = {}
-    for i in range(ultimo_dia_mes_num):
-        fecha = primer_dia_mes + datetime.timedelta(days=i)
+    fecha_actual = primer_dia_mes
+    while fecha_actual <= ultimo_dia_mes:
         semana_num = fecha.isocalendar()[1]
         if semana_num not in calendario_mensual:
             calendario_mensual[semana_num] = []
-        calendario_mensual[semana_num].append(fecha)
+        # Añadir solo los días de esa semana que pertenecen al mes actual
+        calendario_mensual[semana_num].append(fecha_actual)
+        fecha_actual += datetime.timedelta(days=1)
 
     cursor.close()
     conn.close()
