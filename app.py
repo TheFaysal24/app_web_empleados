@@ -2405,9 +2405,9 @@ def admin_asignar_turnos():
         
         try:
             for key, id_turno_disponible in request.form.items():
-                # FIX 1: Corregir el procesamiento de la clave del formulario.
+                # FIX: Corregir el procesamiento de la clave del formulario para guardar los turnos.
                 if key.startswith('turno-') and key.count('-') >= 2:
-                    _, id_usuario_str, fecha_str = key.split('-', 2) # Cambiado de 'hora-' a 'turno-'
+                    _, id_usuario_str, fecha_str = key.split('-', 2)
                     id_usuario = int(id_usuario_str)
                     fecha = datetime.date.fromisoformat(fecha_str)
 
