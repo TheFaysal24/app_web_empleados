@@ -74,19 +74,30 @@
               </td>
               {% for fecha in fechas_semana %}
               <td>
-                <div class="form-group-table">
-                  <!-- FIX 1: El nombre del campo debe ser `turno-id_usuario-fecha` para que el backend lo procese -->
-                  <select name="turno-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm">
-                    <option value="descanso">-- Descanso --</option>
-                    {% set turno_actual = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
-                    {% for turno_disponible in turnos_disponibles %}
-                      <option value="{{ turno_disponible.id }}" {% if turno_actual == turno_disponible.id %}selected{% endif %}>
-                        {# Formatear la hora a AM/PM #}
-                        {% set hora_obj = datetime.datetime.strptime(turno_disponible.hora, '%H:%M') %}
-                        {% set hora_ampm = hora_obj.strftime('%-I:%M %p') %}
-                        {{ hora_ampm }}
-                      </option>
+                <div class="time-picker-group">
+                  {% set turno_actual_id = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
+                  {% set hora_actual = namespace(h=None, m=None, p=None) %}
+                  {% if turno_actual_id %}
+                    {% for t in turnos_disponibles if t.id == turno_actual_id %}
+                      {% set hora_obj = datetime.datetime.strptime(t.hora, '%H:%M') %}
+                      {% set hora_actual.h = hora_obj.strftime('%-I') %}
+                      {% set hora_actual.m = hora_obj.strftime('%M') %}
+                      {% set hora_actual.p = hora_obj.strftime('%p') %}
                     {% endfor %}
+                  {% endif %}
+                  <select name="hora-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
+                    <option value="">--</option>
+                    {% for h in range(1, 13) %}<option value="{{ h }}" {% if hora_actual.h == h|string %}selected{% endif %}>{{ h }}</option>{% endfor %}
+                  </select>
+                  <select name="minuto-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
+                    <option value="">--</option>
+                    <option value="00" {% if hora_actual.m == '00' %}selected{% endif %}>00</option>
+                    <option value="30" {% if hora_actual.m == '30' %}selected{% endif %}>30</option>
+                  </select>
+                  <select name="periodo-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm time-picker-part">
+                    <option value="">--</option>
+                    <option value="AM" {% if hora_actual.p == 'AM' %}selected{% endif %}>AM</option>
+                    <option value="PM" {% if hora_actual.p == 'PM' %}selected{% endif %}>PM</option>
                   </select>
                 </div>
               </td>
@@ -202,6 +213,15 @@
     border-color: #86b7fe;
     outline: 0;
     box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+  }
+  .time-picker-group {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+  }
+  .time-picker-part {
+    min-width: 0 !important;
+    width: auto !important;
   }
   .submit-container {
     position: sticky;
