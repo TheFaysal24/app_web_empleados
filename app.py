@@ -576,7 +576,7 @@ def login():
                     correo=user_data['correo'],
                     telefono=user_data['telefono'],
                     bloqueado=user_data['bloqueado'],
-                    fecha_creacion=user_data.get('fecha_creacion') # FIX: Añadir fecha_creacion
+                    fecha_creacion=user_data.get('fecha_creacion', datetime.datetime.now())
                 )
                 login_user(user, remember=recordar)
                 session['usuario'] = user.username
@@ -2562,6 +2562,12 @@ def admin_asignar_turnos():
                         "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
                         (id_usuario, id_turno_disponible, fecha)
                     )
+                # Si la hora seleccionada está vacía, significa que se quiere borrar el turno
+                elif not hora_seleccionada:
+                    cursor.execute(
+                        "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
+                        (id_usuario, fecha)
+                    )
 
             conn.commit()
             flash('Turnos de la semana guardados correctamente.', 'message')
@@ -2569,6 +2575,7 @@ def admin_asignar_turnos():
             conn.rollback()
             flash(f'Error al guardar los turnos: {e}', 'error')
             logger.error(f"Error en POST de admin_asignar_turnos: {e}")
+            
         
         return redirect(url_for('admin_asignar_turnos', mes=mes_guardar, ano=ano_guardar))
 
