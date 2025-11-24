@@ -867,7 +867,7 @@ def dashboard():
     costos_por_usuario = {}
     usuarios_iniciados_hoy = 0
     total_usuarios_nuevos = 0
-    fechas_ordenadas = []
+    fechas_ordenadas = [] # FIX 5: Inicializar variable
     turnos_usuarios = {}  # ✅ NUEVO: Almacenar turnos seleccionados por usuario
 
     salario_minimo = 1384308
@@ -2405,22 +2405,22 @@ def admin_asignar_turnos():
         
         try:
             for key, id_turno_disponible in request.form.items():
-                # FIX: Corregir el procesamiento de la clave del formulario para guardar los turnos.
-                if key.startswith('turno-') and key.count('-') >= 2:
-                    _, id_usuario_str, fecha_str = key.split('-', 2)
+                # FIX 1: Corregir el procesamiento de la clave del formulario
+                if key.startswith('turno-') and key != 'csrf_token':
+                    _, id_usuario_str, fecha_str = key.split('-')
+                    id_usuario_str, fecha_str = key.split('-')
                     id_usuario = int(id_usuario_str)
                     fecha = datetime.date.fromisoformat(fecha_str)
 
-                    # Eliminar turno existente para ese día
                     cursor.execute(
                         "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
                         (id_usuario, fecha)
                     )
-
-                    # Si se seleccionó un turno válido (no "descanso"), lo insertamos
                     if id_turno_disponible and id_turno_disponible != 'descanso':
-                        cursor.execute("INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)", (id_usuario, id_turno_disponible, fecha))
-
+                        cursor.execute(
+                            "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
+                            (id_usuario, id_turno_disponible, fecha)
+                        )
             conn.commit()
             flash('Turnos de la semana guardados correctamente.', 'message')
         except Exception as e:
@@ -2502,14 +2502,14 @@ def admin_asignar_turno_manual():
         hoy = now_local().date()
         inicio_semana = hoy - datetime.timedelta(days=hoy.weekday())
 
-        # FIX 5: Corregir la lógica del bucle y el procesamiento
+        # FIX 4: Corregir la lógica del bucle y el procesamiento
         try:
             for i, dia_str in enumerate(dias_semana):
                 fecha_asignacion = inicio_semana + datetime.timedelta(days=i)
                 # El nombre del campo en el formulario es `turno_dia`
                 hora = request.form.get(f'turno_{dia_str}')
 
-                if hora: 
+                if hora:
                     # 1. Obtener ID del turno disponible
                     cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia_str, hora))
                     turno_disponible_row = cursor.fetchone()
