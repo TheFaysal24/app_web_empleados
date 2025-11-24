@@ -185,7 +185,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('admin_actualizar_usuario_completo') }}">
-      {{ form.hidden_tag() }}
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="usuario" value="{{ usuario }}">
       
       <!-- Datos Personales -->
@@ -283,7 +283,10 @@ function actualizarRegistro(usuario, fecha) {
   
   fetch('{{ url_for("admin_actualizar_registro") }}', {
     method: 'POST',
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': '{{ csrf_token() }}' // Envío del token CSRF en la cabecera
+    },
     body: 'usuario=' + encodeURIComponent(usuario) + 
           '&fecha=' + encodeURIComponent(fecha) + 
           '&inicio=' + encodeURIComponent(inicio) + 

@@ -1079,6 +1079,11 @@ def dashboard():
     inicio_semana = (hoy_date - datetime.timedelta(days=hoy_date.weekday())) + datetime.timedelta(weeks=semana_offset)
     fin_semana = inicio_semana + datetime.timedelta(days=6)
 
+    # FIX: Obtener todos los usuarios activos primero para asegurar que todos aparezcan en la tabla
+    cursor.execute("SELECT username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
+    all_active_users = cursor.fetchall()
+    turnos_semana_actual = {user['username']: {} for user in all_active_users}
+
     # FIX: Asegurar que el admin vea todos los turnos y el usuario solo los suyos.
     query_turnos = """
             SELECT u.username, ta.fecha_asignacion, td.hora
@@ -1097,10 +1102,7 @@ def dashboard():
 
     cursor.execute(query_turnos, tuple(params))
 
-    turnos_db = cursor.fetchall()
-    for turno in turnos_db:
-        if turno['username'] not in turnos_semana_actual:
-            turnos_semana_actual[turno['username']] = {}
+    for turno in cursor.fetchall():
         # Usar la fecha como clave, no el día de la semana
         fecha_str = turno['fecha_asignacion'].strftime('%Y-%m-%d')
         turnos_semana_actual[turno['username']][fecha_str] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p')

@@ -835,12 +835,11 @@ or: #f97316;
         </tr>
       </thead>
       <tbody>
-        {% for username, turnos_del_usuario in turnos_semana_actual.items() %}
+        {% for username, turnos_del_usuario in turnos_semana_actual.items()|sort %}
           <tr>
             <td class="gestor-name">{{ username }}</td>
             {% for fecha in fechas_semana_actual %}
               <td>
-                {# Buscamos el turno por fecha exacta en lugar de por día de la semana #}
                 {% set hora_asignada = turnos_del_usuario.get(fecha.strftime('%Y-%m-%d')) %}
                 {% if hora_asignada and hora_asignada != 'Libre' %}
                   <span class="badge badge-success">{{ hora_asignada }}</span>
