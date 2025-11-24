@@ -21,7 +21,7 @@
           <strong>💡 Consejo:</strong> Mantén tu información actualizada para que los registros sean precisos.
         </div>
         <form method="POST" action="{{ url_for('ajustes') }}">
-          {{ update_form.hidden_tag() }}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="update-nombre">Nombre</label>
@@ -55,7 +55,7 @@
           <strong>🔒 Seguridad:</strong> Usa una contraseña fuerte con números, letras y caracteres especiales.
         </div>
         <form method="POST" action="{{ url_for('ajustes') }}">
-          {{ password_form.hidden_tag() }}
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="form-group">
             <label class="form-label" for="password-actual">Contraseña Actual</label>
             {{ password_form.actual(class="form-control", placeholder="Ingresa tu contraseña actual") }}
