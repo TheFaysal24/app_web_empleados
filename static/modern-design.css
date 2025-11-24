@@ -3,7 +3,7 @@
    ======================================== */
 
 /* === VARIABLES DE COLOR === */
-:root {
+  :root {
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f87171 100%);

@@ -1,3 +1,4 @@
+{% extends "base.html" %}
 {% block title %}Dashboard Premium{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='custom_buttons.css') }}">
@@ -6,11 +7,11 @@
     background: #f5f7fa;
     padding: 20px;
   }
-
+ 
   .top-navigation {
     background: white;
     padding: 18px 30px;
-    border-radius: 15px;
+    border-radius: 12px;
     margin-bottom: 20px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -25,7 +26,7 @@
   }
 
   .nav-brand h3 {
-    margin: 0;
+    margin: 0; 
     color: #0f2027;
     font-weight: 700;
     font-size: 1.4em;
@@ -34,7 +35,7 @@
   .nav-brand .user-info {
     background: linear-gradient(135deg, #f0f7ff, #e0f2fe);
     padding: 8px 15px;
-    border-radius: 20px;
+    border-radius: 25px;
     font-size: 0.9em;
     color: #1e40af;
     font-weight: 600;
@@ -56,14 +57,13 @@
   }
 
   .dropdown-toggle {
-    background: linear-gradient(135deg, #6
+    background: linear-gradient(135deg, #667eea, #764ba2);
     border: none;
     padding: 12px;
     border-radius: 50%;
     cursor: pointer;
     font-weight: 600;
     font-size: 1.2em;
-    display: flex;
     align-items: center;
     justify-content: center;
     gap: 0;
@@ -71,6 +71,7 @@
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
     width: 48px;
     position: relative;
+    display: flex;
     overflow: hidden;
   }
 
@@ -121,7 +122,7 @@
 
   .dropdown-menu {
     position: absolute;
-    top: 115%;
+    top: 110%;
     right: 0;
     background: white;
     border-radius: 8px;
@@ -132,7 +133,7 @@
     transform: translateY(-10px);
     transition: all 0.2s ease;
     z-index: 1000;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #eee;
     padding: 8px 0;
   }
 
@@ -177,7 +178,7 @@
   }
 
   .dropdown-item:hover i {
-    color: #0369a1;
+    color: #5a67d8;
   }
 
   .menu-section {
@@ -189,7 +190,7 @@
     letter-spacing: 1.2px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
-
+  
   .btn-action {
     border: none;
     color: white;
@@ -207,7 +208,7 @@
   }
 
   .btn-turnos {
-    background: linear-gradient(to right, #2563eb, #3b82f6) !important; /* Azul Real */
+    background: linear-gradient(to right, #6a11cb, #2575fc) !important;
   }
   .btn-turnos:hover {
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
@@ -293,7 +294,7 @@
   .dashboard-header {
     background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
     color: white;
-    padding: 25px 35px;
+    padding: 30px 35px;
     border-radius: 15px;
     margin-bottom: 20px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
@@ -313,7 +314,7 @@
 
   .stat-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 12px;
     margin-bottom: 20px;
   }
@@ -321,7 +322,7 @@
   .stat-card {
     background: white;
     padding: 16px;
-    border-radius: 12px;
+    border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     border-left: 5px solid;
     transition: transform 0.3s ease;
@@ -371,7 +372,8 @@ e {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-siz
+    font-size: 1.2em;
+  }
 
   .table-card {
     background: white;
@@ -386,7 +388,7 @@ e {
     border-collapse: collapse;
     width: 100%;
     font-size: 0.9em;
-
+  }
   .table-card thead {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -448,14 +450,15 @@ e {
 
   .chart-card h4 {
     color: #2563eb; /* Azul Primario */
-    margin-top: 0;
-    font-weight: 700
+    margin-top: 0; 
+    font-weight: 700;
+  }
 
   .export-buttons {
     background: white;
     border-radius: 12px;
     padding: 20px;
-    box-shad1px solid var(--border-color);
+    box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
@@ -464,7 +467,7 @@ e {
   .btn-export-small {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
-    color: white;
+    color: white; 
     padding: 10x 600;
     font-size: 0.9em;
     cursor: pointer;
@@ -506,6 +509,7 @@ e {
 
   @media (max-width: 768px) {
       flex-direction: column;
+      align-items: stretch;
       gap: 15px;
     }
 
@@ -517,7 +521,7 @@ e {
 
     .btn-action {
       flex: 1 1 auto;
-      min-width: 120px;
+      min-width: 120px; /* Asegura que los botones no se encojan demasiado */
     }
 
     .dashboard-header {
@@ -540,6 +544,7 @@ e {
     .table-card th, .table-card td {
       padding: 6px 5px;
     }
+
   }
 </style>
 
@@ -548,7 +553,7 @@ e {
   <div class="nav-brand">
     <h3><i class="fas fa-users-cog"></i> Sistema de Empleados</h3>
   </div>
-  
+
   <div class="nav-actions">
     <!-- Nombre de usuario a la derecha -->
     <div class="user-info" style="margin-right: 15px;">
@@ -563,7 +568,7 @@ e {
         Usuario
       {% endif %}
     </div>
-
+    
     {% if admin %}
     <a href="{{ url_for('admin_gestion_tiempos') }}" class="btn-action btn-turnos">
       <i class="fas fa-clock"></i> Gestión Turnos (Todos)
@@ -581,13 +586,13 @@ e {
       </button>
       <div class="dropdown-menu">
         <div class="menu-section">PRINCIPAL</div>
-        <a href="{{ url_for('dashboard') }}" class="dropdown-item">
+        <a href="{{ url_for('dashboard') }}" class="dropdown-item" >
           <i class="fas fa-home" style="color: #6366f1;"></i> Dashboard
         </a>
         {% if not admin %}
-        <a href="{{ url_for('seleccionar_turno') }}" class="dropdown-item">
+        <a href="{{ url_for('seleccionar_turno') }}" class="dropdown-item" >
           <i class="fas fa-calendar-plus" style="color: #8b5cf6;"></i> Seleccionar Turno
-        </a>
+        </a> 
         <a href="{{ url_for('ver_turnos_asignados') }}" class="dropdown-item">
           <i class="fas fa-calendar-check" style="color: #10b981;"></i> Ver Mis Turnos
         </a>
@@ -595,29 +600,29 @@ e {
 
         {% if admin %}
         <div class="menu-section" style="margin-top: 8px;">ADMINISTRACIÓN</div>
-        <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item">
+        <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item" >
           <i class="fas fa-calendar-plus" style="color: #8b5cf6;"></i> Asignar Turnos
         </a>
-        <a href="{{ url_for('turnos_mensual') }}" class="dropdown-item">
+        <a href="{{ url_for('turnos_mensual') }}" class="dropdown-item" >
           <i class="fas fa-calendar-alt" style="color: #f59e0b;"></i> Turnos Mensual
         </a>
-        <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">
+        <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item" >
           <i class="fas fa-users" style="color: #f59e0b;"></i> Gestionar Usuarios
         </a>
-        <a href="{{ url_for('admin_backups') }}" class="dropdown-item">
+        <a href="{{ url_for('admin_backups') }}" class="dropdown-item" >
           <i class="fas fa-database" style="color: #6b7280;"></i> Backups
         </a>
-        <a href="{{ url_for('exportar_registros') }}" class="dropdown-item">
+        <a href="{{ url_for('exportar_registros') }}" class="dropdown-item" >
           <i class="fas fa-file-csv" style="color: #3b82f6;"></i> Exportar Reporte
         </a>
         {% endif %}
 
         <div class="menu-section" style="margin-top: 8px;">CUENTA</div>
-        <a href="{{ url_for('ajustes') }}" class="dropdown-item">
+        <a href="{{ url_for('ajustes') }}" class="dropdown-item" >
           <i class="fas fa-cog" style="color: #6366f1;"></i> Ajustes
         </a>
         <div style="border-top: 1px solid #eee; margin: 5px 0;"></div>
-        <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ef4444;">
+        <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ef4444;" >
           <i class="fas fa-sign-out-alt"></i> Salir
         </a>
       </div>
@@ -629,14 +634,14 @@ e {
 {% if not admin %}
 <div style="display: flex; justify-content: center; gap: 30px; margin: 40px 0;">
   <form method="POST" action="{{ url_for('marcar_inicio') }}">
-    <button type="submit" class="btn-asistencia btn-inicio-grande" {% if attendance_status == 'active' %}disabled{% endif %}>
+    <button type="submit" class="btn-asistencia btn-inicio-grande" {% if attendance_status == 'active' %}disabled{% endif %} >
       <div class="icon-container"><i class="fas fa-fingerprint"></i></div>
       <span>Registrar Entrada</span>
     </button>
   </form>
   
   <form method="POST" action="{{ url_for('marcar_salida') }}">
-    <button type="submit" class="btn-asistencia btn-salida-grande" {% if attendance_status != 'active' %}disabled{% endif %}>
+    <button type="submit" class="btn-asistencia btn-salida-grande" {% if attendance_status != 'active' %}disabled{% endif %} >
       <div class="icon-container"><i class="fas fa-running"></i></div>
       <span>Registrar Salida</span>
     </button>
@@ -701,22 +706,6 @@ e {
 </style>
 {% endif %}
 
-      {% if admin %}
-      <div class="menu-section" style="margin-top: 8px;">ADMINISTRACIÓN</div>
-      <a href="{{ url_for('admin_asignar_turnos') }}" class="dropdown-item">
-        <i class="fas fa-user-cog"></i> Asignar Turnos
-      </a>
-      <a href="{{ url_for('admin_usuarios') }}" class="dropdown-item">
-        <i class="fas fa-users-cog"></i> Gestión de Usuarios
-      </a>
-      <a href="{{ url_for('admin_backups') }}" class="dropdown-item">
-        <i class="fas fa-database"></i> Backups
-      </a>
-      <a href="{{ url_for('exportar_registros') }}" class="dropdown-item">
-        <i class="fas fa-file-download"></i> Exportar a CSV
-      </a>
-      {% endif %}
-
 <!-- Header -->
 <div class="dashboard-header">
   <div>
@@ -724,31 +713,6 @@ e {
     <p>{% if admin %}Centro de comando y control del sistema{% else %}Control de asistencia y gestión personal{% endif %}</p>
   </div>
 </div>
-
-<!-- Acceso Rápido (Usuarios) -->
-{% if not admin %}
-<div class="table-card">
-  <h3 class="section-title"><i class="fas fa-th-large"></i> Acceso Rápido a Módulos</h3>
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-    <a href="{{ url_for('modulo_turnos') }}" class="btn-turnos">
-      <i class="fas fa-people-group"></i>
-      Gestión de Turnos
-    </a>
-    <a href="{{ url_for('seleccionar_turno') }}" class="btn-turnos">
-      <i class="fas fa-calendar-clock"></i>
-      Seleccionar Turno
-    </a>
-    <a href="{{ url_for('ver_turnos_asignados') }}" class="btn-turnos">
-      <i class="fas fa-calendar-check"></i>
-      Mis Turnos
-    </a>
-    <a href="{{ url_for('ajustes') }}" class="btn-turnos">
-      <i class="fas fa-gear"></i>
-      Mi Perfil
-    </a>
-  </div>
-</div>
-{% endif %}
 
 <!-- Acciones Rápidas Admin -->
 
@@ -780,62 +744,6 @@ e {
     <div class="stat-value" style="font-size: 1.8em;">$ {{ "{:,.0f}".format(costo_total_empresa) }}</div>
   </div>
   {% endif %}
-</div>
-
-<!-- Historial Detallado (Acordeón) -->
-<div class="card mt-4 shadow">
-  <div class="card-header bg-white border-0">
-    <h3 class="section-title mb-0"><i class="fas fa-history"></i> Mi Historial de Turnos</h3>
-  </div>
-  <div class="card-body p-0">
-    <div class="accordion" id="accordionUserHistory">
-      {% for nombre_semana, dias in calendario_semanal_usuario.items() %}
-      <div class="accordion-item border-0 mb-2">
-        <h2 class="accordion-header" id="heading{{ loop.index }}">
-          <button class="accordion-button collapsed rounded shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}" style="background: #f8fafc;">
-            <span class="fw-bold text-primary">{{ nombre_semana }}</span>
-          </button>
-        </h2>
-        <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#accordionUserHistory">
-          <div class="accordion-body p-0">
-            <div class="table-responsive">
-              <table class="table table-hover mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Planificado</th>
-                    <th>Entrada</th>
-                    <th>Salida</th>
-                    <th>Horas</th>
-                    <th>Extras</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for fecha_str, datos in dias.items() %}
-                  <tr>
-                    <td class="fw-bold">{{ fecha_str }}</td>
-                    <td><span class="badge bg-info text-dark">{{ datos.planificado }}</span></td>
-                    <td>{{ datos.inicio if datos.inicio else '-' }}</td>
-                    <td>{{ datos.salida if datos.salida else '-' }}</td>
-                    <td>{{ datos.horas }}h</td>
-                    <td>
-                      {% if datos.extras > 0 %}
-                      <span class="badge bg-warning text-dark">{{ datos.extras }}h</span>
-                      {% else %}
-                      -
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
 </div>
 
 <style>
@@ -1083,9 +991,10 @@ e {
     <i class="fas fa-download"></i> Registros CSV
   </a>
 {% endif %}
-
+ 
 <!-- Variables de datos del servidor -->
-<script type="text/javasc
+<script type="text/javascript">
+  const serverData = {
     fechas: {{ fechas|default([])|tojson|safe }},
     horas: {{ horas_fechas|default([])|tojson|safe }},
     contadores: {{ contador_inicios|default({})|tojson|safe }}
@@ -1094,7 +1003,7 @@ e {
     usuarios: {{ data.get('usuarios', {})|tojson|safe }}
     {% endif %}
   };
-</script>
+</script> 
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="text/javascript">
