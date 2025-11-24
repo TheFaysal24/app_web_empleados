@@ -1045,7 +1045,7 @@ def dashboard():
         JOIN usuarios u ON ta.id_usuario = u.id
         JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
         WHERE ta.fecha_asignacion BETWEEN %s AND %s
-    """, (inicio_semana, fin_semana)) # FIX 2: Usar las fechas correctas
+    """, (inicio_semana, fin_semana))
     
     turnos_db = cursor.fetchall()
     for turno in turnos_db:
