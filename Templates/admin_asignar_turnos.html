@@ -74,32 +74,6 @@
               </td>
               {% for fecha in fechas_semana %}
               <td>
-                <div class="form-group-table">
-                  <select name="turno-{{ usuario.id }}-{{ fecha.isoformat() }}" class="form-control form-control-sm">
-                    <option value="descanso">-- Descanso --</option>
-                    {% set turno_actual_id = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
-                    {% for turno_disponible in turnos_disponibles %}
-                      {# Agrupar por franja horaria para una mejor UX #}
-                      {% set hora_obj = datetime.datetime.strptime(turno_disponible.hora, '%H:%M') %}
-                      {% if loop.first or (loop.index0 > 0 and hora_obj.hour >= 12 and datetime.datetime.strptime(turnos_disponibles[loop.index0-1].hora, '%H:%M').hour < 12) %}
-                        <optgroup label="Tarde">
-                      {% elif loop.first or (loop.index0 > 0 and hora_obj.hour >= 18 and datetime.datetime.strptime(turnos_disponibles[loop.index0-1].hora, '%H:%M').hour < 18) %}
-                        <optgroup label="Noche">
-                      {% elif loop.first %}
-                        <optgroup label="Mañana">
-                      {% endif %}
-
-                      <option value="{{ turno_disponible.id }}" {% if turno_actual_id == turno_disponible.id %}selected{% endif %}>
-                        {{ hora_obj.strftime('%-I:%M %p') }}
-                      </option>
-
-                      {% if (loop.index < loop.length and datetime.datetime.strptime(turnos_disponibles[loop.index].hora, '%H:%M').hour >= 12 and hora_obj.hour < 12) %}
-                        </optgroup>
-                      {% elif (loop.index < loop.length and datetime.datetime.strptime(turnos_disponibles[loop.index].hora, '%H:%M').hour >= 18 and hora_obj.hour < 18) %}
-                        </optgroup>
-                      {% elif loop.last %}
-                        </optgroup>
-                      {% endif %}
                 <div class="time-picker-group">
                   {% set turno_actual_id = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
                   {% set hora_actual = namespace(h=None, m=None, p=None) %}
