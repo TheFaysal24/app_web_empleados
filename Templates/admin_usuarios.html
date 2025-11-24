@@ -143,26 +143,29 @@
                                                             </tr>
                                                         </thead>
                                                         <tbody>
+                                                            {% set dias_semana = {'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles', 'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'} %}
                                                             {% set sorted_dates = registros[usuario].items() | sort(reverse=True) %}
                                                             {% for fecha, reg in sorted_dates[:5] %}
-                                                                {% if reg is mapping and 
-                                                                   5] if reg.inicio else '-' }}</td>
-                                                                    <td>{{ reg.salida[:5] if reg.salida else '-' }}</td>
-                                                                    <td>{{ reg.horas_trabajadas }}h</td>
+                                                                {% if reg is mapping and 'inicio' in reg %}
+                                                                <tr>
                                                                     <td>
-                                                                        <div class="btn-group btn-group-sm" role="group">
-                                                                            <a href="{{ url_for('admin_editar_registro', usuario=usuario, fecha=fecha) }}" class="btn btn-outline-primary" title="Editar">
-                                                                                <i class="fas fa-edit"></i>
-                                                                            </a>
-                                                                            <form method="POST" action="{{ url_for('admin_eliminar_registro') }}" onsubmit="return confirm('¿Seguro que quieres borrar este registro?')" style="display: inline;">
-                                                                                {{ form.hidden_tag() }}
-                                                                                <input type="hidden" name="usuario" value="{{ usuario }}">
-                                                                                <input type="hidden" name="fecha" value="{{ fecha }}">
-                                                                                <button type="submit" class="btn btn-outline-danger" title="Eliminar Registro">
-                                                                                    <i class="fas fa-trash"></i>
-                                                                                </button>
-                                                                            </form>
-                                                                        </div>
+                                                                        {{ fecha }}
+                                                                        <br>
+                                                                        <small class="text-muted">{{ dias_semana[reg.get('dia_semana', 'Monday')] }}</small>
+                                                                    </td>
+                                                                    <td>{{ reg.get('inicio', '-')[:5] }}</td>
+                                                                    <td>{{ reg.get('salida', '-')[:5] }}</td>
+                                                                    <td>{{ reg.get('horas_trabajadas', 0) }}h</td>
+                                                                    <td class="d-flex gap-1">
+                                                                        <a href="{{ url_for('admin_editar_registro', usuario=usuario, fecha=fecha) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                                                            <i class="fas fa-edit"></i>
+                                                                        </a>
+                                                                        <form method="POST" action="{{ url_for('admin_eliminar_registro') }}" onsubmit="return confirm('¿Borrar este registro?')">
+                                                                            <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}">
+                                                                            <input type="hidden" name="usuario" value="{{ usuario }}">
+                                                                            <input type="hidden" name="fecha" value="{{ fecha }}">
+                                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
+                                                                        </form>
                                                                     </td>
                                                                 </tr>
                                                                 {% endif %}
