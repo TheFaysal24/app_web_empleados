@@ -1096,6 +1096,36 @@ def dashboard():
     # Obtener fechas de la semana actual
     fechas_semana_actual = [inicio_semana + datetime.timedelta(days=i) for i in range(7)]
 
+    # ✅ NUEVO: Calcular resumen de horas extras para el admin
+    resumen_horas_extras = []
+    if admin:
+        cursor.execute("SELECT id, username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE")
+        todos_usuarios = cursor.fetchall()
+        
+        for usuario in todos_usuarios:
+            # Extras del día
+            cursor.execute("SELECT SUM(horas_extras) FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s", (usuario['id'], hoy_date))
+            extras_hoy = cursor.fetchone()[0] or 0.0
+
+            # Extras de la semana
+            cursor.execute("SELECT SUM(horas_extras) FROM registros_asistencia WHERE id_usuario = %s AND fecha BETWEEN %s AND %s", (usuario['id'], inicio_semana, fin_semana))
+            extras_semana = cursor.fetchone()[0] or 0.0
+
+            # Extras del mes
+            inicio_mes = hoy_date.replace(day=1)
+            fin_mes = (inicio_mes + datetime.timedelta(days=31)).replace(day=1) - datetime.timedelta(days=1)
+            cursor.execute("SELECT SUM(horas_extras) FROM registros_asistencia WHERE id_usuario = %s AND fecha BETWEEN %s AND %s", (usuario['id'], inicio_mes, fin_mes))
+            extras_mes = cursor.fetchone()[0] or 0.0
+
+            resumen_horas_extras.append({
+                'nombre': usuario['nombre'],
+                'hoy': float(extras_hoy),
+                'semana': float(extras_semana),
+                'mes': float(extras_mes)
+            })
+        # Ordenar por el que más horas extras tiene en el mes
+        resumen_horas_extras.sort(key=lambda x: x['mes'], reverse=True)
+
     # ✅ AÑADIR FORMULARIO VACÍO PARA LOS BOTONES DE ASISTENCIA (CSRF)
     form = EmptyForm()
 
@@ -1124,7 +1154,8 @@ def dashboard():
         semana_offset=semana_offset, # Pasar offset a la plantilla
         attendance_status=attendance_status, # FIX 3: Pasar estado de asistencia
         session=session,
-        form=form  # ✅ Pasar el formulario a la plantilla
+        form=form,  # ✅ Pasar el formulario a la plantilla
+        resumen_horas_extras=resumen_horas_extras # ✅ NUEVO: Pasar resumen de extras
     )
 
 # ✅ Marcar inicio

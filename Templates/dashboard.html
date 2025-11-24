@@ -1017,6 +1017,57 @@
   </div>
 </div>
 
+{% if admin %}
+<!-- Resumen de Horas Extras por Usuario -->
+<div class="table-card">
+  <h3 class="section-title">
+    <i class="fas fa-stopwatch"></i> Resumen de Horas Extras por Usuario
+  </h3>
+  <div style="overflow-x: auto;">
+    <table class="shift-summary-table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Hoy</th>
+          <th>Esta Semana</th>
+          <th>Este Mes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for resumen in resumen_horas_extras %}
+          {% if resumen.hoy > 0 or resumen.semana > 0 or resumen.mes > 0 %}
+          <tr>
+            <td class="gestor-name">{{ resumen.nombre }}</td>
+            <td>
+              {% if resumen.hoy > 0 %}
+                <span class="badge badge-warning">{{ "%.2f"|format(resumen.hoy) }}h</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if resumen.semana > 0 %}
+                <span class="badge badge-info">{{ "%.2f"|format(resumen.semana) }}h</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if resumen.mes > 0 %}
+                <span class="badge badge-primary" style="background: #e0e7ff; color: #4338ca;">{{ "%.2f"|format(resumen.mes) }}h</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
 <div class="grid-2">
   <div class="chart-card">
     <h4>👥 Distribución de Turnos</h4>
