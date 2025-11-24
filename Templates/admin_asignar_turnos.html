@@ -81,7 +81,10 @@
                     {% set turno_actual = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
                     {% for turno_disponible in turnos_disponibles %}
                       <option value="{{ turno_disponible.id }}" {% if turno_actual == turno_disponible.id %}selected{% endif %}>
-                        {{ turno_disponible.hora }}
+                        {# Formatear la hora a AM/PM #}
+                        {% set hora_obj = datetime.datetime.strptime(turno_disponible.hora, '%H:%M') %}
+                        {% set hora_ampm = hora_obj.strftime('%-I:%M %p') %}
+                        {{ hora_ampm }}
                       </option>
                     {% endfor %}
                   </select>

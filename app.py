@@ -2406,8 +2406,8 @@ def admin_asignar_turnos():
         try:
             for key, id_turno_disponible in request.form.items():
                 # FIX 1: Corregir el procesamiento de la clave del formulario.
-                if key.startswith('turno-') and key != 'csrf_token':
-                    id_usuario_str, fecha_str = key.split('-')
+                if key.startswith('turno-') and key.count('-') >= 3: # Asegura que el formato es correcto
+                    _, id_usuario_str, fecha_str = key.split('-', 2)
                     id_usuario = int(id_usuario_str)
                     fecha = datetime.date.fromisoformat(fecha_str)
 
