@@ -145,10 +145,8 @@
                                                         <tbody>
                                                             {% set sorted_dates = registros[usuario].items() | sort(reverse=True) %}
                                                             {% for fecha, reg in sorted_dates[:5] %}
-                                                                {% if reg is mapping and 'inicio' in reg %}
-                                                                <tr>
-                                                                    <td>{{ fecha }}</td>
-                                                                    <td>{{ reg.inicio[:5] if reg.inicio else '-' }}</td>
+                                                                {% if reg is mapping and 
+                                                                   5] if reg.inicio else '-' }}</td>
                                                                     <td>{{ reg.salida[:5] if reg.salida else '-' }}</td>
                                                                     <td>{{ reg.horas_trabajadas }}h</td>
                                                                     <td>
