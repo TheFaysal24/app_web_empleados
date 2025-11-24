@@ -142,19 +142,23 @@
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label" for="nombre">Nombre Completo</label>
-        {{ form.nombre(class="form-control", placeholder="Nombre Completo") }}
+        {{ form.nombre(class="form-control" if not form.nombre.errors else "form-control is-invalid", placeholder="Nombre Completo") }}
+        {% for error in form.nombre.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
       </div>
       <div class="form-group">
         <label class="form-label" for="cedula">Cédula</label>
-        {{ form.cedula(class="form-control", placeholder="Cédula") }}
+        {{ form.cedula(class="form-control" if not form.cedula.errors else "form-control is-invalid", placeholder="Cédula") }}
+        {% for error in form.cedula.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
       </div>
       <div class="form-group">
         <label class="form-label" for="cargo">Cargo</label>
-        {{ form.cargo(class="form-control", placeholder="Ej: Gestor") }}
+        {{ form.cargo(class="form-control" if not form.cargo.errors else "form-control is-invalid", placeholder="Ej: Gestor") }}
+        {% for error in form.cargo.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
       </div>
       <div class="form-group">
         <label class="form-label" for="correo">Correo Electrónico</label>
-        {{ form.correo(class="form-control", placeholder="tu@correo.com") }}
+        {{ form.correo(class="form-control" if not form.correo.errors else "form-control is-invalid", placeholder="tu@correo.com") }}
+        {% for error in form.correo.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
       </div>
       <div class="form-group">
         <label class="form-label" for="telefono">Teléfono</label>
@@ -162,11 +166,13 @@
       </div>
       <div class="form-group">
         <label class="form-label" for="usuario">Nombre de Usuario</label>
-        {{ form.usuario(class="form-control", placeholder="Elige un usuario", autocomplete="username") }}
+        {{ form.usuario(class="form-control" if not form.usuario.errors else "form-control is-invalid", placeholder="Elige un usuario", autocomplete="username") }}
+        {% for error in form.usuario.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
       </div>
       <div class="form-group full-width">
         <label class="form-label" for="contrasena">Contraseña</label>
-        {{ form.contrasena(class="form-control", placeholder="Crea una contraseña segura", autocomplete="new-password", required=True) }}
+        {{ form.contrasena(class="form-control" if not form.contrasena.errors else "form-control is-invalid", placeholder="Crea una contraseña segura", autocomplete="new-password") }}
+        {% for error in form.contrasena.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
       </div>
     </div>
     <div class="form-group full-width" style="margin-top: 20px;">

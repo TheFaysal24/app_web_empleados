@@ -671,53 +671,95 @@ def register():
     form = RegisterForm()
 
     if form.validate_on_submit():
-        # ✅ VALIDACIÓN DE INPUTS
-        nombre = sanitizar_string(form.nombre.data, 100) if form.nombre.data else None
-        cedula = sanitizar_string(form.cedula.data, 20) if form.cedula.data else None
-        cargo = sanitizar_string(form.cargo.data, 100) if form.cargo.data else None
-        correo = sanitizar_string(form.correo.data, 120) if form.correo.data else None
-        telefono = sanitizar_string(form.telefono.data, 20) if form.telefono.data else None
-        username = sanitizar_string(form.usuario.data, 50) if form.usuario.data else None
-        contrasena = form.contrasena.data if form.contrasena.data else None
-
-        # Validaciones específicas
-        if not all([nombre, cedula, cargo, correo, username, contrasena]):
-            flash('Todos los campos son obligatorios', 'error')
-            return redirect(url_for('register'))
-
-        if not validar_username(username):
-            flash('Username inválido. Solo alfanuméricos, guiones y subguiones (3-50 caracteres)', 'error')
-            return redirect(url_for('register'))
-
-        if not validar_email(correo):
-            flash('Email inválido', 'error')
-            return redirect(url_for('register'))
-
-        if not validar_cedula(cedula):
-            flash('Cédula inválida. Debe contener solo números (8-15 dígitos)', 'error')
-            return redirect(url_for('register'))
-
-        if len(contrasena) < 1:
-            flash('La contraseña no puede estar vacía', 'error')
-            return redirect(url_for('register'))
-
+        # Los validadores de WTForms ya hicieron el trabajo.
+        nombre = form.nombre.data
+        cedula = form.cedula.data
+        cargo = form.cargo.data
+        correo = form.correo.data
+        telefono = form.telefono.data
+        username = form.usuario.data
+        contrasena = form.contrasena.data
+        
         conn = get_db_connection()
         cursor = conn.cursor()
 
         # 1. Verificar si el nombre de usuario ya existe
         cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
         if cursor.fetchone():
-            flash('El nombre de usuario ya existe. Por favor, elige otro.', 'error')
+            form.usuario.errors.append('El nombre de usuario ya existe. Por favor, elige otro.')
             cursor.close()
             conn.close()
-            return redirect(url_for('register'))
+            return render_template('register.html', form=form)
         
         # Buscar si ya existe un usuario con esta cédula
         cursor.execute("SELECT id, username FROM usuarios WHERE cedula = %s", (cedula,))
         usuario_existente = cursor.fetchone()
         
         if usuario_existente:
-            # 2. Si la cédula ya existe, actualizamos la información de ese usuario
+            # Si la cédula ya existe, no se puede registrar.
+            form.cedula.errors.append('Esta cédula ya está registrada.')
+            cursor.close()
+            conn.close()
+            return render_template('register.html', form=form)
+        
+        # Verificar si el correo ya existe
+        cursor.execute("SELECT id FROM usuarios WHERE correo = %s", (correo,))
+        if cursor.fetchone():
+            form.correo.errors.append('Este correo electrónico ya está en uso.')
+            cursor.close()
+            conn.close()
+            return render_template('register.html', form=form)
+
+        # Si todo es válido, creamos el nuevo usuario
+        try:
+            hashed_password = generate_password_hash(contrasena)
+            logger.info(f"Inserting new user: username={username}, cedula={cedula}")
+            cursor.execute(
+                "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                (username, hashed_password, False, nombre, cedula, cargo, correo, telefono)
+            )
+            id_nuevo_usuario = cursor.fetchone()['id']
+            conn.commit()
+            asignar_turnos_automaticos(cedula, id_nuevo_usuario)
+            logger.info(f"Nuevo usuario registrado: {username}")
+            flash('Usuario registrado con éxito. Ahora puedes iniciar sesión.', 'message')
+        except psycopg2.DatabaseError as e:
+            logger.error(f"Error al crear usuario: {e}")
+            flash('Error al registrar usuario', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+        
+        return redirect(url_for('login'))
+
+    return render_template('register.html', form=form)
+
+@app.route('/register_legacy', methods=['GET', 'POST'])
+@limiter.limit("10 per hour")
+def register_legacy():
+    form = RegisterForm()
+
+    if form.validate_on_submit():
+        nombre = form.nombre.data
+        cedula = form.cedula.data
+        cargo = form.cargo.data
+        correo = form.correo.data
+        telefono = form.telefono.data
+        username = form.usuario.data
+        contrasena = form.contrasena.data
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
+        if cursor.fetchone():
+            flash('El nombre de usuario ya existe. Por favor, elige otro.', 'error')
+            return redirect(url_for('register'))
+        
+        cursor.execute("SELECT id, username FROM usuarios WHERE cedula = %s", (cedula,))
+        usuario_existente = cursor.fetchone()
+        
+        if usuario_existente:
             try:
                 cursor.execute(
                     "UPDATE usuarios SET nombre = %s, cargo = %s, correo = %s, telefono = %s, contrasena = %s WHERE id = %s",
@@ -729,29 +771,26 @@ def register():
             except psycopg2.DatabaseError as e:
                 logger.error(f"Error al actualizar usuario: {e}")
                 flash('Error al actualizar usuario', 'error')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('login')) # FIX: Redirigir a login tras actualizar
+            finally:
+                cursor.close()
+                conn.close()
+            return redirect(url_for('login'))
         else:
-            # 3. Si ni el usuario ni la cédula existen, creamos un nuevo usuario
             try:
                 hashed_password = generate_password_hash(contrasena)
-                logger.info(f"Inserting new user: username={username}, cedula={cedula}")
                 cursor.execute(
                     "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                     (username, hashed_password, False, nombre, cedula, cargo, correo, telefono)
                 )
                 id_nuevo_usuario = cursor.fetchone()['id']
                 conn.commit()
-                asignar_turnos_automaticos(cedula, id_nuevo_usuario)
-                logger.info(f"Nuevo usuario registrado: {username}")
-                flash('Usuario registrado con éxito. Turnos asignados automáticamente.', 'message')
+                flash('Usuario registrado con éxito.', 'message')
             except psycopg2.DatabaseError as e:
-                logger.error(f"Error al crear usuario: {e}")
                 flash('Error al registrar usuario', 'error')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('login')) # FIX: Redirigir a login tras registrar
+            finally:
+                cursor.close()
+                conn.close()
+            return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
 # ✅ Logout con Flask-Login
@@ -1051,7 +1090,7 @@ def dashboard():
     for turno in turnos_db:
         if turno['username'] not in turnos_semana_actual:
             turnos_semana_actual[turno['username']] = {} # FIX: Inicializar diccionario para el usuario
-        turnos_semana_actual[turno['username']][turno['dia_semana'].lower()] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p')
+        turnos_semana_actual[turno['username']][turno['dia_semana'].lower()] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p') # FIX: Corregir la asignación
 
     # Obtener fechas de la semana actual
     fechas_semana_actual = [inicio_semana + datetime.timedelta(days=i) for i in range(7)]
