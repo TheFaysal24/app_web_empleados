@@ -731,7 +731,7 @@ def register():
                 flash('Error al actualizar usuario', 'error')
             cursor.close()
             conn.close()
-            return redirect(url_for('login'))
+            return redirect(url_for('login')) # FIX: Redirigir a login tras actualizar
         else:
             # 3. Si ni el usuario ni la cédula existen, creamos un nuevo usuario
             try:
@@ -751,7 +751,7 @@ def register():
                 flash('Error al registrar usuario', 'error')
             cursor.close()
             conn.close()
-            return redirect(url_for('login'))    
+            return redirect(url_for('login')) # FIX: Redirigir a login tras registrar
     return render_template('register.html', form=form)
 
 # ✅ Logout con Flask-Login
