@@ -153,8 +153,8 @@
                                                                     <br>
                                                                     <small class="text-muted">{{ dias_semana.get(reg.get('dia_semana', 'monday').lower(), '-') }}</small>
                                                                 </td>
-                                                                <td>{{ reg.get('inicio', '-')[:5] }}</td>
-                                                                <td>{{ reg.get('salida', '-')[:5] }}</td>
+                                                                <td>{{ (reg.get('inicio') or '-')[:5] }}</td>
+                                                                <td>{{ (reg.get('salida') or '-')[:5] }}</td>
                                                                 <td>{{ reg.get('horas_trabajadas', 0) }}h</td>
                                                                 <td class="d-flex gap-1">
                                                                     <a href="{{ url_for('admin_editar_registro', usuario=usuario, fecha=fecha) }}" class="btn btn-sm btn-outline-primary" title="Editar">
