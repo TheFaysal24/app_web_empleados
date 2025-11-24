@@ -1088,6 +1088,9 @@ def dashboard():
     # FIX: Asegurar que el admin vea todos los turnos y el usuario solo los suyos.
     # 2. Obtener TODOS los turnos asignados en el rango de la semana
     query_turnos = """
+        SELECT u.username, ta.fecha_asignacion, td.hora
+        FROM turnos_asignados ta
+        JOIN usuarios u ON ta.id_usuario = u.id
         JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
         WHERE ta.fecha_asignacion BETWEEN %s AND %s
     """
