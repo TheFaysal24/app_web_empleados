@@ -681,17 +681,17 @@ def register():
             flash('Todos los campos son obligatorios', 'error')
             return redirect(url_for('register'))
 
-        # if not validar_username(username):
-        #     flash('Username inválido. Solo alfanuméricos, guiones y subguiones (3-50 caracteres)', 'error')
-        #     return redirect(url_for('register'))
+        if not validar_username(username):
+            flash('Username inválido. Solo alfanuméricos, guiones y subguiones (3-50 caracteres)', 'error')
+            return redirect(url_for('register'))
 
-        # if not validar_email(correo):
-        #     flash('Email inválido', 'error')
-        #     return redirect(url_for('register'))
+        if not validar_email(correo):
+            flash('Email inválido', 'error')
+            return redirect(url_for('register'))
 
-        # if not validar_cedula(cedula):
-        #     flash('Cédula inválida. Debe contener solo números (8-15 dígitos)', 'error')
-        #     return redirect(url_for('register'))
+        if not validar_cedula(cedula):
+            flash('Cédula inválida. Debe contener solo números (8-15 dígitos)', 'error')
+            return redirect(url_for('register'))
 
         if len(contrasena) < 1:
             flash('La contraseña no puede estar vacía', 'error')

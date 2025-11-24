@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+x#!/usr/bin/env python3
 """
 Script completo de instalación y configuración
 """
@@ -14,10 +14,14 @@ print()
 # 1. Instalar dependencias
 print("📦 Instalando dependencias...")
 dependencias = [
+    "Flask==2.3.3",
+    "Flask-Login==0.6.3",
     "Flask-Limiter==3.5.0",
     "Flask-WTF==1.2.1", 
     "python-dotenv==1.0.0",
-    "psycopg2-binary"
+    "psycopg2-binary",
+    "Flask-Mail",
+    "gunicorn==21.2.0"
 ]
 
 for dep in dependencias:
