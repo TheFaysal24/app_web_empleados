@@ -21,7 +21,8 @@ dependencias = [
     "python-dotenv==1.0.0",
     "psycopg2-binary",
     "Flask-Mail",
-    "gunicorn==21.2.0"
+    "gunicorn==21.2.0",
+    "email-validator"
 ]
 
 for dep in dependencias:
