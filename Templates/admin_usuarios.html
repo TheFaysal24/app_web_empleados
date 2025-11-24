@@ -145,22 +145,22 @@
                                                         <tbody>
                                                             {% set sorted_dates = registros[usuario].items() | sort(reverse=True) %}
                                                             {% for fecha, reg in sorted_dates[:5] %}
-                                                                {% if reg is mapping and reg.get('inicio') %}
+                                                                {% if reg is mapping and 'inicio' in reg %}
                                                                 <tr>
                                                                     <td>{{ fecha }}</td>
                                                                     <td>{{ reg.inicio[:5] if reg.inicio else '-' }}</td>
                                                                     <td>{{ reg.salida[:5] if reg.salida else '-' }}</td>
                                                                     <td>{{ reg.horas_trabajadas }}h</td>
                                                                     <td>
-                                                                        <div class="btn-group btn-group-sm">
-                                                                            <a href="{{ url_for('admin_editar_registro') }}?usuario={{ usuario }}&fecha={{ fecha }}" class="btn btn-outline-secondary" title="Editar">
+                                                                        <div class="btn-group btn-group-sm" role="group">
+                                                                            <a href="{{ url_for('admin_editar_registro', usuario=usuario, fecha=fecha) }}" class="btn btn-outline-primary" title="Editar">
                                                                                 <i class="fas fa-edit"></i>
                                                                             </a>
-                                                                            <form method="POST" action="{{ url_for('admin_eliminar_registro') }}" onsubmit="return confirm('¿Borrar?')" style="display:inline;">
+                                                                            <form method="POST" action="{{ url_for('admin_eliminar_registro') }}" onsubmit="return confirm('¿Seguro que quieres borrar este registro?')" style="display: inline;">
                                                                                 {{ form.hidden_tag() }}
                                                                                 <input type="hidden" name="usuario" value="{{ usuario }}">
                                                                                 <input type="hidden" name="fecha" value="{{ fecha }}">
-                                                                                <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                                                <button type="submit" class="btn btn-outline-danger" title="Eliminar Registro">
                                                                                     <i class="fas fa-trash"></i>
                                                                                 </button>
                                                                             </form>
