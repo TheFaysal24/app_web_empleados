@@ -178,14 +178,14 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Iniciar Sesión')
 
 class RegisterForm(FlaskForm):
-    nombre = StringField('Nombre Completo')
+    nombre = StringField('Nombre Completo', validators=[DataRequired()])
     apellido = StringField('Apellido')
-    cedula = StringField('Cédula')
-    cargo = StringField('Cargo')
-    correo = StringField('Correo Electrónico')
+    cedula = StringField('Cédula', validators=[DataRequired()])
+    cargo = StringField('Cargo', validators=[DataRequired()])
+    correo = StringField('Correo Electrónico', validators=[DataRequired(), Email()])
     telefono = StringField('Teléfono')
-    usuario = StringField('Nombre de Usuario')
-    contrasena = PasswordField('Contraseña')
+    usuario = StringField('Nombre de Usuario', validators=[DataRequired()])
+    contrasena = PasswordField('Contraseña', validators=[DataRequired()])
     submit = SubmitField('Registrarse')
 
 class CambiarContrasenaForm(FlaskForm):
