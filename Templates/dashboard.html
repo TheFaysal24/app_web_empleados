@@ -633,6 +633,7 @@ e {
 <!-- Panel de Control de Asistencia (Centrado y Grande) -->
 {% if not admin %}
 <div style="display: flex; justify-content: center; gap: 30px; margin: 40px 0;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <form method="POST" action="{{ url_for('marcar_inicio') }}">
     <button type="submit" class="btn-asistencia btn-inicio-grande" {% if attendance_status == 'active' %}disabled{% endif %} >
       <div class="icon-container"><i class="fas fa-fingerprint"></i></div>
