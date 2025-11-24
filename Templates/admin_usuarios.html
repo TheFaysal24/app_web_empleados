@@ -86,13 +86,13 @@
                                                         <button type="submit" class="btn btn-warning btn-sm">
                                                             <i class="fas fa-ban"></i> Bloquear Usuario
                                                         </button>
-                                                    </form>
-                                                    <a href="{{ url_for('admin_editar_completo', username=usuario) }}" class="btn btn-info btn-sm">
-                                                        <i class="fas fa-user-edit"></i> Edición Total
-                                                    </form>
+                                                    </form>                                                    
                                                 {% endif %}
                                                 
                                                 {% if not datos.get('admin') %}
+                                                    <a href="{{ url_for('admin_editar_completo', username=usuario) }}" class="btn btn-info btn-sm mt-2">
+                                                        <i class="fas fa-user-edit"></i> Edición Total
+                                                    </a>
                                                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="if(confirm('¿Eliminar {{ datos.nombre }}? Esto eliminará sus registros y turnos.')) window.location.href='{{ url_for('admin_eliminar_usuario', usuario=usuario) }}'">
                                                         <i class="fas fa-trash"></i> Eliminar Usuario
                                                     </button>
