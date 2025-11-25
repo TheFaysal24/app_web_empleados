@@ -1126,27 +1126,66 @@ def dashboard():
 
     # ✅ NUEVO: Obtener registros de asistencia para la semana actual
     registros_semana_actual = []
+    query_registros_semana = """
+        SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
+        FROM registros_asistencia ra
+        JOIN usuarios u ON ra.id_usuario = u.id
+        WHERE ra.fecha BETWEEN %s AND %s
+    """
+    params_registros_semana = [inicio_semana, fin_semana]
+
     if admin:
+        query_registros_semana += " AND u.admin IS NOT TRUE ORDER BY ra.fecha, u.nombre"
+    else:
+        query_registros_semana += " AND u.id = %s ORDER BY ra.fecha"
+        params_registros_semana.append(current_user.id)
+
+    cursor.execute(query_registros_semana, tuple(params_registros_semana))
+    registros_db = cursor.fetchall()
+    for reg in registros_db:
+        registros_semana_actual.append({
+            'usuario': reg['nombre'],
+            'fecha': reg['fecha'].strftime('%d/%m/%Y'),
+            'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
+            'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
+            'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
+        })
+
+    # ✅ NUEVO: Agrupar todos los registros por usuario, mes y semana para el acordeón del admin
+    registros_dashboard_agrupados = {}
+    if admin:
+        from itertools import groupby
+        # Obtener todos los registros de todos los usuarios no-admin
         cursor.execute("""
-            SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
+            SELECT u.id, u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas, ra.horas_extras
             FROM registros_asistencia ra
-            JOIN usuarios u ON ra.id_usuario = u.id AND u.admin IS NOT TRUE
-            WHERE ra.fecha BETWEEN %s AND %s
-            ORDER BY ra.fecha, u.nombre
-        """, (inicio_semana, fin_semana))
-        registros_db = cursor.fetchall()
-        for reg in registros_db:
-            registros_semana_actual.append({
-                'usuario': reg['nombre'],
-                'fecha': reg['fecha'].strftime('%d/%m/%Y'),
-                'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
-                'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
-                'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
-            })
-    else: # Lógica para usuario no admin (si se necesita)
-        cursor.execute("SELECT fecha, inicio, salida, horas_trabajadas FROM registros_asistencia WHERE id_usuario = %s AND fecha BETWEEN %s AND %s ORDER BY fecha", (current_user.id, inicio_semana, fin_semana))
-        # ... (procesar y añadir a registros_semana_actual)
-        pass
+            JOIN usuarios u ON ra.id_usuario = u.id
+            WHERE u.admin IS NOT TRUE
+            ORDER BY u.nombre, ra.fecha DESC
+        """)
+        todos_los_registros = cursor.fetchall()
+
+        meses_es = {
+            1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
+            7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+        }
+
+        # Agrupar primero por usuario
+        for user_nombre, user_group in groupby(todos_los_registros, key=lambda r: r['nombre']):
+            registros_dashboard_agrupados[user_nombre] = {}
+            
+            # Luego por mes
+            for (year, month), month_group in groupby(user_group, key=lambda r: (r['fecha'].year, r['fecha'].month)):
+                month_name = f"{meses_es[month]} {year}"
+                registros_dashboard_agrupados[user_nombre][month_name] = {}
+
+                # Y finalmente por semana
+                for week_num, week_group in groupby(month_group, key=lambda r: r['fecha'].isocalendar()[1]):
+                    week_days = list(week_group)
+                    start_of_week = week_days[0]['fecha'] - datetime.timedelta(days=week_days[0]['fecha'].weekday())
+                    end_of_week = start_of_week + datetime.timedelta(days=6)
+                    week_name = f"Semana {week_num} ({start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b')})"
+                    registros_dashboard_agrupados[user_nombre][month_name][week_name] = week_days
 
 
     # ✅ NUEVO: Calcular resumen de horas extras para el admin
@@ -1226,7 +1265,8 @@ def dashboard():
         session=session,
         form=form,  # ✅ Pasar el formulario a la plantilla
         resumen_horas_extras=resumen_horas_extras, # ✅ NUEVO: Pasar resumen de extras
-        server_data_json=server_data_json # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
+        server_data_json=server_data_json, # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
+        registros_dashboard_agrupados=registros_dashboard_agrupados # ✅ NUEVO: Pasar datos para el acordeón
     )
 
 # ✅ Marcar inicio
@@ -1250,6 +1290,7 @@ def marcar_inicio():
             
             usuario_id = current_user.id
             hoy = today_local_iso()
+            ahora = now_local().isoformat()
             ahora = client_timestamp or now_local().isoformat()
 
             cursor.execute(
@@ -1310,6 +1351,7 @@ def marcar_salida():
     if form.validate_on_submit():
         conn = get_db_connection()
         cursor = conn.cursor()
+        
 
         # ✅ FIX: Usar la hora del cliente (navegador) para mayor precisión.
         client_timestamp = request.form.get('client_timestamp')
@@ -1317,6 +1359,7 @@ def marcar_salida():
 
         usuario_id = current_user.id
         hoy = today_local_iso()
+        ahora = now_local()
 
         cursor.execute(
             "SELECT id, inicio FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL AND salida IS NULL",
@@ -1357,6 +1400,7 @@ def marcar_asistencia():
     if form.validate_on_submit():
         conn = get_db_connection()
         cursor = conn.cursor()
+        
 
         # ✅ FIX: Usar la hora del cliente (navegador) para mayor precisión.
         client_timestamp = request.form.get('client_timestamp')
@@ -1364,6 +1408,7 @@ def marcar_asistencia():
 
         usuario_id = current_user.id
         hoy = today_local_iso()
+        ahora = now_local()
 
         # Verificar si ya marcó entrada hoy y no ha marcado salida
         cursor.execute(
@@ -2938,6 +2983,8 @@ def admin_edicion_total():
     cursor.close()
     conn.close()
 
+    # Para que el acordeón funcione, necesitamos Bootstrap JS. Asegurémonos de que esté en base.html o aquí.
+
     return render_template('admin_edicion_total.html', 
                            todos_los_usuarios=todos_los_usuarios,
                            usuario_seleccionado=usuario_seleccionado,
@@ -3665,5 +3712,49 @@ if app.secret_key.startswith('CHANGE_THIS'):
 
 if __name__ == '__main__':    
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
+                logger.error(f"Error importando turno histórico: {e}") # pyright: ignore[reportUndefinedVariable]
+                skipped_count += 1 # type: ignore
 
-# Forzando re-commit para despliegue
+    conn.commit() # type: ignore
+    cursor.close() # type: ignore
+    conn.close() # type: ignore
+
+    if imported_count > 0: # type: ignore
+        flash(f"✅ Se importaron y registraron {imported_count} turnos históricos exitosamente.", 'message') # type: ignore
+    if skipped_count > 0:
+        flash(f"⚠️ Se saltaron {skipped_count} turnos (ya existían o hubo errores).", 'warning')
+    for msg in error_messages: # type: ignore
+        flash(msg, 'error')
+
+    return redirect(url_for('admin_usuarios')) # Redirigir a la GESTIÓN DE USUARIOS para ver los registros
+
+# ✅ NUEVO: Función para enviar el correo de restablecimiento de contraseña
+def send_password_reset_email(user, token):
+    """
+    Construye y envía el correo electrónico para restablecer la contraseña.
+    """
+    try:
+        msg = Message('Restablecimiento de Contraseña - Sistema de Empleados',
+                      recipients=[user['correo']])
+        reset_url = url_for('resetear_clave', token=token, _external=True)
+        msg.body = f'''Hola {user['nombre']},
+
+Para restablecer tu contraseña, visita el siguiente enlace:
+{reset_url}
+
+Si no solicitaste este cambio, puedes ignorar este correo. El enlace expirará en 30 minutos.
+'''
+        mail.send(msg)
+    except Exception as e:
+        logger.error(f"Fallo al enviar correo a {user['correo']}: {e}")
+        raise e
+
+# -------------------
+# Ejecutar aplicación
+# -------------------
+# Advertencia si se usa SECRET_KEY por defecto
+if app.secret_key.startswith('CHANGE_THIS'):
+    logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
+
+if __name__ == '__main__':    
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
