@@ -1260,8 +1260,6 @@ def dashboard():
         session=session,
         form=form,  # ✅ Pasar el formulario a la plantilla
         resumen_horas_extras=resumen_horas_extras, # ✅ NUEVO: Pasar resumen de extras
-        server_data_json=server_data_json, # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
-        registros_semana_actual=registros_semana_actual # Pasar los registros a la plantilla
         server_data_json=server_data_json,
         registros_semana_actual=registros_semana_actual,
         registros_mes_actual=registros_mes_actual # ✅ NUEVO: Pasar registros del mes
