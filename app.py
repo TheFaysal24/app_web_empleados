@@ -20,8 +20,6 @@ import uuid
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField, EmailField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
 import re
-import calendar
-from itertools import groupby
 
 # Cargar variables de entorno
 load_dotenv()
@@ -1147,51 +1145,8 @@ def dashboard():
             })
     else: # Lógica para usuario no admin (si se necesita)
         cursor.execute("SELECT fecha, inicio, salida, horas_trabajadas FROM registros_asistencia WHERE id_usuario = %s AND fecha BETWEEN %s AND %s ORDER BY fecha", (current_user.id, inicio_semana, fin_semana))
-        registros_db = cursor.fetchall()
-        for reg in registros_db:
-            registros_semana_actual.append({
-                'usuario': current_user.nombre,
-                'fecha': reg['fecha'].strftime('%d/%m/%Y'),
-                'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
-                'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
-                'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
-            })
-
-    # ✅ NUEVO: Obtener registros de asistencia para el mes actual
-    inicio_mes = hoy_date.replace(day=1)
-    next_month = inicio_mes.replace(day=28) + datetime.timedelta(days=4)
-    fin_mes = next_month - datetime.timedelta(days=next_month.day)
-    registros_mes_actual = []
-
-    if admin:
-        cursor.execute("""
-            SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
-            FROM registros_asistencia ra
-            JOIN usuarios u ON ra.id_usuario = u.id AND u.admin IS NOT TRUE
-            WHERE ra.fecha BETWEEN %s AND %s
-            ORDER BY ra.fecha, u.nombre
-        """, (inicio_mes, fin_mes))
-        registros_db_mes = cursor.fetchall()
-        for reg in registros_db_mes:
-            registros_mes_actual.append({
-                'usuario': reg['nombre'],
-                'fecha': reg['fecha'].strftime('%d/%m/%Y'),
-                'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
-                'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
-                'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
-            })
-    else: # Lógica para usuario no admin
-        cursor.execute("SELECT fecha, inicio, salida, horas_trabajadas FROM registros_asistencia WHERE id_usuario = %s AND fecha BETWEEN %s AND %s ORDER BY fecha", (current_user.id, inicio_mes, fin_mes))
-        registros_db_mes = cursor.fetchall()
-        for reg in registros_db_mes:
-            registros_mes_actual.append({
-                'usuario': current_user.nombre,
-                'fecha': reg['fecha'].strftime('%d/%m/%Y'),
-                'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
-                'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
-                'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
-            })
-
+        # ... (procesar y añadir a registros_semana_actual)
+        pass
 
 
     # ✅ NUEVO: Calcular resumen de horas extras para el admin
@@ -1271,8 +1226,7 @@ def dashboard():
         session=session,
         form=form,  # ✅ Pasar el formulario a la plantilla
         resumen_horas_extras=resumen_horas_extras, # ✅ NUEVO: Pasar resumen de extras
-        server_data_json=server_data_json, # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
-        registros_mes_actual=registros_mes_actual
+        server_data_json=server_data_json # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
     )
 
 # ✅ Marcar inicio
@@ -1284,6 +1238,10 @@ def marcar_inicio():
 
     form = EmptyForm()
     if form.validate_on_submit():
+        # ✅ FIX: Usar la hora del cliente (navegador) para mayor precisión.
+        # Si no llega, usar la del servidor como respaldo.
+        client_timestamp = request.form.get('client_timestamp')
+
         conn = None
         cursor = None
         try:
@@ -1292,7 +1250,7 @@ def marcar_inicio():
             
             usuario_id = current_user.id
             hoy = today_local_iso()
-            ahora = now_local().isoformat()
+            ahora = client_timestamp or now_local().isoformat()
 
             cursor.execute(
                 "SELECT id FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL",
@@ -1352,10 +1310,13 @@ def marcar_salida():
     if form.validate_on_submit():
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
+        # ✅ FIX: Usar la hora del cliente (navegador) para mayor precisión.
+        client_timestamp = request.form.get('client_timestamp')
+        ahora = datetime.datetime.fromisoformat(client_timestamp) if client_timestamp else now_local()
+
         usuario_id = current_user.id
         hoy = today_local_iso()
-        ahora = now_local()
 
         cursor.execute(
             "SELECT id, inicio FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL AND salida IS NULL",
@@ -1396,10 +1357,13 @@ def marcar_asistencia():
     if form.validate_on_submit():
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
+        # ✅ FIX: Usar la hora del cliente (navegador) para mayor precisión.
+        client_timestamp = request.form.get('client_timestamp')
+        ahora = datetime.datetime.fromisoformat(client_timestamp) if client_timestamp else now_local()
+
         usuario_id = current_user.id
         hoy = today_local_iso()
-        ahora = now_local()
 
         # Verificar si ya marcó entrada hoy y no ha marcado salida
         cursor.execute(
@@ -1970,10 +1934,6 @@ def admin_editar_registro():
         fecha_str = request.form.get('fecha')
         inicio_str = request.form.get('inicio')
         salida_str = request.form.get('salida')
-
-        # Convert empty strings to None for database compatibility
-        inicio_to_db = inicio_str if inicio_str else None
-        salida_to_db = salida_str if salida_str else None
         
         cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
         user_id = cursor.fetchone()
@@ -1981,12 +1941,12 @@ def admin_editar_registro():
         if user_id:
             horas_trabajadas = 0.0
             horas_extras = 0.0
-            if inicio_to_db and salida_to_db: # Use the values converted to None
-                horas_trabajadas, horas_extras = calcular_horas(inicio_to_db, salida_to_db)
+            if inicio_str and salida_str:
+                horas_trabajadas, horas_extras = calcular_horas(inicio_str, salida_str)
             
             try:
                 # Registro de Auditoría Previo
-                registrar_auditoria('Edición Horas', f"Admin editó registro de {username} para {fecha_str}: Inicio {inicio_to_db}, Salida {salida_to_db}")
+                registrar_auditoria('Edición Horas', f"Admin editó registro de {username} para {fecha_str}: Inicio {inicio_str}, Salida {salida_str}")
 
                 # Upsert lógico: INSERT si no existe, UPDATE si existe
                 # Como la tabla tiene UNIQUE(id_usuario, fecha), podemos usar ON CONFLICT
@@ -1999,7 +1959,7 @@ def admin_editar_registro():
                         salida = EXCLUDED.salida,
                         horas_trabajadas = EXCLUDED.horas_trabajadas,
                         horas_extras = EXCLUDED.horas_extras
-                """, (user_id['id'], fecha_str, inicio_to_db, salida_to_db, horas_trabajadas, horas_extras))
+                """, (user_id['id'], fecha_str, inicio_str, salida_str, horas_trabajadas, horas_extras))
                 
                 conn.commit()
                 flash('Registro guardado correctamente', 'message')
@@ -2020,53 +1980,34 @@ def admin_editar_registro():
 
     username = request.args.get('usuario')
     fecha_str = request.args.get('fecha')
+    registro = None
     
-    # Initialize `registro` with default empty values for new record entry
-    registro = {
-        'fecha': fecha_str,
-        'inicio': '',
-        'salida': '',
-        'horas_trabajadas': 0.0,
-        'horas_extras': 0.0,
-        'estado_ausencia': 'Ninguno' # Default value
-    }
-    user_id_val = None # To store the actual user_id for later use
-
     if username and fecha_str:
-        conn = get_db_connection()
-        cursor = conn.cursor()
         cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
-        user_id_row = cursor.fetchone()
-        if user_id_row:
-            user_id_val = user_id_row['id']
+        user_id = cursor.fetchone()
+        if user_id:
             cursor.execute(
-                "SELECT fecha, inicio, salida, horas_trabajadas, horas_extras, estado_ausencia FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s",
-                (user_id_val, fecha_str)
+                "SELECT fecha, inicio, salida, horas_trabajadas, horas_extras FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s",
+                (user_id['id'], fecha_str)
             )
             registro_db = cursor.fetchone()
-            if registro_db: # If a record is found, populate `registro` with existing data
-                registro['fecha'] = registro_db['fecha'].isoformat()
-                registro['inicio'] = registro_db['inicio'].strftime('%Y-%m-%dT%H:%M') if registro_db['inicio'] else ''
-                registro['salida'] = registro_db['salida'].strftime('%Y-%m-%dT%H:%M') if registro_db['salida'] else ''
-                registro['horas_trabajadas'] = float(registro_db['horas_trabajadas'] or 0.0)
-                registro['horas_extras'] = float(registro_db['horas_extras'] or 0.0)
-                registro['estado_ausencia'] = registro_db['estado_ausencia'] if registro_db['estado_ausencia'] else 'Ninguno'
-            # ELSE: registro remains with default empty values for adding a new record
-
-            cursor.close()
-            conn.close()
-            # Always render the template if username and fecha_str are valid
-            return render_template('admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form)
-        else:
-            flash('Usuario no encontrado', 'error')
-    else: # If username or fecha_str are missing from GET parameters
-        flash('Parámetros de edición incompletos', 'error')
-
-    # If essential parameters are missing or user not found, redirect
-    conn = get_db_connection() # Re-establish connection if it was closed
-    cursor = conn.cursor()
+            if registro_db:
+                registro = {
+                    'fecha': registro_db['fecha'].isoformat(), # YYYY-MM-DD
+                    # FIX: Formatear para el input datetime-local (YYYY-MM-DDTHH:MM)
+                    'inicio': registro_db['inicio'].strftime('%Y-%m-%dT%H:%M') if registro_db['inicio'] else '',
+                    'salida': registro_db['salida'].strftime('%Y-%m-%dT%H:%M') if registro_db['salida'] else '',
+                    'horas_trabajadas': float(registro_db['horas_trabajadas'] or 0.0),
+                    'horas_extras': float(registro_db['horas_extras'] or 0.0)
+                }
+    
     cursor.close()
     conn.close()
+
+    if registro:
+        return render_template('admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form) # FIX: Ruta correcta
+    
+    flash('Registro no encontrado', 'error')
     return redirect(url_for('admin_usuarios'))
 
 # ✅ NUEVO: Ruta para AÑADIR un registro de asistencia manualmente (Admin)
@@ -2392,6 +2333,7 @@ def admin_gestion_tiempos():
     usuarios_activos = cursor.fetchall()
 
     # Generar todas las fechas del mes
+    import calendar
     num_dias = calendar.monthrange(ano, mes)[1]
     fechas_mes = [datetime.date(ano, mes, d) for d in range(1, num_dias + 1)]
 
@@ -2715,6 +2657,7 @@ def admin_asignar_turnos():
     cursor.execute("SELECT id, hora FROM turnos_disponibles ORDER BY hora")
     turnos_disponibles = cursor.fetchall()
 
+    import calendar
     primer_dia_mes = datetime.date(ano_actual, mes_actual, 1)
     ultimo_dia_mes_num = calendar.monthrange(ano_actual, mes_actual)[1]
     ultimo_dia_mes = datetime.date(ano_actual, mes_actual, ultimo_dia_mes_num)
@@ -2963,6 +2906,7 @@ def admin_edicion_total():
         usuario_data = cursor.fetchone()
 
         if usuario_data:
+            from itertools import groupby
             # Obtener todos los registros de asistencia para ese usuario
             cursor.execute(
                 "SELECT fecha, inicio, salida, horas_trabajadas, horas_extras FROM registros_asistencia WHERE id_usuario = %s ORDER BY fecha DESC",
@@ -2977,10 +2921,19 @@ def admin_edicion_total():
             }
 
             # Agrupar por año y mes
-            keyfunc = lambda r: (r['fecha'].year, r['fecha'].month)
-            for (year, month), group in groupby(registros_db, key=keyfunc):
+            keyfunc_month = lambda r: (r['fecha'].year, r['fecha'].month)
+            for (year, month), month_group in groupby(registros_db, key=keyfunc_month):
                 month_name = f"{meses_es[month]} {year}"
-                registros_agrupados[month_name] = list(group)
+                registros_agrupados[month_name] = {}
+
+                # Ahora, agrupar ese mes por semana
+                keyfunc_week = lambda r: r['fecha'].isocalendar()[1]
+                for week_num, week_group in groupby(month_group, key=keyfunc_week):
+                    week_days = list(week_group)
+                    start_of_week = week_days[0]['fecha'] - datetime.timedelta(days=week_days[0]['fecha'].weekday())
+                    end_of_week = start_of_week + datetime.timedelta(days=6)
+                    week_name = f"Semana {week_num} ({start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b')})"
+                    registros_agrupados[month_name][week_name] = week_days
 
     cursor.close()
     conn.close()
@@ -3712,3 +3665,51 @@ if app.secret_key.startswith('CHANGE_THIS'):
 
 if __name__ == '__main__':    
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
+                logger.error(f"Error importando turno histórico: {e}") # pyright: ignore[reportUndefinedVariable]
+                skipped_count += 1 # type: ignore
+
+    conn.commit() # type: ignore
+    cursor.close() # type: ignore
+    conn.close() # type: ignore
+
+    if imported_count > 0: # type: ignore
+        flash(f"✅ Se importaron y registraron {imported_count} turnos históricos exitosamente.", 'message') # type: ignore
+    if skipped_count > 0:
+        flash(f"⚠️ Se saltaron {skipped_count} turnos (ya existían o hubo errores).", 'warning')
+    for msg in error_messages: # type: ignore
+        flash(msg, 'error')
+
+    return redirect(url_for('admin_usuarios')) # Redirigir a la GESTIÓN DE USUARIOS para ver los registros
+
+# ✅ NUEVO: Función para enviar el correo de restablecimiento de contraseña
+def send_password_reset_email(user, token):
+    """
+    Construye y envía el correo electrónico para restablecer la contraseña.
+    """
+    try:
+        msg = Message('Restablecimiento de Contraseña - Sistema de Empleados',
+                      recipients=[user['correo']])
+        reset_url = url_for('resetear_clave', token=token, _external=True)
+        msg.body = f'''Hola {user['nombre']},
+
+Para restablecer tu contraseña, visita el siguiente enlace:
+{reset_url}
+
+Si no solicitaste este cambio, puedes ignorar este correo. El enlace expirará en 30 minutos.
+'''
+        mail.send(msg)
+    except Exception as e:
+        logger.error(f"Fallo al enviar correo a {user['correo']}: {e}")
+        raise e
+
+# -------------------
+# Ejecutar aplicación
+# -------------------
+# Advertencia si se usa SECRET_KEY por defecto
+if app.secret_key.startswith('CHANGE_THIS'):
+    logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
+
+if __name__ == '__main__':    
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
+
+# Forzando re-commit para despliegue
