@@ -1173,6 +1173,23 @@ def dashboard():
     # ✅ AÑADIR FORMULARIO VACÍO PARA LOS BOTONES DE ASISTENCIA (CSRF)
     form = EmptyForm()
 
+    # ✅ SOLUCIÓN DEFINITIVA: Construir el diccionario de datos para los gráficos
+    # Esto es lo que faltaba y causaba que el JavaScript se viera en la pantalla.
+    cursor.execute("SELECT username, cargo FROM usuarios WHERE bloqueado IS NOT TRUE")
+    all_users_for_charts = cursor.fetchall()
+    usuarios_chart_data = {u['username']: {'cargo': u['cargo']} for u in all_users_for_charts}
+
+    server_data = {
+        "fechas": fechas_ordenadas,
+        "horas": horas_fechas,
+        "contadores": contador_inicios,
+        "costos": costos_por_usuario,
+        "usuarios": usuarios_chart_data
+    }
+    # Convertir a JSON para pasarlo de forma segura a la plantilla
+    server_data_json = json.dumps(server_data, default=str) # default=str para manejar fechas
+
+
     cursor.close()
     conn.close()
 
@@ -1200,6 +1217,8 @@ def dashboard():
         session=session,
         form=form,  # ✅ Pasar el formulario a la plantilla
         resumen_horas_extras=resumen_horas_extras # ✅ NUEVO: Pasar resumen de extras
+        resumen_horas_extras=resumen_horas_extras, # ✅ NUEVO: Pasar resumen de extras
+        server_data_json=server_data_json # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
     )
 
 # ✅ Marcar inicio
