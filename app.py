@@ -2573,18 +2573,19 @@ def admin_asignar_turnos():
                         
                         id_turno_disponible = turno_disponible_row['id']
                         
-                        # SOLUCIÓN DEFINITIVA: Lógica de "Borrar y Crear" para evitar errores de ON CONFLICT.
-                        # 1. Borramos cualquier turno que el usuario ya tenga para esa fecha.
+                        # Lógica de "Borrar y Crear" para evitar errores de ON CONFLICT.
+                        # Primero, borramos cualquier turno que el usuario ya tenga para esa fecha.
                         cursor.execute("DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s", (id_usuario, fecha))
 
-                        # 2. Insertamos el nuevo turno seleccionado.
+                        # Luego, insertamos el nuevo turno seleccionado.
                         cursor.execute("""
                             INSERT INTO turnos_asignados (id_usuario, fecha_asignacion, id_turno_disponible)
                             VALUES (%s, %s, %s)
                         """, (id_usuario, fecha, id_turno_disponible))
 
-                    # Si la hora seleccionada está vacía, se borra el turno existente para ese día y usuario.
+                    # FIX: Si la hora seleccionada está vacía, también se debe borrar el turno existente.
                     else:
+                        # Esta lógica es crucial para cuando se des-selecciona un turno.
                         cursor.execute("DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s", (id_usuario, fecha))
 
             conn.commit()
