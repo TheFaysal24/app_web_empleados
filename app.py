@@ -2813,6 +2813,56 @@ def admin_editar_completo(username):
                         registros=registros,
                         form=form)
 
+# ✅ NUEVO: Módulo de Edición Total
+@app.route('/admin/edicion_total')
+@login_required
+def admin_edicion_total():
+    if not current_user.is_admin():
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('home'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Obtener todos los usuarios para el selector
+    cursor.execute("SELECT id, username, nombre FROM usuarios ORDER BY nombre")
+    todos_los_usuarios = cursor.fetchall()
+
+    usuario_seleccionado = request.args.get('usuario')
+    usuario_data = None
+    registros = {}
+    form = EmptyForm()
+
+    if usuario_seleccionado:
+        # Obtener datos del perfil del usuario seleccionado
+        cursor.execute("SELECT * FROM usuarios WHERE username = %s", (usuario_seleccionado,))
+        usuario_data = cursor.fetchone()
+
+        if usuario_data:
+            # Obtener todos los registros de asistencia para ese usuario
+            cursor.execute(
+                "SELECT fecha, inicio, salida, horas_trabajadas, horas_extras FROM registros_asistencia WHERE id_usuario = %s ORDER BY fecha DESC",
+                (usuario_data['id'],)
+            )
+            registros_db = cursor.fetchall()
+            for reg in registros_db:
+                registros[reg['fecha'].isoformat()] = {
+                    'inicio': reg['inicio'],
+                    'salida': reg['salida'],
+                    'horas_trabajadas': reg['horas_trabajadas'],
+                    'horas_extras': reg['horas_extras']
+                }
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin_edicion_total.html',
+                           todos_los_usuarios=todos_los_usuarios,
+                           usuario_seleccionado=usuario_seleccionado,
+                           usuario_data=usuario_data,
+                           registros=registros,
+                           form=form)
+
 # ✅ Actualizar usuario completo (Admin)
 @app.route('/admin/actualizar_usuario_completo', methods=['POST'])
 def admin_actualizar_usuario_completo():
@@ -2860,9 +2910,9 @@ def admin_actualizar_usuario_completo():
         else:
             flash('Usuario no encontrado', 'error')
         
-        cursor.close()
+        cursor.close() # FIX: Mover el cierre de conexión y redirección fuera del if
         conn.close()
-    return redirect(url_for('admin_usuarios'))
+    return redirect(url_for('admin_edicion_total', usuario=username)) # FIX: Redirigir de vuelta al módulo de edición
 
 # ✅ Actualizar registro de asistencia (Admin - AJAX)
 @app.route('/admin/actualizar_registro', methods=['POST'])

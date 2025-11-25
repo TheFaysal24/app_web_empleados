@@ -594,6 +594,9 @@ or: #f97316;
 
         {% if admin %}
         <div class="menu-section" style="margin-top: 8px;">ADMINISTRACIÓN</div>
+        <a href="{{ url_for('admin_edicion_total') }}" class="dropdown-item" >
+          <i class="fas fa-cogs" style="color: #ef4444;"></i> Edición Total
+        </a>
         <a href="{{ url_for('admin_gestion_tiempos') }}" class="dropdown-item" >
           <i class="fas fa-edit" style="color: #10b981;"></i> Gestión de Tiempos
         </a>
