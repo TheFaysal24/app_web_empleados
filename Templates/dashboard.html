@@ -862,6 +862,89 @@ or: #f97316;
   </div>
 </div>
 
+{% if admin %}
+<!-- ✅ NUEVO: Tabla de Registro de Asistencia Semanal -->
+<div class="table-card">
+  <h3 class="section-title">
+    <i class="fas fa-history"></i> Registro de Asistencia Semanal
+  </h3>
+  <div style="overflow-x: auto;">
+    <table class="shift-summary-table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Fecha</th>
+          <th>Inicio</th>
+          <th>Salida</th>
+          <th>Horas Trabajadas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for registro in registros_semana_actual %}
+          <tr>
+            <td>{{ registro.usuario }}</td>
+            <td>{{ registro.fecha }}</td>
+            <td>
+              {% if registro.inicio %}
+                <span class="badge badge-success">{{ registro.inicio }}</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if registro.salida %}
+                <span class="badge badge-warning">{{ registro.salida }}</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ "%.2f"|format(registro.horas_trabajadas) }}h</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="no-data">No hay registros de asistencia para esta semana.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ✅ NUEVO: Tabla de Resumen de Horas Extras -->
+<div class="table-card">
+  <h3 class="section-title">
+    <i class="fas fa-stopwatch"></i> Resumen de Horas Extras por Usuario
+  </h3>
+  <div style="overflow-x: auto;">
+    <table class="shift-summary-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Extras Hoy</th>
+          <th>Extras Semana</th>
+          <th>Extras Mes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for resumen in resumen_horas_extras %}
+          <tr>
+            <td class="gestor-name">{{ resumen.nombre }}</td>
+            <td>{{ "%.2f"|format(resumen.hoy) }}h</td>
+            <td>{{ "%.2f"|format(resumen.semana) }}h</td>
+            <td><strong>{{ "%.2f"|format(resumen.mes) }}h</strong></td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="4" class="no-data">No hay datos de horas extras para mostrar.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const serverData = {{ server_data_json|safe }};
