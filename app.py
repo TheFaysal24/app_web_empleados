@@ -1147,8 +1147,15 @@ def dashboard():
             })
     else: # Lógica para usuario no admin (si se necesita)
         cursor.execute("SELECT fecha, inicio, salida, horas_trabajadas FROM registros_asistencia WHERE id_usuario = %s AND fecha BETWEEN %s AND %s ORDER BY fecha", (current_user.id, inicio_semana, fin_semana))
-        # ... (procesar y añadir a registros_semana_actual)
-        pass
+        registros_db = cursor.fetchall()
+        for reg in registros_db:
+            registros_semana_actual.append({
+                'usuario': current_user.nombre,
+                'fecha': reg['fecha'].strftime('%d/%m/%Y'),
+                'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
+                'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
+                'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
+            })
 
 
     # ✅ NUEVO: Calcular resumen de horas extras para el admin
