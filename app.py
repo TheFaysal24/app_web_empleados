@@ -1216,7 +1216,6 @@ def dashboard():
         attendance_status=attendance_status, # FIX 3: Pasar estado de asistencia
         session=session,
         form=form,  # ✅ Pasar el formulario a la plantilla
-        resumen_horas_extras=resumen_horas_extras # ✅ NUEVO: Pasar resumen de extras
         resumen_horas_extras=resumen_horas_extras, # ✅ NUEVO: Pasar resumen de extras
         server_data_json=server_data_json # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
     )
