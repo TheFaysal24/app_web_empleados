@@ -3665,51 +3665,5 @@ if app.secret_key.startswith('CHANGE_THIS'):
 
 if __name__ == '__main__':    
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
-                logger.error(f"Error importando turno histórico: {e}") # pyright: ignore[reportUndefinedVariable]
-                skipped_count += 1 # type: ignore
-
-    conn.commit() # type: ignore
-    cursor.close() # type: ignore
-    conn.close() # type: ignore
-
-    if imported_count > 0: # type: ignore
-        flash(f"✅ Se importaron y registraron {imported_count} turnos históricos exitosamente.", 'message') # type: ignore
-    if skipped_count > 0:
-        flash(f"⚠️ Se saltaron {skipped_count} turnos (ya existían o hubo errores).", 'warning')
-    for msg in error_messages: # type: ignore
-        flash(msg, 'error')
-
-    return redirect(url_for('admin_usuarios')) # Redirigir a la GESTIÓN DE USUARIOS para ver los registros
-
-# ✅ NUEVO: Función para enviar el correo de restablecimiento de contraseña
-def send_password_reset_email(user, token):
-    """
-    Construye y envía el correo electrónico para restablecer la contraseña.
-    """
-    try:
-        msg = Message('Restablecimiento de Contraseña - Sistema de Empleados',
-                      recipients=[user['correo']])
-        reset_url = url_for('resetear_clave', token=token, _external=True)
-        msg.body = f'''Hola {user['nombre']},
-
-Para restablecer tu contraseña, visita el siguiente enlace:
-{reset_url}
-
-Si no solicitaste este cambio, puedes ignorar este correo. El enlace expirará en 30 minutos.
-'''
-        mail.send(msg)
-    except Exception as e:
-        logger.error(f"Fallo al enviar correo a {user['correo']}: {e}")
-        raise e
-
-# -------------------
-# Ejecutar aplicación
-# -------------------
-# Advertencia si se usa SECRET_KEY por defecto
-if app.secret_key.startswith('CHANGE_THIS'):
-    logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
-
-if __name__ == '__main__':    
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
 
 # Forzando re-commit para despliegue
