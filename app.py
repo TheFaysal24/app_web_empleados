@@ -1126,27 +1126,30 @@ def dashboard():
 
     # ✅ NUEVO: Obtener registros de asistencia para la semana actual
     registros_semana_actual = []
+    query_semana = """
+        SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
+        FROM registros_asistencia ra
+        JOIN usuarios u ON ra.id_usuario = u.id
+        WHERE ra.fecha BETWEEN %s AND %s
+    """
+    params_semana = [inicio_semana, fin_semana]
+
     if admin:
-        cursor.execute("""
-            SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
-            FROM registros_asistencia ra
-            JOIN usuarios u ON ra.id_usuario = u.id AND u.admin IS NOT TRUE
-            WHERE ra.fecha BETWEEN %s AND %s
-            ORDER BY ra.fecha, u.nombre
-        """, (inicio_semana, fin_semana))
-        registros_db = cursor.fetchall()
-        for reg in registros_db:
-            registros_semana_actual.append({
-                'usuario': reg['nombre'],
-                'fecha': reg['fecha'].strftime('%d/%m/%Y'),
-                'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
-                'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
-                'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
-            })
-    else: # Lógica para usuario no admin (si se necesita)
-        cursor.execute("SELECT fecha, inicio, salida, horas_trabajadas FROM registros_asistencia WHERE id_usuario = %s AND fecha BETWEEN %s AND %s ORDER BY fecha", (current_user.id, inicio_semana, fin_semana))
-        # ... (procesar y añadir a registros_semana_actual)
-        pass
+        query_semana += " AND u.admin IS NOT TRUE ORDER BY u.nombre, ra.fecha DESC"
+    else:
+        query_semana += " AND u.id = %s ORDER BY ra.fecha DESC"
+        params_semana.append(current_user.id)
+
+    cursor.execute(query_semana, tuple(params_semana))
+    registros_db = cursor.fetchall()
+    for reg in registros_db:
+        registros_semana_actual.append({
+            'usuario': reg['nombre'],
+            'fecha': reg['fecha'].strftime('%A, %d/%m/%Y'),
+            'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else '-',
+            'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else '-',
+            'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
+        })
 
 
     # ✅ NUEVO: Calcular resumen de horas extras para el admin
@@ -1226,7 +1229,8 @@ def dashboard():
         session=session,
         form=form,  # ✅ Pasar el formulario a la plantilla
         resumen_horas_extras=resumen_horas_extras, # ✅ NUEVO: Pasar resumen de extras
-        server_data_json=server_data_json # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
+        server_data_json=server_data_json, # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
+        registros_semana_actual=registros_semana_actual # Pasar los registros a la plantilla
     )
 
 # ✅ Marcar inicio
