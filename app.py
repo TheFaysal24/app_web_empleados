@@ -1157,30 +1157,12 @@ def dashboard():
         # Obtener todos los registros de todos los usuarios no-admin
         cursor.execute("""
             SELECT u.id, u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas, ra.horas_extras
-            SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
             FROM registros_asistencia ra
             JOIN usuarios u ON ra.id_usuario = u.id
             WHERE u.admin IS NOT TRUE
             ORDER BY u.nombre, ra.fecha DESC
         """)
         todos_los_registros = cursor.fetchall()
-            JOIN usuarios u ON ra.id_usuario = u.id AND u.admin IS NOT TRUE
-            WHERE ra.fecha BETWEEN %s AND %s
-            ORDER BY ra.fecha, u.nombre
-        """, (inicio_semana, fin_semana))
-        registros_db = cursor.fetchall()
-        for reg in registros_db:
-            registros_semana_actual.append({
-                'usuario': reg['nombre'],
-                'fecha': reg['fecha'].strftime('%d/%m/%Y'),
-                'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
-                'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
-                'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
-            })
-    else: # Lógica para usuario no admin (si se necesita)
-        cursor.execute("SELECT fecha, inicio, salida, horas_trabajadas FROM registros_asistencia WHERE id_usuario = %s AND fecha BETWEEN %s AND %s ORDER BY fecha", (current_user.id, inicio_semana, fin_semana))
-        # ... (procesar y añadir a registros_semana_actual)
-        pass
 
         meses_es = {
             1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
@@ -1282,8 +1264,7 @@ def dashboard():
         session=session,
         form=form,  # ✅ Pasar el formulario a la plantilla
         resumen_horas_extras=resumen_horas_extras, # ✅ NUEVO: Pasar resumen de extras
-        server_data_json=server_data_json, # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
-        registros_dashboard_agrupados=registros_dashboard_agrupados # ✅ NUEVO: Pasar datos para el acordeón
+        registros_dashboard_agrupados=registros_dashboard_agrupados, # ✅ NUEVO: Pasar datos para el acordeón
         server_data_json=server_data_json # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
     )
 
@@ -1308,7 +1289,6 @@ def marcar_inicio():
             
             usuario_id = current_user.id
             hoy = today_local_iso()
-            ahora = now_local().isoformat()
             ahora = client_timestamp or now_local().isoformat()
 
             cursor.execute(
@@ -1377,7 +1357,6 @@ def marcar_salida():
 
         usuario_id = current_user.id
         hoy = today_local_iso()
-        ahora = now_local()
 
         cursor.execute(
             "SELECT id, inicio FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL AND salida IS NULL",
@@ -1426,7 +1405,6 @@ def marcar_asistencia():
 
         usuario_id = current_user.id
         hoy = today_local_iso()
-        ahora = now_local()
 
         # Verificar si ya marcó entrada hoy y no ha marcado salida
         cursor.execute(
