@@ -909,6 +909,53 @@ or: #f97316;
   </div>
 </div>
 
+<!-- ✅ NUEVO: Tabla de Registro de Asistencia Mensual -->
+<div class="table-card">
+  <h3 class="section-title">
+    <i class="fas fa-calendar-alt"></i> Registro de Asistencia Mensual
+  </h3>
+  <div style="overflow-x: auto;">
+    <table class="shift-summary-table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Fecha</th>
+          <th>Inicio</th>
+          <th>Salida</th>
+          <th>Horas Trabajadas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for registro in registros_mes_actual %}
+          <tr>
+            <td>{{ registro.usuario }}</td>
+            <td>{{ registro.fecha }}</td>
+            <td>
+              {% if registro.inicio %}
+                <span class="badge badge-success">{{ registro.inicio }}</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if registro.salida %}
+                <span class="badge badge-warning">{{ registro.salida }}</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ "%.2f"|format(registro.horas_trabajadas) }}h</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="no-data">No hay registros de asistencia para este mes.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 {% if admin %}
 <!-- ✅ NUEVO: Tabla de Resumen de Horas Extras -->
 <div class="table-card">
