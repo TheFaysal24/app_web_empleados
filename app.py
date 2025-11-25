@@ -2924,23 +2924,20 @@ def admin_edicion_total():
                 7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
             }
 
-            # ✅ SOLUCIÓN DEFINITIVA: Agrupación robusta a prueba de fallos
-            if registros_db:
-                # Agrupar por año y mes
-                keyfunc_month = lambda r: (r['fecha'].year, r['fecha'].month)
-                for (year, month), month_group in groupby(registros_db, key=keyfunc_month):
-                    month_name = f"{meses_es[month]} {year}"
-                    registros_agrupados[month_name] = {}
- 
-                    # Ahora, agrupar ese mes por semana
-                    keyfunc_week = lambda r: r['fecha'].isocalendar()[1]
-                    for week_num, week_group in groupby(month_group, key=keyfunc_week):
-                        week_days = list(week_group)
-                        if week_days: # Asegurarse de que la semana no esté vacía
-                            start_of_week = week_days[0]['fecha'] - datetime.timedelta(days=week_days[0]['fecha'].weekday())
-                            end_of_week = start_of_week + datetime.timedelta(days=6)
-                            week_name = f"Semana {week_num} ({start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b')})"
-                            registros_agrupados[month_name][week_name] = week_days
+            # Agrupar por año y mes
+            keyfunc_month = lambda r: (r['fecha'].year, r['fecha'].month)
+            for (year, month), month_group in groupby(registros_db, key=keyfunc_month):
+                month_name = f"{meses_es[month]} {year}"
+                registros_agrupados[month_name] = {}
+
+                # Ahora, agrupar ese mes por semana
+                keyfunc_week = lambda r: r['fecha'].isocalendar()[1]
+                for week_num, week_group in groupby(month_group, key=keyfunc_week):
+                    week_days = list(week_group)
+                    start_of_week = week_days[0]['fecha'] - datetime.timedelta(days=week_days[0]['fecha'].weekday())
+                    end_of_week = start_of_week + datetime.timedelta(days=6)
+                    week_name = f"Semana {week_num} ({start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b')})"
+                    registros_agrupados[month_name][week_name] = week_days
 
     cursor.close()
     conn.close()
@@ -3673,5 +3670,4 @@ if app.secret_key.startswith('CHANGE_THIS'):
 if __name__ == '__main__':    
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
 
-# Forzando re-commit para despliegue
 # Forzando re-commit para despliegue
