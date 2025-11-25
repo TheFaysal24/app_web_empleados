@@ -1081,7 +1081,7 @@ def dashboard():
 
     # FIX: Obtener todos los usuarios activos primero para asegurar que todos aparezcan en la tabla
     # 1. Obtener todos los usuarios activos para inicializar la estructura
-    cursor.execute("SELECT username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
+    cursor.execute("SELECT username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE AND admin IS NOT TRUE ORDER BY nombre")
     all_active_users = cursor.fetchall()
     turnos_semana_actual = {user['username']: {} for user in all_active_users}
 
@@ -1090,7 +1090,7 @@ def dashboard():
     query_turnos = """
         SELECT u.username, ta.fecha_asignacion, td.hora
         FROM turnos_asignados ta
-        JOIN usuarios u ON ta.id_usuario = u.id
+        JOIN usuarios u ON ta.id_usuario = u.id AND u.admin IS NOT TRUE
         JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
         WHERE ta.fecha_asignacion BETWEEN %s AND %s
     """
@@ -1143,7 +1143,7 @@ def dashboard():
     # ✅ NUEVO: Calcular resumen de horas extras para el admin
     resumen_horas_extras = []
     if admin:
-        cursor.execute("SELECT id, username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE")
+        cursor.execute("SELECT id, username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE AND admin IS NOT TRUE")
         todos_usuarios = cursor.fetchall()
         
         for usuario in todos_usuarios:
@@ -1968,7 +1968,7 @@ def admin_editar_registro():
     conn.close()
 
     if registro:
-        return render_template('admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form)
+        return render_template('admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form) # FIX: Ruta correcta
     
     flash('Registro no encontrado', 'error')
     return redirect(url_for('admin_usuarios'))
@@ -2555,27 +2555,35 @@ def admin_asignar_turnos():
                         
                         id_turno_disponible = turno_disponible_row['id']
                         
-                        # 2. Eliminar cualquier turno existente para ese usuario y día
-                        cursor.execute("DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s", (id_usuario, fecha))
-                        
-                        # 3. Insertar el nuevo turno asignado
-                        cursor.execute("INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)", (id_usuario, id_turno_disponible, fecha))
+                        # FIX: Lógica de UPSERT (Update or Insert) para PostgreSQL
+                        # Esto inserta un nuevo turno o actualiza el existente para el mismo día y usuario.
+                        cursor.execute("""
+                            INSERT INTO turnos_asignados (id_usuario, fecha_asignacion, id_turno_disponible)
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (id_usuario, fecha_asignacion) DO UPDATE SET
+                                id_turno_disponible = EXCLUDED.id_turno_disponible;
+                        """, (id_usuario, fecha, id_turno_disponible))
+
                     # Si la hora seleccionada está vacía, se borra el turno existente para ese día y usuario.
                     else:
                         cursor.execute("DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s", (id_usuario, fecha))
 
             conn.commit()
             flash('Turnos de la semana guardados correctamente.', 'message')
-        except Exception as e:
+        except psycopg2.Error as e:
             conn.rollback()
-            flash(f'Error al guardar los turnos: {e}', 'error')
+            # Proporcionar un mensaje de error más útil
+            if e.pgcode == '23503': # foreign_key_violation
+                flash(f'Error: El turno seleccionado no es válido. Por favor, recarga la página.', 'error')
+            else:
+                flash(f'Error de base de datos al guardar los turnos: {e}', 'error')
             logger.error(f"Error en POST de admin_asignar_turnos: {e}")
             
         
         return redirect(url_for('admin_asignar_turnos', mes=mes_guardar, ano=ano_guardar))
 
     # --- Lógica para GET ---
-    cursor.execute("SELECT id, username, nombre, cargo FROM usuarios WHERE bloqueado IS NOT TRUE AND admin IS NOT TRUE ORDER BY nombre")
+    cursor.execute("SELECT id, username, nombre, cargo FROM usuarios WHERE bloqueado IS NOT TRUE AND admin IS NOT TRUE ORDER BY nombre") # Doble verificación
     usuarios = cursor.fetchall()
 
     # FIX 1: Obtener ID y HORA para que el guardado funcione.
