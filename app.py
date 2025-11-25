@@ -1970,6 +1970,10 @@ def admin_editar_registro():
         fecha_str = request.form.get('fecha')
         inicio_str = request.form.get('inicio')
         salida_str = request.form.get('salida')
+
+        # Convert empty strings to None for database compatibility
+        inicio_to_db = inicio_str if inicio_str else None
+        salida_to_db = salida_str if salida_str else None
         
         cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
         user_id = cursor.fetchone()
@@ -1977,12 +1981,12 @@ def admin_editar_registro():
         if user_id:
             horas_trabajadas = 0.0
             horas_extras = 0.0
-            if inicio_str and salida_str:
-                horas_trabajadas, horas_extras = calcular_horas(inicio_str, salida_str)
+            if inicio_to_db and salida_to_db: # Use the values converted to None
+                horas_trabajadas, horas_extras = calcular_horas(inicio_to_db, salida_to_db)
             
             try:
                 # Registro de Auditoría Previo
-                registrar_auditoria('Edición Horas', f"Admin editó registro de {username} para {fecha_str}: Inicio {inicio_str}, Salida {salida_str}")
+                registrar_auditoria('Edición Horas', f"Admin editó registro de {username} para {fecha_str}: Inicio {inicio_to_db}, Salida {salida_to_db}")
 
                 # Upsert lógico: INSERT si no existe, UPDATE si existe
                 # Como la tabla tiene UNIQUE(id_usuario, fecha), podemos usar ON CONFLICT
@@ -1995,7 +1999,7 @@ def admin_editar_registro():
                         salida = EXCLUDED.salida,
                         horas_trabajadas = EXCLUDED.horas_trabajadas,
                         horas_extras = EXCLUDED.horas_extras
-                """, (user_id['id'], fecha_str, inicio_str, salida_str, horas_trabajadas, horas_extras))
+                """, (user_id['id'], fecha_str, inicio_to_db, salida_to_db, horas_trabajadas, horas_extras))
                 
                 conn.commit()
                 flash('Registro guardado correctamente', 'message')
