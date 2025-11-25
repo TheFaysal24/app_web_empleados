@@ -2931,7 +2931,7 @@ def admin_edicion_total():
                 for (year, month), month_group in groupby(registros_db, key=keyfunc_month):
                     month_name = f"{meses_es[month]} {year}"
                     registros_agrupados[month_name] = {}
-
+ 
                     # Ahora, agrupar ese mes por semana
                     keyfunc_week = lambda r: r['fecha'].isocalendar()[1]
                     for week_num, week_group in groupby(month_group, key=keyfunc_week):
@@ -3673,4 +3673,5 @@ if app.secret_key.startswith('CHANGE_THIS'):
 if __name__ == '__main__':    
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
 
+# Forzando re-commit para despliegue
 # Forzando re-commit para despliegue
