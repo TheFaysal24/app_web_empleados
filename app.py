@@ -2581,7 +2581,7 @@ def admin_asignar_turnos():
         return redirect(url_for('admin_asignar_turnos', mes=mes_guardar, ano=ano_guardar))
 
     # --- Lógica para GET ---
-    cursor.execute("SELECT id, username, nombre, cargo FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
+    cursor.execute("SELECT id, username, nombre, cargo FROM usuarios WHERE bloqueado IS NOT TRUE AND admin IS NOT TRUE ORDER BY nombre")
     usuarios = cursor.fetchall()
 
     # FIX 1: Obtener ID y HORA para que el guardado funcione.
