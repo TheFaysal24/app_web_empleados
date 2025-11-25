@@ -1956,18 +1956,19 @@ def admin_editar_registro():
             registro_db = cursor.fetchone()
             if registro_db:
                 registro = {
-                    'fecha': registro_db['fecha'].isoformat(),
-                    'inicio': registro_db['inicio'].isoformat() if registro_db['inicio'] else '',
-                    'salida': registro_db['salida'].isoformat() if registro_db['salida'] else '',
-                    'horas_trabajadas': float(registro_db['horas_trabajadas']),
-                    'horas_extras': float(registro_db['horas_extras'])
+                    'fecha': registro_db['fecha'].isoformat(), # YYYY-MM-DD
+                    # FIX: Formatear para el input datetime-local (YYYY-MM-DDTHH:MM)
+                    'inicio': registro_db['inicio'].strftime('%Y-%m-%dT%H:%M') if registro_db['inicio'] else '',
+                    'salida': registro_db['salida'].strftime('%Y-%m-%dT%H:%M') if registro_db['salida'] else '',
+                    'horas_trabajadas': float(registro_db['horas_trabajadas'] or 0.0),
+                    'horas_extras': float(registro_db['horas_extras'] or 0.0)
                 }
     
     cursor.close()
     conn.close()
 
     if registro:
-        return render_template('editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form)
+        return render_template('admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form)
     
     flash('Registro no encontrado', 'error')
     return redirect(url_for('admin_usuarios'))

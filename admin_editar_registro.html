@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block title %}Editar Registro - {{ usuario }}{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-lg animate-scale" style="max-width: 600px; margin: auto;">
+        <div class="card-header">
+            <h3 class="card-title text-gradient mb-0">
+                <i class="fas fa-user-clock"></i> Editar Registro de Asistencia
+            </h3>
+        </div>
+        <div class="card-body p-4">
+            <p class="text-secondary mb-4">
+                Ajusta la fecha y hora de entrada/salida para <strong>{{ usuario }}</strong> en la fecha <strong>{{ fecha }}</strong>.
+            </p>
+
+            <form method="POST" action="{{ url_for('admin_editar_registro') }}">
+                <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}">
+                <input type="hidden" name="usuario" value="{{ usuario }}">
+                <input type="hidden" name="fecha" value="{{ fecha }}">
+
+                <div class="form-group mb-4">
+                    <label for="inicio" class="form-label">
+                        <i class="fas fa-sign-in-alt text-success"></i> Hora de Entrada
+                    </label>
+                    <input type="datetime-local" class="form-control" id="inicio" name="inicio" value="{{ registro.inicio }}">
+                </div>
+
+                <div class="form-group mb-4">
+                    <label for="salida" class="form-label">
+                        <i class="fas fa-sign-out-alt text-danger"></i> Hora de Salida
+                    </label>
+                    <input type="datetime-local" class="form-control" id="salida" name="salida" value="{{ registro.salida }}">
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('admin_gestion_tiempos', mes=fecha|todatetime|strftime('%m')|int, ano=fecha|todatetime|strftime('%Y')|int) }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer text-muted small">
+            <p class="mb-1"><strong>Horas Trabajadas (calculadas):</strong> {{ registro.horas_trabajadas }}h</p>
+            <p class="mb-0"><strong>Horas Extras (calculadas):</strong> {{ registro.horas_extras }}h</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
