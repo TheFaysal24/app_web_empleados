@@ -1157,12 +1157,30 @@ def dashboard():
         # Obtener todos los registros de todos los usuarios no-admin
         cursor.execute("""
             SELECT u.id, u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas, ra.horas_extras
+            SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
             FROM registros_asistencia ra
             JOIN usuarios u ON ra.id_usuario = u.id
             WHERE u.admin IS NOT TRUE
             ORDER BY u.nombre, ra.fecha DESC
         """)
         todos_los_registros = cursor.fetchall()
+            JOIN usuarios u ON ra.id_usuario = u.id AND u.admin IS NOT TRUE
+            WHERE ra.fecha BETWEEN %s AND %s
+            ORDER BY ra.fecha, u.nombre
+        """, (inicio_semana, fin_semana))
+        registros_db = cursor.fetchall()
+        for reg in registros_db:
+            registros_semana_actual.append({
+                'usuario': reg['nombre'],
+                'fecha': reg['fecha'].strftime('%d/%m/%Y'),
+                'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
+                'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
+                'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
+            })
+    else: # Lógica para usuario no admin (si se necesita)
+        cursor.execute("SELECT fecha, inicio, salida, horas_trabajadas FROM registros_asistencia WHERE id_usuario = %s AND fecha BETWEEN %s AND %s ORDER BY fecha", (current_user.id, inicio_semana, fin_semana))
+        # ... (procesar y añadir a registros_semana_actual)
+        pass
 
         meses_es = {
             1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
@@ -1266,6 +1284,7 @@ def dashboard():
         resumen_horas_extras=resumen_horas_extras, # ✅ NUEVO: Pasar resumen de extras
         server_data_json=server_data_json, # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
         registros_dashboard_agrupados=registros_dashboard_agrupados # ✅ NUEVO: Pasar datos para el acordeón
+        server_data_json=server_data_json # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
     )
 
 # ✅ Marcar inicio
@@ -2979,6 +2998,11 @@ def admin_edicion_total():
                         end_of_week = start_of_week + datetime.timedelta(days=6)
                         week_name = f"Semana {week_num} ({start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b')})"
                         registros_agrupados[month_name][week_name] = week_days
+                    week_days = list(week_group)
+                    start_of_week = week_days[0]['fecha'] - datetime.timedelta(days=week_days[0]['fecha'].weekday())
+                    end_of_week = start_of_week + datetime.timedelta(days=6)
+                    week_name = f"Semana {week_num} ({start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b')})"
+                    registros_agrupados[month_name][week_name] = week_days
 
     cursor.close()
     conn.close()
@@ -3758,3 +3782,4 @@ if app.secret_key.startswith('CHANGE_THIS'):
 
 if __name__ == '__main__':    
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
+# Forzando re-commit para despliegue
