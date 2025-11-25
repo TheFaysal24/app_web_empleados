@@ -346,9 +346,9 @@ def init_db():
             id_usuario INT NOT NULL,
             id_turno_disponible INT NOT NULL,
             fecha_asignacion DATE NOT NULL,
-            FOREIGN KEY (id_usuario) REFERENCES usuarios(id),
+            FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
             FOREIGN KEY (id_turno_disponible) REFERENCES turnos_disponibles(id),
-            UNIQUE (id_usuario, id_turno_disponible, fecha_asignacion)
+            UNIQUE (id_usuario, fecha_asignacion)
         )
     """)
     cursor.execute("""
@@ -2856,7 +2856,7 @@ def admin_edicion_total():
     cursor.close()
     conn.close()
 
-    return render_template('admin_edicion_total.html',
+    return render_template('admin_edicion_total.html', # FIX: Ruta correcta
                            todos_los_usuarios=todos_los_usuarios,
                            usuario_seleccionado=usuario_seleccionado,
                            usuario_data=usuario_data,
