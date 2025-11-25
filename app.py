@@ -1968,7 +1968,7 @@ def admin_editar_registro():
     conn.close()
 
     if registro:
-        return render_template('admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form)
+        return render_template('Templates/admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form)
     
     flash('Registro no encontrado', 'error')
     return redirect(url_for('admin_usuarios'))
