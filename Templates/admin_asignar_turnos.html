@@ -74,12 +74,15 @@
                 </td>
                 {% for fecha in fechas_semana %}
                 <td>
-                  {% set hora_actual = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id, '') %}
-                  <input type="time" 
-                         name="turno-{{ usuario.id }}-{{ fecha.isoformat() }}" 
-                         class="form-control form-control-sm" 
-                         value="{{ hora_actual if hora_actual else '' }}"
-                         style="min-width: 120px;">
+                  {% set id_turno_actual = turnos_asignados.get(fecha.isoformat(), {}).get(usuario.id) %}
+                  <select name="turno_{{ usuario.id }}_{{ fecha.isoformat() }}" class="form-select form-select-sm" style="min-width: 120px;">
+                    <option value="">-- Sin Asignar --</option>
+                    {% for turno in turnos_disponibles %}
+                      <option value="{{ turno.id }}" {% if turno.id == id_turno_actual %}selected{% endif %}>
+                        {{ turno.hora }}
+                      </option>
+                    {% endfor %}
+                  </select>
                 </td>
                 {% endfor %}
               </tr>

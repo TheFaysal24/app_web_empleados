@@ -73,7 +73,10 @@
 
 <div class="main-container">
     <div class="header-section">
-        <h2><i class="fas fa-cogs"></i> Módulo de Edición Total</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h2><i class="fas fa-cogs"></i> Módulo de Edición Total</h2>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-light"><i class="fas fa-tachometer-alt"></i> Volver al Dashboard</a>
+        </div>
         <p>Gestión completa de perfiles y registros de usuarios.</p>
     </div>
 
@@ -150,58 +153,64 @@
         </div>
     </div>
 
-    <!-- Tabla de Registros de Asistencia -->
-    <div class="card mt-4">
-        <div class="card-header">
-            Registros de Asistencia de <strong>{{ usuario_data.nombre }}</strong>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Entrada</th>
-                            <th>Salida</th>
-                            <th>Horas Trabajadas</th>
-                            <th>Horas Extras</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for fecha, reg in registros.items()|sort(reverse=True) %}
-                        <tr>
-                            <td>{{ fecha|strftime('%d/%m/%Y') }}</td>
-                            <td>{{ reg.inicio.strftime('%I:%M %p') if reg.inicio else '-' }}</td>
-                            <td>{{ reg.salida.strftime('%I:%M %p') if reg.salida else '-' }}</td>
-                            <td>{{ "%.2f"|format(reg.horas_trabajadas|float) }}</td>
-                            <td>{{ "%.2f"|format(reg.horas_extras|float) }}</td>
-                            <td>
-                                <div class="btn-group">
-                                    <a href="{{ url_for('admin_editar_registro', usuario=usuario_seleccionado, fecha=fecha) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form method="POST" action="{{ url_for('admin_eliminar_registro') }}" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este registro?');" style="display:inline;">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <input type="hidden" name="usuario" value="{{ usuario_seleccionado }}">
-                                        <input type="hidden" name="fecha" value="{{ fecha }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center">No hay registros para este usuario.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Registros de Asistencia Agrupados por Mes -->
+    {% if registros_agrupados %}
+        {% for month_name, registros_mes in registros_agrupados.items() %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    Registros de Asistencia para <strong>{{ month_name }}</strong>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Entrada</th>
+                                    <th>Salida</th>
+                                    <th>Horas Trabajadas</th>
+                                    <th>Horas Extras</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reg in registros_mes %}
+                                <tr>
+                                    <td>{{ reg.fecha.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ reg.inicio.strftime('%I:%M %p') if reg.inicio else '-' }}</td>
+                                    <td>{{ reg.salida.strftime('%I:%M %p') if reg.salida else '-' }}</td>
+                                    <td>{{ "%.2f"|format(reg.horas_trabajadas|float) if reg.horas_trabajadas is not none else "0.00" }}</td>
+                                    <td>{{ "%.2f"|format(reg.horas_extras|float) if reg.horas_extras is not none else "0.00" }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('admin_editar_registro', usuario=usuario_seleccionado, fecha=reg.fecha.strftime('%Y-%m-%d')) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('admin_eliminar_registro') }}" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este registro?');" style="display:inline;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="usuario" value="{{ usuario_seleccionado }}">
+                                                <input type="hidden" name="fecha" value="{{ reg.fecha.strftime('%Y-%m-%d') }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
+        {% endfor %}
+    {% else %}
+        <div class="card mt-4">
+             <div class="card-body text-center">
+                No hay registros de asistencia para este usuario.
+             </div>
         </div>
-    </div>
+    {% endif %}
 
     {% else %}
     <div class="alert alert-info text-center">

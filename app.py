@@ -20,6 +20,8 @@ import uuid
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField, EmailField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
 import re
+import calendar
+from itertools import groupby
 
 # Cargar variables de entorno
 load_dotenv()
@@ -435,7 +437,12 @@ def init_db():
     try:
         cursor.execute("SELECT id FROM usuarios WHERE username = 'admin'")
         if not cursor.fetchone():
-            hashed_password = generate_password_hash('1234')
+            # CORRECCIÓN DE SEGURIDAD: Usar variable de entorno para la contraseña del admin
+            admin_pass = os.environ.get('ADMIN_PASSWORD', '1234')
+            if admin_pass == '1234':
+                logger.warning("Usando contraseña de admin por defecto. Establezca ADMIN_PASSWORD en su entorno para producción.")
+            
+            hashed_password = generate_password_hash(admin_pass)
             logger.info(f"Inserting admin user: username=admin")
             cursor.execute(
                 "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (username) DO NOTHING",
@@ -1078,37 +1085,41 @@ def dashboard():
     turnos_semana_actual = {}
     inicio_semana = (hoy_date - datetime.timedelta(days=hoy_date.weekday())) + datetime.timedelta(weeks=semana_offset)
     fin_semana = inicio_semana + datetime.timedelta(days=6)
-
-    # FIX: Obtener todos los usuarios activos primero para asegurar que todos aparezcan en la tabla
-    # 1. Obtener todos los usuarios activos para inicializar la estructura
-    cursor.execute("SELECT username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE AND admin IS NOT TRUE ORDER BY nombre")
-    all_active_users = cursor.fetchall()
-    turnos_semana_actual = {user['username']: {} for user in all_active_users}
-
-    # FIX: Asegurar que el admin vea todos los turnos y el usuario solo los suyos.
-    # 2. Obtener TODOS los turnos asignados en el rango de la semana
-    query_turnos = """
-        SELECT u.username, ta.fecha_asignacion, td.hora
-        FROM turnos_asignados ta
-        JOIN usuarios u ON ta.id_usuario = u.id AND u.admin IS NOT TRUE
-        JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
-        WHERE ta.fecha_asignacion BETWEEN %s AND %s
-    """
+    
     params = [inicio_semana, fin_semana]
 
-    if not admin:
-        query_turnos += " AND u.id = %s"
+    # CORRECCIÓN: Separar la lógica para admin y para usuario normal
+    if admin:
+        # El admin ve la tabla con todos los usuarios
+        cursor.execute("SELECT username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE AND admin IS NOT TRUE ORDER BY nombre")
+        all_active_users = cursor.fetchall()
+        turnos_semana_actual = {user['username']: {} for user in all_active_users}
+        
+        query_turnos = """
+            SELECT u.username, ta.fecha_asignacion, td.hora
+            FROM turnos_asignados ta
+            JOIN usuarios u ON ta.id_usuario = u.id AND u.admin IS NOT TRUE
+            JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+            WHERE ta.fecha_asignacion BETWEEN %s AND %s
+        """
+    else:
+        # El usuario normal solo debe verse a sí mismo en la tabla
+        turnos_semana_actual = {current_user.username: {}}
+        query_turnos = """
+            SELECT u.username, ta.fecha_asignacion, td.hora
+            FROM turnos_asignados ta
+            JOIN usuarios u ON ta.id_usuario = u.id
+            JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id
+            WHERE ta.fecha_asignacion BETWEEN %s AND %s AND u.id = %s
+        """
         params.append(current_user.id)
 
     query_turnos += " ORDER BY u.nombre"
-
     cursor.execute(query_turnos, tuple(params))
 
-    # 3. Poblar la estructura con los turnos encontrados
+    # Poblar la estructura con los turnos encontrados
     for turno in cursor.fetchall():
-        # Usar la fecha como clave, no el día de la semana
         fecha_str = turno['fecha_asignacion'].strftime('%Y-%m-%d')
-        # Asegurarse de que el usuario exista en la estructura antes de asignarle el turno
         if turno['username'] in turnos_semana_actual:
             turnos_semana_actual[turno['username']][fecha_str] = datetime.datetime.strptime(turno['hora'], '%H:%M').strftime('%-I:%M %p')
 
@@ -1991,6 +2002,50 @@ def admin_editar_registro():
     flash('Registro no encontrado', 'error')
     return redirect(url_for('admin_usuarios'))
 
+# ✅ NUEVO: Ruta para AÑADIR un registro de asistencia manualmente (Admin)
+@app.route('/admin/agregar_registro', methods=['GET', 'POST'])
+@login_required
+def admin_agregar_registro():
+    if not current_user.is_admin():
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('dashboard'))
+
+    form = EmptyForm()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if form.validate_on_submit():
+        username = request.form.get('usuario')
+        fecha_str = request.form.get('fecha')
+        inicio_str = request.form.get('inicio')
+        salida_str = request.form.get('salida')
+
+        cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
+        user_id_row = cursor.fetchone()
+
+        if user_id_row:
+            horas_trabajadas, horas_extras = calcular_horas(inicio_str, salida_str)
+            
+            # Usamos ON CONFLICT para insertar o actualizar, lo que hace esta función muy robusta.
+            cursor.execute("""
+                INSERT INTO registros_asistencia (id_usuario, fecha, inicio, salida, horas_trabajadas, horas_extras)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id_usuario, fecha) DO UPDATE SET
+                    inicio = EXCLUDED.inicio,
+                    salida = EXCLUDED.salida,
+                    horas_trabajadas = EXCLUDED.horas_trabajadas,
+                    horas_extras = EXCLUDED.horas_extras
+            """, (user_id_row['id'], fecha_str, inicio_str, salida_str, horas_trabajadas, horas_extras))
+            
+            conn.commit()
+            flash(f'Registro para {username} en la fecha {fecha_str} ha sido guardado.', 'message')
+            return redirect(url_for('admin_edicion_total', usuario=username))
+
+    # Para el método GET
+    cursor.execute("SELECT id, username, nombre FROM usuarios WHERE bloqueado IS NOT TRUE ORDER BY nombre")
+    usuarios = cursor.fetchall()
+    return render_template('admin_agregar_registro.html', form=form, usuarios=usuarios)
+
 # ✅ Gestión de Backups (Admin)
 @app.route('/admin/backups')
 def admin_backups():
@@ -2047,6 +2102,7 @@ def admin_descargar_backup(nombre):
 @app.route('/seleccionar_turno', methods=['GET', 'POST'])
 def seleccionar_turno():
     if not current_user.is_authenticated:
+        # FIX: Añadir el token CSRF al formulario
         flash('Debes iniciar sesión primero', 'error')
         return redirect(url_for('login'))
 
@@ -2073,6 +2129,7 @@ def seleccionar_turno():
     
     # PROCESAR FORMULARIO DE SEMANA COMPLETA (POST)
     if request.method == 'POST':
+        form.validate_on_submit() # Validar CSRF
         # Recuperar fecha de inicio del formulario oculto para mantener consistencia
         inicio_semana_form = request.form.get('inicio_semana')
         if inicio_semana_form:
@@ -2268,7 +2325,6 @@ def admin_gestion_tiempos():
     usuarios_activos = cursor.fetchall()
 
     # Generar todas las fechas del mes
-    import calendar
     num_dias = calendar.monthrange(ano, mes)[1]
     fechas_mes = [datetime.date(ano, mes, d) for d in range(1, num_dias + 1)]
 
@@ -2552,54 +2608,36 @@ def admin_asignar_turnos():
         ano_guardar = request.form.get('ano_actual', type=int)
 
         try:
-            # FIX: Iterar sobre todos los campos del formulario para procesar tanto asignaciones como borrados.
-            for key, hora_seleccionada in request.form.items():
-                if key.startswith('turno-'):
-                    _, id_usuario_str, fecha_str = key.split('-', 2)
-                    id_usuario = int(id_usuario_str)
-                    fecha = datetime.date.fromisoformat(fecha_str)
-                    dia_semana_str = fecha.strftime('%A').lower()
-                    
-                    # Si se seleccionó una hora, se asigna el turno.
-                    if hora_seleccionada:
-                        # 1. Buscar el ID del turno disponible basado en la hora y el día
-                        cursor.execute(
-                            "SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s",
-                            (dia_semana_str, hora_seleccionada)
-                        )
-                        turno_disponible_row = cursor.fetchone()
-                        if not turno_disponible_row:
-                            continue # Si la hora no existe en los turnos disponibles, la ignoramos
-                        
-                        id_turno_disponible = turno_disponible_row['id']
-                        
-                        # Lógica de "Borrar y Crear" para evitar errores de ON CONFLICT.
-                        # Primero, borramos cualquier turno que el usuario ya tenga para esa fecha.
-                        cursor.execute("DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s", (id_usuario, fecha))
+            # Obtener todos los turnos enviados en el formulario para procesar
+            shifts_to_process = {key: val for key, val in request.form.items() if key.startswith('turno_')}
+            
+            for key, id_turno_disponible_str in shifts_to_process.items():
+                _, usuario_id_str, fecha_str = key.split('_', 2)
+                usuario_id = int(usuario_id_str)
+                fecha = datetime.date.fromisoformat(fecha_str)
 
-                        # Luego, insertamos el nuevo turno seleccionado.
-                        cursor.execute("""
-                            INSERT INTO turnos_asignados (id_usuario, fecha_asignacion, id_turno_disponible)
-                            VALUES (%s, %s, %s)
-                        """, (id_usuario, fecha, id_turno_disponible))
+                # Primero, borrar cualquier turno existente para ese usuario en ese día para manejar cambios.
+                cursor.execute(
+                    "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
+                    (usuario_id, fecha)
+                )
 
-                    # FIX: Si la hora seleccionada está vacía, también se debe borrar el turno existente.
-                    else:
-                        # Esta lógica es crucial para cuando se des-selecciona un turno.
-                        cursor.execute("DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s", (id_usuario, fecha))
+                # Si se seleccionó un turno válido (no la opción 'eliminar'), insertar el nuevo.
+                if id_turno_disponible_str and id_turno_disponible_str.isdigit():
+                    id_turno_disponible = int(id_turno_disponible_str)
+                    cursor.execute(
+                        "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
+                        (usuario_id, id_turno_disponible, fecha)
+                    )
 
             conn.commit()
-            flash('Turnos de la semana guardados correctamente.', 'message')
-        except psycopg2.Error as e:
+            flash('Turnos actualizados correctamente.', 'success')
+        except (Exception, psycopg2.Error) as e:
             conn.rollback()
-            # Proporcionar un mensaje de error más útil
-            if e.pgcode == '23503': # foreign_key_violation
-                flash(f'Error: El turno seleccionado no es válido. Por favor, recarga la página.', 'error')
-            else:
-                flash(f'Error de base de datos al guardar los turnos: {e}', 'error')
+            flash(f'Error al guardar los turnos: {e}', 'danger')
             logger.error(f"Error en POST de admin_asignar_turnos: {e}")
-            
         
+        # Redirigir después de procesar
         return redirect(url_for('admin_asignar_turnos', mes=mes_guardar, ano=ano_guardar))
 
     # --- Lógica para GET ---
@@ -2610,13 +2648,12 @@ def admin_asignar_turnos():
     cursor.execute("SELECT id, hora FROM turnos_disponibles ORDER BY hora")
     turnos_disponibles = cursor.fetchall()
 
-    import calendar
     primer_dia_mes = datetime.date(ano_actual, mes_actual, 1)
     ultimo_dia_mes_num = calendar.monthrange(ano_actual, mes_actual)[1]
     ultimo_dia_mes = datetime.date(ano_actual, mes_actual, ultimo_dia_mes_num)
 
     cursor.execute(
-        "SELECT ta.id_usuario, ta.fecha_asignacion, td.hora FROM turnos_asignados ta JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id WHERE ta.fecha_asignacion BETWEEN %s AND %s",
+        "SELECT ta.id_usuario, ta.fecha_asignacion, td.id AS id_turno FROM turnos_asignados ta JOIN turnos_disponibles td ON ta.id_turno_disponible = td.id WHERE ta.fecha_asignacion BETWEEN %s AND %s",
         (primer_dia_mes, ultimo_dia_mes)
     )
     turnos_db = cursor.fetchall()
@@ -2625,7 +2662,7 @@ def admin_asignar_turnos():
         fecha_str = turno['fecha_asignacion'].isoformat()
         if fecha_str not in turnos_asignados:
             turnos_asignados[fecha_str] = {}
-        turnos_asignados[fecha_str][turno['id_usuario']] = turno['hora']
+        turnos_asignados[fecha_str][turno['id_usuario']] = turno['id_turno']
 
     # Agrupar fechas por semana para la vista
     calendario_mensual = {}
@@ -2850,7 +2887,7 @@ def admin_edicion_total():
 
     usuario_seleccionado = request.args.get('usuario')
     usuario_data = None
-    registros = {}
+    registros_agrupados = {}  # Usaremos este para los datos agrupados
     form = EmptyForm()
 
     if usuario_seleccionado:
@@ -2865,22 +2902,27 @@ def admin_edicion_total():
                 (usuario_data['id'],)
             )
             registros_db = cursor.fetchall()
-            for reg in registros_db:
-                registros[reg['fecha'].isoformat()] = {
-                    'inicio': reg['inicio'],
-                    'salida': reg['salida'],
-                    'horas_trabajadas': reg['horas_trabajadas'],
-                    'horas_extras': reg['horas_extras']
-                }
+
+            # Diccionario para nombres de meses en español
+            meses_es = {
+                1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
+                7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+            }
+
+            # Agrupar por año y mes
+            keyfunc = lambda r: (r['fecha'].year, r['fecha'].month)
+            for (year, month), group in groupby(registros_db, key=keyfunc):
+                month_name = f"{meses_es[month]} {year}"
+                registros_agrupados[month_name] = list(group)
 
     cursor.close()
     conn.close()
 
-    return render_template('admin_edicion_total.html', # FIX: Ruta correcta
+    return render_template('admin_edicion_total.html', 
                            todos_los_usuarios=todos_los_usuarios,
                            usuario_seleccionado=usuario_seleccionado,
                            usuario_data=usuario_data,
-                           registros=registros,
+                           registros_agrupados=registros_agrupados,  # Pasar datos agrupados
                            form=form)
 
 # ✅ Actualizar usuario completo (Admin)
