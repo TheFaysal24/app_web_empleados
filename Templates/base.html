@@ -38,5 +38,31 @@
       });
     }, 1300);
   </script>
+
+  <script>
+    /**
+     * Inyecta la hora local del cliente en los formularios de asistencia antes de enviarlos.
+     * Esto asegura que la hora registrada sea la del PC del usuario y no la del servidor.
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+      // Busca todos los formularios que envían a rutas de asistencia
+      const forms = document.querySelectorAll('form[action*="marcar_asistencia"], form[action*="marcar_inicio"], form[action*="marcar_salida"]');
+      
+      forms.forEach(form => {
+        form.addEventListener('submit', function(event) {
+          // Crea un campo oculto si no existe
+          let clientTimeInput = form.querySelector('input[name="client_timestamp"]');
+          if (!clientTimeInput) {
+            clientTimeInput = document.createElement('input');
+            clientTimeInput.type = 'hidden';
+            clientTimeInput.name = 'client_timestamp';
+            form.appendChild(clientTimeInput);
+          }
+          // Establece la hora actual del cliente en formato ISO (UTC)
+          clientTimeInput.value = new Date().toISOString();
+        });
+      });
+    });
+  </script>
 </body>
 </html>

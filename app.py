@@ -2027,7 +2027,8 @@ def admin_editar_registro():
         'inicio': '',
         'salida': '',
         'horas_trabajadas': 0.0,
-        'horas_extras': 0.0
+        'horas_extras': 0.0,
+        'estado_ausencia': 'Ninguno' # Default value
     }
     user_id_val = None # To store the actual user_id for later use
 
@@ -2039,7 +2040,7 @@ def admin_editar_registro():
         if user_id_row:
             user_id_val = user_id_row['id']
             cursor.execute(
-                "SELECT fecha, inicio, salida, horas_trabajadas, horas_extras FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s",
+                "SELECT fecha, inicio, salida, horas_trabajadas, horas_extras, estado_ausencia FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s",
                 (user_id_val, fecha_str)
             )
             registro_db = cursor.fetchone()
@@ -2049,6 +2050,7 @@ def admin_editar_registro():
                 registro['salida'] = registro_db['salida'].strftime('%Y-%m-%dT%H:%M') if registro_db['salida'] else ''
                 registro['horas_trabajadas'] = float(registro_db['horas_trabajadas'] or 0.0)
                 registro['horas_extras'] = float(registro_db['horas_extras'] or 0.0)
+                registro['estado_ausencia'] = registro_db['estado_ausencia'] if registro_db['estado_ausencia'] else 'Ninguno'
             # ELSE: registro remains with default empty values for adding a new record
 
             cursor.close()
