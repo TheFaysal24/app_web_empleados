@@ -1121,7 +1121,7 @@ def dashboard():
         cursor.execute("""
             SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
             FROM registros_asistencia ra
-            JOIN usuarios u ON ra.id_usuario = u.id
+            JOIN usuarios u ON ra.id_usuario = u.id AND u.admin IS NOT TRUE
             WHERE ra.fecha BETWEEN %s AND %s
             ORDER BY ra.fecha, u.nombre
         """, (inicio_semana, fin_semana))
@@ -1968,7 +1968,7 @@ def admin_editar_registro():
     conn.close()
 
     if registro:
-        return render_template('Templates/admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form)
+        return render_template('admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form)
     
     flash('Registro no encontrado', 'error')
     return redirect(url_for('admin_usuarios'))
@@ -2534,41 +2534,35 @@ def admin_asignar_turnos():
         ano_guardar = request.form.get('ano_actual', type=int)
 
         try:
+            # FIX: Iterar sobre todos los campos del formulario para procesar tanto asignaciones como borrados.
             for key, hora_seleccionada in request.form.items():
-                if key.startswith('turno-') and hora_seleccionada:
+                if key.startswith('turno-'):
                     _, id_usuario_str, fecha_str = key.split('-', 2)
                     id_usuario = int(id_usuario_str)
                     fecha = datetime.date.fromisoformat(fecha_str)
                     dia_semana_str = fecha.strftime('%A').lower()
                     
-                    # 1. Buscar el ID del turno disponible basado en la hora y el día
-                    cursor.execute(
-                        "SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s",
-                        (dia_semana_str, hora_seleccionada)
-                    )
-                    turno_disponible_row = cursor.fetchone()
-                    if not turno_disponible_row:
-                        continue # Si la hora no existe en los turnos disponibles, la ignoramos
-                    
-                    id_turno_disponible = turno_disponible_row['id']
-                    
-                    # 2. Eliminar cualquier turno existente para ese usuario y día
-                    cursor.execute(
-                        "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
-                        (id_usuario, fecha)
-                    )
-                    
-                    # 3. Insertar el nuevo turno asignado
-                    cursor.execute(
-                        "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
-                        (id_usuario, id_turno_disponible, fecha)
-                    )
-                # Si la hora seleccionada está vacía, significa que se quiere borrar el turno
-                elif not hora_seleccionada:
-                    cursor.execute(
-                        "DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
-                        (id_usuario, fecha)
-                    )
+                    # Si se seleccionó una hora, se asigna el turno.
+                    if hora_seleccionada:
+                        # 1. Buscar el ID del turno disponible basado en la hora y el día
+                        cursor.execute(
+                            "SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s",
+                            (dia_semana_str, hora_seleccionada)
+                        )
+                        turno_disponible_row = cursor.fetchone()
+                        if not turno_disponible_row:
+                            continue # Si la hora no existe en los turnos disponibles, la ignoramos
+                        
+                        id_turno_disponible = turno_disponible_row['id']
+                        
+                        # 2. Eliminar cualquier turno existente para ese usuario y día
+                        cursor.execute("DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s", (id_usuario, fecha))
+                        
+                        # 3. Insertar el nuevo turno asignado
+                        cursor.execute("INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)", (id_usuario, id_turno_disponible, fecha))
+                    # Si la hora seleccionada está vacía, se borra el turno existente para ese día y usuario.
+                    else:
+                        cursor.execute("DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s", (id_usuario, fecha))
 
             conn.commit()
             flash('Turnos de la semana guardados correctamente.', 'message')
