@@ -1126,31 +1126,30 @@ def dashboard():
 
     # ✅ NUEVO: Obtener registros de asistencia para la semana actual
     registros_semana_actual = []
-    query_registros_semana = """
+    query_semana = """
         SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
         FROM registros_asistencia ra
         JOIN usuarios u ON ra.id_usuario = u.id
         WHERE ra.fecha BETWEEN %s AND %s
     """
-    params_registros_semana = [inicio_semana, fin_semana]
+    params_semana = [inicio_semana, fin_semana]
 
     if admin:
-        query_registros_semana += " AND u.admin IS NOT TRUE ORDER BY ra.fecha, u.nombre"
+        query_semana += " AND u.admin IS NOT TRUE ORDER BY u.nombre, ra.fecha DESC"
     else:
-        query_registros_semana += " AND u.id = %s ORDER BY ra.fecha"
-        params_registros_semana.append(current_user.id)
+        query_semana += " AND u.id = %s ORDER BY ra.fecha DESC"
+        params_semana.append(current_user.id)
 
-    cursor.execute(query_registros_semana, tuple(params_registros_semana))
+    cursor.execute(query_semana, tuple(params_semana))
     registros_db = cursor.fetchall()
     for reg in registros_db:
         registros_semana_actual.append({
             'usuario': reg['nombre'],
             'fecha': reg['fecha'].strftime('%d/%m/%Y'),
-            'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else None,
-            'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else None,
+            'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else '-',
+            'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else '-',
             'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
         })
-
     # ✅ NUEVO: Agrupar todos los registros por usuario, mes y semana para el acordeón del admin
     registros_dashboard_agrupados = {}
     if admin:
@@ -2974,11 +2973,12 @@ def admin_edicion_total():
                 # Ahora, agrupar ese mes por semana
                 keyfunc_week = lambda r: r['fecha'].isocalendar()[1]
                 for week_num, week_group in groupby(month_group, key=keyfunc_week):
-                    week_days = list(week_group)
-                    start_of_week = week_days[0]['fecha'] - datetime.timedelta(days=week_days[0]['fecha'].weekday())
-                    end_of_week = start_of_week + datetime.timedelta(days=6)
-                    week_name = f"Semana {week_num} ({start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b')})"
-                    registros_agrupados[month_name][week_name] = week_days
+                    week_days = list(week_group) # Convertir el iterador a lista
+                    if week_days: # Asegurarse de que la semana no esté vacía
+                        start_of_week = week_days[0]['fecha'] - datetime.timedelta(days=week_days[0]['fecha'].weekday())
+                        end_of_week = start_of_week + datetime.timedelta(days=6)
+                        week_name = f"Semana {week_num} ({start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b')})"
+                        registros_agrupados[month_name][week_name] = week_days
 
     cursor.close()
     conn.close()
