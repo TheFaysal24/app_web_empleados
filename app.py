@@ -2020,34 +2020,51 @@ def admin_editar_registro():
 
     username = request.args.get('usuario')
     fecha_str = request.args.get('fecha')
-    registro = None
     
+    # Initialize `registro` with default empty values for new record entry
+    registro = {
+        'fecha': fecha_str,
+        'inicio': '',
+        'salida': '',
+        'horas_trabajadas': 0.0,
+        'horas_extras': 0.0
+    }
+    user_id_val = None # To store the actual user_id for later use
+
     if username and fecha_str:
+        conn = get_db_connection()
+        cursor = conn.cursor()
         cursor.execute("SELECT id FROM usuarios WHERE username = %s", (username,))
-        user_id = cursor.fetchone()
-        if user_id:
+        user_id_row = cursor.fetchone()
+        if user_id_row:
+            user_id_val = user_id_row['id']
             cursor.execute(
                 "SELECT fecha, inicio, salida, horas_trabajadas, horas_extras FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s",
-                (user_id['id'], fecha_str)
+                (user_id_val, fecha_str)
             )
             registro_db = cursor.fetchone()
-            if registro_db:
-                registro = {
-                    'fecha': registro_db['fecha'].isoformat(), # YYYY-MM-DD
-                    # FIX: Formatear para el input datetime-local (YYYY-MM-DDTHH:MM)
-                    'inicio': registro_db['inicio'].strftime('%Y-%m-%dT%H:%M') if registro_db['inicio'] else '',
-                    'salida': registro_db['salida'].strftime('%Y-%m-%dT%H:%M') if registro_db['salida'] else '',
-                    'horas_trabajadas': float(registro_db['horas_trabajadas'] or 0.0),
-                    'horas_extras': float(registro_db['horas_extras'] or 0.0)
-                }
-    
+            if registro_db: # If a record is found, populate `registro` with existing data
+                registro['fecha'] = registro_db['fecha'].isoformat()
+                registro['inicio'] = registro_db['inicio'].strftime('%Y-%m-%dT%H:%M') if registro_db['inicio'] else ''
+                registro['salida'] = registro_db['salida'].strftime('%Y-%m-%dT%H:%M') if registro_db['salida'] else ''
+                registro['horas_trabajadas'] = float(registro_db['horas_trabajadas'] or 0.0)
+                registro['horas_extras'] = float(registro_db['horas_extras'] or 0.0)
+            # ELSE: registro remains with default empty values for adding a new record
+
+            cursor.close()
+            conn.close()
+            # Always render the template if username and fecha_str are valid
+            return render_template('admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form)
+        else:
+            flash('Usuario no encontrado', 'error')
+    else: # If username or fecha_str are missing from GET parameters
+        flash('Parámetros de edición incompletos', 'error')
+
+    # If essential parameters are missing or user not found, redirect
+    conn = get_db_connection() # Re-establish connection if it was closed
+    cursor = conn.cursor()
     cursor.close()
     conn.close()
-
-    if registro:
-        return render_template('admin_editar_registro.html', usuario=username, fecha=fecha_str, registro=registro, form=form) # FIX: Ruta correcta
-    
-    flash('Registro no encontrado', 'error')
     return redirect(url_for('admin_usuarios'))
 
 # ✅ NUEVO: Ruta para AÑADIR un registro de asistencia manualmente (Admin)
