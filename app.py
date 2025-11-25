@@ -1151,6 +1151,37 @@ def dashboard():
             'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
         })
 
+    # ✅ NUEVO: Obtener registros de asistencia para el mes actual
+    registros_mes_actual = []
+    inicio_mes = hoy_date.replace(day=1)
+    # Calcular el último día del mes
+    import calendar
+    _, num_dias = calendar.monthrange(hoy_date.year, hoy_date.month)
+    fin_mes = hoy_date.replace(day=num_dias)
+
+    query_mes = """
+        SELECT u.nombre, ra.fecha, ra.inicio, ra.salida, ra.horas_trabajadas
+        FROM registros_asistencia ra
+        JOIN usuarios u ON ra.id_usuario = u.id
+        WHERE ra.fecha BETWEEN %s AND %s
+    """
+    params_mes = [inicio_mes, fin_mes]
+
+    if admin:
+        query_mes += " AND u.admin IS NOT TRUE ORDER BY u.nombre, ra.fecha DESC"
+    else:
+        query_mes += " AND u.id = %s ORDER BY ra.fecha DESC"
+        params_mes.append(current_user.id)
+
+    cursor.execute(query_mes, tuple(params_mes))
+    for reg in cursor.fetchall():
+        registros_mes_actual.append({
+            'usuario': reg['nombre'],
+            'fecha': reg['fecha'].strftime('%A, %d/%m/%Y'),
+            'inicio': reg['inicio'].strftime('%I:%M %p') if reg['inicio'] else '-',
+            'salida': reg['salida'].strftime('%I:%M %p') if reg['salida'] else '-',
+            'horas_trabajadas': float(reg['horas_trabajadas'] or 0.0)
+        })
 
     # ✅ NUEVO: Calcular resumen de horas extras para el admin
     resumen_horas_extras = []
@@ -1231,6 +1262,9 @@ def dashboard():
         resumen_horas_extras=resumen_horas_extras, # ✅ NUEVO: Pasar resumen de extras
         server_data_json=server_data_json, # ✅ SOLUCIÓN: Pasar los datos JSON a la plantilla
         registros_semana_actual=registros_semana_actual # Pasar los registros a la plantilla
+        server_data_json=server_data_json,
+        registros_semana_actual=registros_semana_actual,
+        registros_mes_actual=registros_mes_actual # ✅ NUEVO: Pasar registros del mes
     )
 
 # ✅ Marcar inicio
