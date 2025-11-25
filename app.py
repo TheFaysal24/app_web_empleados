@@ -2555,13 +2555,14 @@ def admin_asignar_turnos():
                         
                         id_turno_disponible = turno_disponible_row['id']
                         
-                        # FIX: Lógica de UPSERT (Update or Insert) para PostgreSQL
-                        # Esto inserta un nuevo turno o actualiza el existente para el mismo día y usuario.
+                        # SOLUCIÓN DEFINITIVA: Lógica de "Borrar y Crear" para evitar errores de ON CONFLICT.
+                        # 1. Borramos cualquier turno que el usuario ya tenga para esa fecha.
+                        cursor.execute("DELETE FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s", (id_usuario, fecha))
+
+                        # 2. Insertamos el nuevo turno seleccionado.
                         cursor.execute("""
                             INSERT INTO turnos_asignados (id_usuario, fecha_asignacion, id_turno_disponible)
                             VALUES (%s, %s, %s)
-                            ON CONFLICT (id_usuario, fecha_asignacion) DO UPDATE SET
-                                id_turno_disponible = EXCLUDED.id_turno_disponible;
                         """, (id_usuario, fecha, id_turno_disponible))
 
                     # Si la hora seleccionada está vacía, se borra el turno existente para ese día y usuario.

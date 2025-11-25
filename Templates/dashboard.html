@@ -861,6 +861,14 @@ or: #f97316;
   </div>
 </div>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const serverData = {{ server_data_json|safe }};
+
+    const chartDataLabels = {
+      id: 'chartDataLabels',
+      afterDatasetsDraw(chart, args, options) {
+        chart.data.datasets.forEach((dataset, i) => {
           const meta = chart.getDatasetMeta(i);
           meta.data.forEach((bar, index) => {
             const barData = bar.$context.parsed.y;
@@ -874,7 +882,7 @@ or: #f97316;
           });
         });
       }
-    };
+    }; 
 
     const ctx1 = document.getElementById('graficoHoras');
     if (ctx1 && serverData.fechas && serverData.horas) {
@@ -1183,5 +1191,6 @@ or: #f97316;
     }
 
   });
-</script>
+</script> 
+
 {% endblock %}
