@@ -349,6 +349,8 @@ def init_db():
             FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
             FOREIGN KEY (id_turno_disponible) REFERENCES turnos_disponibles(id),
             UNIQUE (id_usuario, fecha_asignacion)
+            FOREIGN KEY (id_turno_disponible) REFERENCES turnos_disponibles(id) ON DELETE CASCADE,
+            UNIQUE (id_usuario, fecha_asignacion, id_turno_disponible)
         )
     """)
     cursor.execute("""
@@ -490,6 +492,66 @@ def registrar_auditoria(accion, detalle, usuario=None):
         conn.close()
     except Exception as e:
         logger.error(f"Error al registrar auditoría: {e}")
+
+# -------------------
+# ✅ NUEVO: Función de Migración de Base de Datos (Segura)
+# -------------------
+def migrar_db_v1():
+    """
+    Aplica cambios a la estructura de la base de datos sin perder datos.
+    Específicamente, actualiza la restricción UNIQUE en 'turnos_asignados'.
+    """
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        logger.info("Iniciando migración de base de datos v1...")
+
+        # 1. Encontrar el nombre de la vieja restricción UNIQUE en 'turnos_asignados'
+        cursor.execute("""
+            SELECT constraint_name 
+            FROM information_schema.table_constraints 
+            WHERE table_name = 'turnos_asignados' AND constraint_type = 'UNIQUE';
+        """)
+        constraint_row = cursor.fetchone()
+        
+        if constraint_row:
+            old_constraint_name = constraint_row['constraint_name']
+            
+            # Solo intentar la migración si la restricción vieja es la que esperamos
+            if 'id_usuario_fecha_asignacion_key' in old_constraint_name:
+                logger.info(f"Encontrada restricción antigua: {old_constraint_name}. Procediendo a migrar.")
+                
+                # 2. Eliminar la restricción antigua
+                cursor.execute(f"ALTER TABLE turnos_asignados DROP CONSTRAINT {old_constraint_name};")
+                logger.info("Restricción antigua eliminada.")
+
+                # 3. Añadir la nueva restricción UNIQUE
+                cursor.execute("""
+                    ALTER TABLE turnos_asignados 
+                    ADD CONSTRAINT turnos_asignados_id_usuario_fecha_asignacion_id_turno_dispo_key 
+                    UNIQUE (id_usuario, fecha_asignacion, id_turno_disponible);
+                """)
+                logger.info("Nueva restricción UNIQUE (id_usuario, fecha_asignacion, id_turno_disponible) añadida.")
+                
+                conn.commit()
+                flash("✅ Migración de base de datos completada exitosamente.", "message")
+                logger.info("Migración completada y confirmada.")
+            else:
+                logger.info("La restricción UNIQUE ya parece estar actualizada. No se necesita migración.")
+                flash("La base de datos ya está en la versión más reciente.", "info")
+        else:
+            logger.info("No se encontró una restricción UNIQUE para migrar en 'turnos_asignados'.")
+
+    except Exception as e:
+        logger.error(f"Error durante la migración de la base de datos: {e}")
+        flash(f"Error durante la migración: {e}", "error")
+        if conn: conn.rollback()
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 # -------------------
 # Flask-Login user loader
@@ -3665,6 +3727,7 @@ def importar_turnos_historicos():
                 inicio_dt_tz = TZ.localize(inicio_dt) if TZ and hasattr(TZ, 'localize') else inicio_dt
 
                 
+                h, m = map(int, hora_24h.split(':'))                
                 # FIX: Crear el datetime como "naive" (sin zona horaria)
                 inicio_dt_naive = datetime.datetime(year, month, day, h, m)
                 
