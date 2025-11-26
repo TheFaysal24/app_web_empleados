@@ -3664,6 +3664,14 @@ def importar_turnos_historicos():
                 # Asegurarse de que tenga la zona horaria correcta
                 inicio_dt_tz = TZ.localize(inicio_dt) if TZ and hasattr(TZ, 'localize') else inicio_dt
 
+                
+                # FIX: Crear el datetime como "naive" (sin zona horaria)
+                inicio_dt_naive = datetime.datetime(year, month, day, h, m)
+                
+                # FIX: Asignarle la zona horaria de Colombia (America/Bogota) para que sea "aware"
+                # Esto le dice al sistema: "Esta hora que te doy, considérala como si fuera de Bogotá"
+                inicio_dt_tz = TZ.localize(inicio_dt_naive) if TZ and hasattr(TZ, 'localize') else inicio_dt_naive
+                
                 # Insertar en registros_asistencia, si no existe ya un registro para ese día
                 logger.info(f"Inserting registro asistencia historico: id_usuario={id_usuario}, fecha={fecha_asignacion}")
                 cursor.execute(
