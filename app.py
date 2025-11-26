@@ -2023,8 +2023,8 @@ def admin_editar_registro():
         
         cursor.close()
         conn.close()
-        # Redirigir al nuevo panel de gestión de tiempos para mantener el flujo
-        return redirect(url_for('admin_gestion_tiempos', mes=datetime.datetime.strptime(fecha_str, '%Y-%m-%d').month, ano=datetime.datetime.strptime(fecha_str, '%Y-%m-%d').year))
+        # Redirigir de vuelta al módulo de edición total con el usuario seleccionado
+        return redirect(url_for('admin_edicion_total', usuario=username))
     
       else:
         flash('Error de validación del formulario. Intenta de nuevo.', 'error')
