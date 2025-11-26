@@ -722,8 +722,6 @@ def asignar_turnos_automaticos(cedula, id_usuario):
             # Verificar si el turno ya está asignado para hoy
             # Verificar si el turno ya está asignado para ese día
             cursor.execute(
-                "SELECT id FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
-                (turno_disponible_id, today_local_iso())
                 "SELECT id FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
                 (id_usuario, fecha_del_dia)
             )
