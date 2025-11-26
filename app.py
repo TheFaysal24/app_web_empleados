@@ -347,8 +347,6 @@ def init_db():
             id_turno_disponible INT NOT NULL,
             fecha_asignacion DATE NOT NULL,
             FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
-            FOREIGN KEY (id_turno_disponible) REFERENCES turnos_disponibles(id),
-            UNIQUE (id_usuario, fecha_asignacion)
             FOREIGN KEY (id_turno_disponible) REFERENCES turnos_disponibles(id) ON DELETE CASCADE,
             UNIQUE (id_usuario, fecha_asignacion, id_turno_disponible)
         )
