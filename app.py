@@ -216,15 +216,18 @@ class AsignarTurnosForm(FlaskForm):
 def parse_time_am_pm(time_str):
     if not time_str:
         return None
-    time_str = time_str.replace('.', '').replace(' ', '').lower()
-    if 'a.m' in time_str:
-        time_str = time_str.replace('a.m', '')
-        hour, minute = map(int, time_str.split(':'))
+    
+    # Limpieza robusta: quitar puntos, espacios y convertir a minúsculas
+    cleaned_time_str = time_str.replace('.', '').replace(' ', '').lower()
+    
+    if 'am' in cleaned_time_str:
+        time_part = cleaned_time_str.replace('am', '')
+        hour, minute = map(int, time_part.split(':'))
         if hour == 12: hour = 0 # 12 AM es 00:00
-    elif 'p.m' in time_str:
-        time_str = time_str.replace('p.m', '')
-        hour, minute = map(int, time_str.split(':'))
-        if hour != 12: hour += 12 # 12 PM es 12:00, otros add 12
+    elif 'pm' in cleaned_time_str:
+        time_part = cleaned_time_str.replace('pm', '')
+        hour, minute = map(int, time_part.split(':'))
+        if hour != 12: hour += 12 # 12 PM es 12:00, otros suman 12
     else: # Asumir formato 24-horas si no hay am/pm
         hour, minute = map(int, time_str.split(':'))
     return f"{hour:02d}:{minute:02d}"
