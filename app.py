@@ -711,7 +711,6 @@ def asignar_turnos_automaticos(cedula, id_usuario):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    for dia in dias_semana:
     for i, dia in enumerate(dias_semana):
         fecha_del_dia = inicio_semana_actual + datetime.timedelta(days=i)
         cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, turno_asignado_hora))
