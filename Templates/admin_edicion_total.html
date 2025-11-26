@@ -104,7 +104,7 @@
             Editando Perfil de: <strong>{{ usuario_data.nombre }}</strong>
         </div>
         <div class="card-body">
-            <form method="POST" action="{{ url_for('admin_actualizar_usuario_completo') }}">
+            <form method="POST" action="{{ url_for('admin_actualizar_usuario_completo') }}" id="form-perfil">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="usuario" value="{{ usuario_data.username }}">
 

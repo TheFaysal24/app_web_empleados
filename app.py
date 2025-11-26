@@ -1286,7 +1286,13 @@ def marcar_inicio():
             
             usuario_id = current_user.id
             hoy = today_local_iso()
-            ahora = client_timestamp or now_local().isoformat()
+            
+            # FIX: Convertir el timestamp del cliente (UTC) a la zona horaria local del servidor
+            if client_timestamp:
+                ahora = datetime.datetime.fromisoformat(client_timestamp.replace('Z', '+00:00')).astimezone(TZ)
+            else:
+                ahora = now_local()
+            ahora_iso = ahora.isoformat()
 
             cursor.execute(
                 "SELECT id FROM registros_asistencia WHERE id_usuario = %s AND fecha = %s AND inicio IS NOT NULL",
@@ -1296,7 +1302,7 @@ def marcar_inicio():
                 flash('Ya registraste tu inicio hoy', 'error')
             else:
                 logger.info(f"Inserting registro asistencia inicio: id_usuario={usuario_id}, fecha={hoy}")
-                cursor.execute("INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING", (usuario_id, hoy, ahora))
+                cursor.execute("INSERT INTO registros_asistencia (id_usuario, fecha, inicio) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha) DO NOTHING", (usuario_id, hoy, ahora_iso))
                 conn.commit()
                 flash('Hora de inicio registrada.', 'message')
         except Exception as e:
@@ -1349,7 +1355,12 @@ def marcar_salida():
 
         # ✅ FIX: Usar la hora del cliente (navegador) para mayor precisión.
         client_timestamp = request.form.get('client_timestamp')
-        ahora = datetime.datetime.fromisoformat(client_timestamp) if client_timestamp else now_local()
+        
+        # FIX: Convertir el timestamp del cliente (UTC) a la zona horaria local del servidor
+        if client_timestamp:
+            ahora = datetime.datetime.fromisoformat(client_timestamp.replace('Z', '+00:00')).astimezone(TZ)
+        else:
+            ahora = now_local()
 
         usuario_id = current_user.id
         hoy = today_local_iso()
@@ -1396,7 +1407,12 @@ def marcar_asistencia():
 
         # ✅ FIX: Usar la hora del cliente (navegador) para mayor precisión.
         client_timestamp = request.form.get('client_timestamp')
-        ahora = datetime.datetime.fromisoformat(client_timestamp) if client_timestamp else now_local()
+        
+        # FIX: Convertir el timestamp del cliente (UTC) a la zona horaria local del servidor
+        if client_timestamp:
+            ahora = datetime.datetime.fromisoformat(client_timestamp.replace('Z', '+00:00')).astimezone(TZ)
+        else:
+            ahora = now_local()
 
         usuario_id = current_user.id
         hoy = today_local_iso()
