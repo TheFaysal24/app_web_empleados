@@ -3728,11 +3728,6 @@ def _do_importar_turnos_historicos():
 
                 # ✅ AÑADIR REGISTRO DE ASISTENCIA CON LA HORA DE INICIO
                 # Construir el objeto datetime para el inicio
-                h, m = map(int, hora_24h.split(':'))
-                inicio_dt = datetime.datetime(year, month, day, h, m)
-                # Asegurarse de que tenga la zona horaria correcta
-                inicio_dt_tz = TZ.localize(inicio_dt) if TZ and hasattr(TZ, 'localize') else inicio_dt
-
                 
                 h, m = map(int, hora_24h.split(':'))                
                 # FIX: Crear el datetime como "naive" (sin zona horaria)
