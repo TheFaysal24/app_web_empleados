@@ -3626,14 +3626,6 @@ def turnos_mensual():
                         historial_mes=historial_mes,
                         session=session)
 
-# ✅ NUEVA RUTA: Importar Turnos Históricos (Admin)
-@app.route('/admin/importar_turnos_historicos')
-@login_required
-def importar_turnos_historicos():
-    if not current_user.is_admin():
-        flash('Acceso denegado', 'error')
-        return redirect(url_for('home'))
-
 def _do_importar_turnos_historicos():
     """Función interna para importar datos. No depende del contexto de la petición."""
     # Datos históricos proporcionados por el usuario
