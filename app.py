@@ -3634,6 +3634,8 @@ def importar_turnos_historicos():
         flash('Acceso denegado', 'error')
         return redirect(url_for('home'))
 
+def _do_importar_turnos_historicos():
+    """Función interna para importar datos. No depende del contexto de la petición."""
     # Datos históricos proporcionados por el usuario
     raw_shift_data = {
         "NATALIA AREVALO": {"cedula": "1070963486", "shifts": [
@@ -3749,7 +3751,19 @@ def importar_turnos_historicos():
     conn.commit()
     cursor.close()
     conn.close()
+    
+    return imported_count, skipped_count, error_messages
 
+# ✅ NUEVA RUTA: Importar Turnos Históricos (Admin)
+@app.route('/admin/importar_turnos_historicos')
+@login_required
+def importar_turnos_historicos():
+    if not current_user.is_admin():
+        flash('Acceso denegado', 'error')
+        return redirect(url_for('home'))
+
+    imported_count, skipped_count, error_messages = _do_importar_turnos_historicos()
+    
     if imported_count > 0:
         flash(f"✅ Se importaron y registraron {imported_count} turnos históricos exitosamente.", 'message')
     if skipped_count > 0:
@@ -3757,6 +3771,7 @@ def importar_turnos_historicos():
     for msg in error_messages:
         flash(msg, 'error')
 
+    
     return redirect(url_for('admin_usuarios')) # Redirigir a la GESTIÓN DE USUARIOS para ver los registros
 
 # ✅ NUEVO: Función para enviar el correo de restablecimiento de contraseña
