@@ -703,11 +703,17 @@ def asignar_turnos_automaticos(cedula, id_usuario):
     
     # Asignar el turno de esta semana (de lunes a sábado)
     dias_semana = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    # Asignar el turno para la semana actual (de lunes a domingo)
+    dias_semana = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    hoy_dt = now_local().date()
+    inicio_semana_actual = hoy_dt - datetime.timedelta(days=hoy_dt.weekday())
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
     for dia in dias_semana:
+    for i, dia in enumerate(dias_semana):
+        fecha_del_dia = inicio_semana_actual + datetime.timedelta(days=i)
         cursor.execute("SELECT id FROM turnos_disponibles WHERE dia_semana = %s AND hora = %s", (dia, turno_asignado_hora))
         turno_disponible_id = cursor.fetchone()
         
@@ -715,15 +721,21 @@ def asignar_turnos_automaticos(cedula, id_usuario):
             turno_disponible_id = turno_disponible_id['id']
             
             # Verificar si el turno ya está asignado para hoy
+            # Verificar si el turno ya está asignado para ese día
             cursor.execute(
                 "SELECT id FROM turnos_asignados WHERE id_turno_disponible = %s AND fecha_asignacion = %s",
                 (turno_disponible_id, today_local_iso())
+                "SELECT id FROM turnos_asignados WHERE id_usuario = %s AND fecha_asignacion = %s",
+                (id_usuario, fecha_del_dia)
             )
             if not cursor.fetchone():
                 try:
                     logger.info(f"Inserting turno asignado automatico: id_usuario={id_usuario}, turno_id={turno_disponible_id}, fecha={today_local_iso()}")
                     cursor.execute("INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
                                 (id_usuario, turno_disponible_id, today_local_iso()))
+                    logger.info(f"Asignando turno automático para {id_usuario} el {fecha_del_dia} a las {turno_asignado_hora}")
+                    cursor.execute("INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s)",
+                                (id_usuario, turno_disponible_id, fecha_del_dia))
                     conn.commit()
                 except psycopg2.Error as err:
                     if err.pgcode == '23505': # unique_violation
@@ -3676,6 +3688,9 @@ def _do_importar_turnos_historicos():
             skipped_count += len(user_data["shifts"])
             continue
         
+        # ✅ RESTAURAR TURNOS SEMANA ACTUAL: Llamar a la asignación automática para este usuario
+        asignar_turnos_automaticos(cedula, user_id_row['id'])
+
         id_usuario = user_id_row['id']
 
         for date_str, time_str_am_pm in user_data["shifts"]:
