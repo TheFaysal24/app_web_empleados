@@ -3678,12 +3678,35 @@ def _do_importar_turnos_historicos():
         cedula = user_data["cedula"]
         
         cursor.execute("SELECT id FROM usuarios WHERE cedula = %s", (cedula,))
-        user_id_row = cursor.fetchone()
+        user_id_row = cursor.fetchone() # Esto puede ser None si el usuario no existe
 
+        # ✅ RESTAURACIÓN AUTOMÁTICA DE USUARIOS
         if not user_id_row:
-            error_messages.append(f"Usuario con cédula {cedula} ({user_name}) no encontrado. Saltando sus turnos.")
-            skipped_count += len(user_data["shifts"])
-            continue
+            try:
+                logger.info(f"Usuario con cédula {cedula} no encontrado. Creando automáticamente...")
+                
+                # ✅ MEJORA: Generar un nombre de usuario legible desde el nombre completo
+                # Ejemplo: "NATALIA AREVALO" -> "natalia.arevalo"
+                username_temp = user_name.lower().replace(' ', '.')
+                
+                # Usar la cédula como contraseña temporal (fácil de comunicar)
+                password_temp = cedula
+                hashed_password = generate_password_hash(password_temp)
+                
+                # Crear el usuario con los datos disponibles
+                cursor.execute(
+                    "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (cedula) DO NOTHING RETURNING id",
+                    (username_temp, hashed_password, False, user_name, cedula, 'Gestor', f"{username_temp}@empresa.com", '')
+                )
+                user_id_row = cursor.fetchone() # Obtener el ID del nuevo usuario creado
+                conn.commit() # Confirmar la creación del usuario
+                logger.info(f"Usuario {user_name} creado con username y contraseña temporal: {cedula}")
+            except Exception as e:
+                conn.rollback()
+                error_messages.append(f"Error CRÍTICO al crear automáticamente al usuario {user_name}: {e}")
+                logger.error(f"Error CRÍTICO al crear automáticamente al usuario {user_name}: {e}")
+                skipped_count += len(user_data["shifts"])
+                continue # Saltar al siguiente usuario si la creación falla
         
         # ✅ RESTAURAR TURNOS SEMANA ACTUAL: Llamar a la asignación automática para este usuario
         asignar_turnos_automaticos(cedula, user_id_row['id'])
@@ -3791,6 +3814,48 @@ def send_password_reset_email(user, token):
         msg = Message('Restablecimiento de Contraseña - Sistema de Empleados',
                       recipients=[user['correo']])
         reset_url = url_for('resetear_clave', token=token, _external=True)
+        msg.body = f'''Hola {user['nombre']},
+
+Para restablecer tu contraseña, visita el siguiente enlace:
+{reset_url}
+
+Si no solicitaste este cambio, puedes ignorar este correo. El enlace expirará en 30 minutos.
+'''
+        mail.send(msg)
+    except Exception as e:
+        logger.error(f"Fallo al enviar correo a {user['correo']}: {e}")
+        raise e
+
+# -------------------
+# Ejecutar aplicación
+# -------------------
+# Advertencia si se usa SECRET_KEY por defecto
+if app.secret_key.startswith('CHANGE_THIS'):
+    logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
+
+if __name__ == '__main__':    
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
+
+# Forzando re-commit para despliegue
+
+Si no solicitaste este cambio, puedes ignorar este correo. El enlace expirará en 30 minutos.
+'''
+        mail.send(msg)
+    except Exception as e:
+        logger.error(f"Fallo al enviar correo a {user['correo']}: {e}")
+        raise e
+
+# -------------------
+# Ejecutar aplicación
+# -------------------
+# Advertencia si se usa SECRET_KEY por defecto
+if app.secret_key.startswith('CHANGE_THIS'):
+    logger.warning("ADVERTENCIA: Usando SECRET_KEY por defecto. Configura una en .env para produccion!")
+
+if __name__ == '__main__':    
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=os.environ.get('FLASK_DEBUG') == '1')
+
+# Forzando re-commit para despliegue
         msg.body = f'''Hola {user['nombre']},
 
 Para restablecer tu contraseña, visita el siguiente enlace:
