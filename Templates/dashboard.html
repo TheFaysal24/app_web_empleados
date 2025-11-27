@@ -1323,40 +1323,4 @@ or: #f97316;
 
   });
 </script> 
-
-<script>
-  // ✅ FIX DEFINITIVO PARA LA HORA:
-  // Este script se asegura de que la hora del cliente (navegador) se envíe al servidor
-  // al momento de marcar entrada o salida, garantizando la máxima precisión.
-  document.addEventListener('DOMContentLoaded', function() {
-      // Función para manejar el envío del formulario con la hora del cliente
-      function handleSubmitWithTimestamp(event) {
-          // Prevenir el envío inmediato del formulario
-          event.preventDefault();
-          const form = event.target;
-
-          // Crear un campo oculto para la hora del cliente
-          const timestampInput = document.createElement('input');
-          timestampInput.type = 'hidden';
-          timestampInput.name = 'client_timestamp';
-          timestampInput.value = new Date().toISOString(); // Hora actual en formato ISO UTC
-          form.appendChild(timestampInput);
-
-          // Enviar el formulario con el nuevo campo
-          form.submit();
-      }
-
-      // Asignar el manejador a los formularios de marcar inicio y salida
-      const formInicio = document.querySelector('form[action="{{ url_for('marcar_inicio') }}"]');
-      const formSalida = document.querySelector('form[action="{{ url_for('marcar_salida') }}"]');
-
-      if (formInicio) {
-          formInicio.addEventListener('submit', handleSubmitWithTimestamp);
-      }
-      if (formSalida) {
-          formSalida.addEventListener('submit', handleSubmitWithTimestamp);
-      }
-  });
-</script>
-
 {% endblock %}

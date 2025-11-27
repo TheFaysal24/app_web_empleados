@@ -31,37 +31,40 @@
   {% block content %}{% endblock %}
   
   <script>
-    setTimeout(function() {
-      const alerts = document.querySelectorAll('.alert');
-      alerts.forEach(alert => {
-        alert.remove();
-      });
-    }, 1300);
-  </script>
-
-  <script>
     /**
-     * Inyecta la hora local del cliente en los formularios de asistencia antes de enviarlos.
-     * Esto asegura que la hora registrada sea la del PC del usuario y no la del servidor.
+     * SOLUCIÓN DEFINITIVA PARA LA HORA:
+     * Este script centralizado intercepta TODOS los formularios de asistencia.
+     * Previene el envío normal, añade la hora exacta del cliente y luego lo envía.
+     * Esto garantiza que la hora local del PC siempre se registre correctamente.
      */
     document.addEventListener('DOMContentLoaded', function() {
-      // Busca todos los formularios que envían a rutas de asistencia
-      const forms = document.querySelectorAll('form[action*="marcar_asistencia"], form[action*="marcar_inicio"], form[action*="marcar_salida"]');
-      
-      forms.forEach(form => {
-        form.addEventListener('submit', function(event) {
-          // Crea un campo oculto si no existe
-          let clientTimeInput = form.querySelector('input[name="client_timestamp"]');
-          if (!clientTimeInput) {
-            clientTimeInput = document.createElement('input');
-            clientTimeInput.type = 'hidden';
-            clientTimeInput.name = 'client_timestamp';
-            form.appendChild(clientTimeInput);
-          }
-          // Establece la hora actual del cliente en formato ISO (UTC)
-          clientTimeInput.value = new Date().toISOString();
+        // Eliminar mensajes flash después de unos segundos
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.5s ease';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000); // Aumentado a 5 segundos
+
+        // Manejador de envío de formularios de asistencia
+        function handleSubmitWithTimestamp(event) {
+            event.preventDefault(); // Detener el envío
+            const form = event.target;
+            const timestampInput = document.createElement('input');
+            timestampInput.type = 'hidden';
+            timestampInput.name = 'client_timestamp';
+            timestampInput.value = new Date().toISOString(); // Hora UTC del cliente
+            form.appendChild(timestampInput);
+            form.submit(); // Enviar el formulario modificado
+        }
+
+        // Aplicar el manejador a todos los formularios de asistencia
+        const forms = document.querySelectorAll('form[action*="marcar_inicio"], form[action*="marcar_salida"], form[action*="marcar_asistencia"]');
+        forms.forEach(form => {
+            form.addEventListener('submit', handleSubmitWithTimestamp);
         });
-      });
     });
   </script>
 </body>
