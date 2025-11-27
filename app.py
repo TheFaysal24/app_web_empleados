@@ -3715,6 +3715,12 @@ def _do_importar_turnos_historicos():
                 
                 id_turno_disponible = turno_disponible_id_row['id']
 
+                # ✅ RESTAURAR TURNO HISTÓRICO: Insertar en turnos_asignados para la fecha pasada
+                cursor.execute(
+                    "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, fecha_asignacion, id_turno_disponible) DO NOTHING",
+                    (id_usuario, id_turno_disponible, fecha_asignacion)
+                )
+
                 # Insertar en turnos_asignados (ON CONFLICT DO NOTHING para evitar duplicados)
                 cursor.execute(
                     "INSERT INTO turnos_asignados (id_usuario, id_turno_disponible, fecha_asignacion) VALUES (%s, %s, %s) ON CONFLICT (id_usuario, id_turno_disponible, fecha_asignacion) DO NOTHING",
