@@ -3698,8 +3698,10 @@ def _do_importar_turnos_historicos():
                     "INSERT INTO usuarios (username, contrasena, admin, nombre, cedula, cargo, correo, telefono) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (cedula) DO NOTHING RETURNING id",
                     (username_temp, hashed_password, False, user_name, cedula, 'Gestor', f"{username_temp}@empresa.com", '')
                 )
-                user_id_row = cursor.fetchone() # Obtener el ID del nuevo usuario creado
+                new_user_id_row = cursor.fetchone() # Obtener el ID del nuevo usuario creado
                 conn.commit() # Confirmar la creación del usuario
+                if new_user_id_row:
+                    user_id_row = new_user_id_row # Asignar el nuevo ID para el resto del proceso
                 logger.info(f"Usuario {user_name} creado con username y contraseña temporal: {cedula}")
             except Exception as e:
                 conn.rollback()
